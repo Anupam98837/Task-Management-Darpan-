@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Services\ClientUserScopeService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -12,6 +13,10 @@ use Illuminate\Database\QueryException;
 
 class ClientController extends Controller
 {
+    public function __construct(private ClientUserScopeService $scopeService)
+    {
+    }
+
     /** =========================
      *   Auth/Role Helpers
      * ========================= */
@@ -103,36 +108,7 @@ class ClientController extends Controller
     /** Insert one notification row (no email). */
     private function persistNotification(array $payload): void
     {
-        $title     = (string)($payload['title']    ?? 'Notification');
-        $message   = (string)($payload['message']  ?? '');
-        $receivers = array_values(array_map(function($x){
-            return [
-                'id'   => isset($x['id']) ? (int)$x['id'] : null,
-                'role' => (string)($x['role'] ?? 'unknown'),
-                'read' => (int)($x['read'] ?? 0),
-            ];
-        }, $payload['receivers'] ?? []));
-
-        $metadata = $payload['metadata'] ?? [];
-        $type     = (string)($payload['type'] ?? 'general');
-        $linkUrl  = $payload['link_url'] ?? null;
-        $priority = in_array(($payload['priority'] ?? 'normal'), ['low','normal','high','urgent'], true)
-                    ? $payload['priority'] : 'normal';
-        $status   = in_array(($payload['status'] ?? 'active'), ['active','archived','deleted'], true)
-                    ? $payload['status'] : 'active';
-
-        DB::table('notifications')->insert([
-            'title'      => $title,
-            'message'    => $message,
-            'receivers'  => json_encode($receivers, JSON_UNESCAPED_UNICODE),
-            'metadata'   => $metadata ? json_encode($metadata, JSON_UNESCAPED_UNICODE) : null,
-            'type'       => $type,
-            'link_url'   => $linkUrl,
-            'priority'   => $priority,
-            'status'     => $status,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        app(\App\Services\NotificationDispatchService::class)->dispatch($payload);
     }
 
     /** Admin receivers: all admins (id, role=admin). */
@@ -184,14 +160,136 @@ class ClientController extends Controller
 
     private function findBySlug(string $slug): ?object
     {
-        return DB::table('clients')
-            ->where('slug', mb_strtolower($slug))
-            ->first();
+        return $this->decorateClient(
+            $this->clientBaseQuery()
+                ->where('c.slug', mb_strtolower($slug))
+                ->first()
+        );
     }
 
     private function findById(int $id): ?object
     {
-        return DB::table('clients')->where('id', $id)->first();
+        return $this->decorateClient(
+            $this->clientBaseQuery()
+                ->where('c.id', $id)
+                ->first()
+        );
+    }
+
+    private function clientBaseQuery()
+    {
+        return DB::table('clients as c')
+            ->leftJoin('clients as p', 'p.id', '=', 'c.parent_id')
+            ->select('c.*', 'p.name as parent_name');
+    }
+
+    private function decorateClient(?object $client): ?object
+    {
+        if (!$client) {
+            return null;
+        }
+
+        $client->image_full_url = $this->imageUrl($client->image_url);
+        return $client;
+    }
+
+    private function normalizeParentId($value): ?int
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        if (is_string($value)) {
+            $value = strtolower(trim($value));
+            if ($value === '' || $value === 'self' || $value === 'root' || $value === 'null') {
+                return null;
+            }
+            if (ctype_digit($value)) {
+                $parsed = (int) $value;
+                return $parsed > 0 ? $parsed : null;
+            }
+        }
+
+        if (is_numeric($value)) {
+            $parsed = (int) $value;
+            return $parsed > 0 ? $parsed : null;
+        }
+
+        return null;
+    }
+
+    private function scopedClientIdsForActor(Request $request): ?array
+    {
+        $actor = $this->actor($request);
+        return $this->scopeService->visibleClientIdsForActor($actor['role'] ?? null, (int) ($actor['id'] ?? 0));
+    }
+
+    private function applyScopedVisibility($query, Request $request): void
+    {
+        $scopedClientIds = $this->scopedClientIdsForActor($request);
+        if ($scopedClientIds === null) {
+            return;
+        }
+
+        if (empty($scopedClientIds)) {
+            $query->whereRaw('1 = 0');
+            return;
+        }
+
+        $query->whereIn('c.id', $scopedClientIds);
+    }
+
+    private function wouldCreateHierarchyCycle(int $selfId, int $parentId): bool
+    {
+        $cursor = $parentId;
+
+        while ($cursor > 0) {
+            if ($cursor === $selfId) {
+                return true;
+            }
+
+            $next = DB::table('clients')->where('id', $cursor)->value('parent_id');
+            if ($next === null) {
+                break;
+            }
+
+            $cursor = (int) $next;
+        }
+
+        return false;
+    }
+
+    private function parentValidationError(?int $parentId, ?int $selfId = null)
+    {
+        if ($parentId === null) {
+            return null;
+        }
+
+        if ($selfId !== null && $parentId === $selfId) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'A client cannot be its own parent.',
+                'errors' => ['parent_id' => ['A client cannot be its own parent.']],
+            ], 422);
+        }
+
+        if (!DB::table('clients')->where('id', $parentId)->exists()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Parent client not found.',
+                'errors' => ['parent_id' => ['Parent client not found.']],
+            ], 422);
+        }
+
+        if ($selfId !== null && $this->wouldCreateHierarchyCycle($selfId, $parentId)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'That parent selection would create a client cycle.',
+                'errors' => ['parent_id' => ['That parent selection would create a client cycle.']],
+            ], 422);
+        }
+
+        return null;
     }
 
     private function uniqueErrorResponse(QueryException $e)
@@ -229,7 +327,7 @@ class ClientController extends Controller
      * ========================= */
 public function index(Request $request)
 {
-    if ($resp = $this->requireRole($request, ['admin','user'])) return $resp;
+    if ($resp = $this->requireRole($request, ['admin','user','assignee','client_user'])) return $resp;
 
     $page     = max(1, (int) $request->query('page', 1));
     $perPage  = min(100, max(1, (int) $request->query('per_page', 10)));
@@ -241,35 +339,37 @@ public function index(Request $request)
 
     $allowedOrg = ['company','hospital','clinic','ngo','individual','other'];
 
-    $query = DB::table('clients');
+    $query = $this->clientBaseQuery();
+    $this->applyScopedVisibility($query, $request);
 
     if ($q !== '') {
         $like = "%{$q}%";
         $query->where(function ($w) use ($like) {
-            $w->where('name', 'LIKE', $like)
-              ->orWhere('org_type', 'LIKE', $like)
-              ->orWhere('email', 'LIKE', $like)
-              ->orWhere('phone', 'LIKE', $like)
-              ->orWhere('address', 'LIKE', $like)
-              ->orWhere('city', 'LIKE', $like)
-              ->orWhere('state', 'LIKE', $like)
-              ->orWhere('postcode', 'LIKE', $like)
-              ->orWhere('country', 'LIKE', $like)
-              ->orWhere('timezone', 'LIKE', $like)
-              ->orWhere('website_url', 'LIKE', $like)
-              ->orWhere('contact_name', 'LIKE', $like)
-              ->orWhere('contact_email', 'LIKE', $like)
-              ->orWhere('contact_phone', 'LIKE', $like)
-              ->orWhere('slug', 'LIKE', $like);
+            $w->where('c.name', 'LIKE', $like)
+              ->orWhere('c.org_type', 'LIKE', $like)
+              ->orWhere('c.email', 'LIKE', $like)
+              ->orWhere('c.phone', 'LIKE', $like)
+              ->orWhere('c.address', 'LIKE', $like)
+              ->orWhere('c.city', 'LIKE', $like)
+              ->orWhere('c.state', 'LIKE', $like)
+              ->orWhere('c.postcode', 'LIKE', $like)
+              ->orWhere('c.country', 'LIKE', $like)
+              ->orWhere('c.timezone', 'LIKE', $like)
+              ->orWhere('c.website_url', 'LIKE', $like)
+              ->orWhere('c.contact_name', 'LIKE', $like)
+              ->orWhere('c.contact_email', 'LIKE', $like)
+              ->orWhere('c.contact_phone', 'LIKE', $like)
+              ->orWhere('c.slug', 'LIKE', $like)
+              ->orWhere('p.name', 'LIKE', $like);
         });
     }
 
     if ($status !== '') {
-        $query->where('status', $status);
+        $query->where('c.status', $status);
     }
 
     if ($orgType !== '' && in_array($orgType, $allowedOrg, true)) {
-        $query->where('org_type', $orgType);
+        $query->where('c.org_type', $orgType);
     }
 
     // compute totals BEFORE pagination
@@ -289,14 +389,11 @@ public function index(Request $request)
 
     // apply ordering and pagination — forPage handles offset/limit cleanly
     $items = $query
-        ->orderBy('created_at', $orderDir)
-        ->orderBy('id', $orderDir)
+        ->orderBy('c.created_at', $orderDir)
+        ->orderBy('c.id', $orderDir)
         ->forPage($page, $perPage)
         ->get()
-        ->map(function ($c) {
-            $c->image_full_url = $this->imageUrl($c->image_url);
-            return $c;
-        });
+        ->map(fn ($c) => $this->decorateClient($c));
 
     return response()->json([
         'status' => 'success',
@@ -312,7 +409,7 @@ public function index(Request $request)
 }
     public function all(Request $request)
     {
-        if ($resp = $this->requireRole($request, ['admin','user'])) return $resp;
+        if ($resp = $this->requireRole($request, ['admin','user','assignee','client_user'])) return $resp;
 
         $q        = trim((string) $request->query('q', ''));
         $status   = trim((string) $request->query('status', ''));
@@ -322,45 +419,44 @@ public function index(Request $request)
 
         $allowedOrg = ['company','hospital','clinic','ngo','individual','other'];
 
-        $query = DB::table('clients');
+        $query = $this->clientBaseQuery();
+        $this->applyScopedVisibility($query, $request);
 
         if ($q !== '') {
             $like = "%{$q}%";
             $query->where(function ($w) use ($like) {
-                $w->where('name', 'LIKE', $like)
-                    ->orWhere('org_type', 'LIKE', $like)
-                    ->orWhere('email', 'LIKE', $like)
-                    ->orWhere('phone', 'LIKE', $like)
-                    ->orWhere('address', 'LIKE', $like)
-                    ->orWhere('city', 'LIKE', $like)
-                    ->orWhere('state', 'LIKE', $like)
-                    ->orWhere('postcode', 'LIKE', $like)
-                    ->orWhere('country', 'LIKE', $like)
-                    ->orWhere('timezone', 'LIKE', $like)
-                    ->orWhere('website_url', 'LIKE', $like)
-                    ->orWhere('contact_name', 'LIKE', $like)
-                    ->orWhere('contact_email', 'LIKE', $like)
-                    ->orWhere('contact_phone', 'LIKE', $like)
-                    ->orWhere('slug', 'LIKE', $like);
+                $w->where('c.name', 'LIKE', $like)
+                    ->orWhere('c.org_type', 'LIKE', $like)
+                    ->orWhere('c.email', 'LIKE', $like)
+                    ->orWhere('c.phone', 'LIKE', $like)
+                    ->orWhere('c.address', 'LIKE', $like)
+                    ->orWhere('c.city', 'LIKE', $like)
+                    ->orWhere('c.state', 'LIKE', $like)
+                    ->orWhere('c.postcode', 'LIKE', $like)
+                    ->orWhere('c.country', 'LIKE', $like)
+                    ->orWhere('c.timezone', 'LIKE', $like)
+                    ->orWhere('c.website_url', 'LIKE', $like)
+                    ->orWhere('c.contact_name', 'LIKE', $like)
+                    ->orWhere('c.contact_email', 'LIKE', $like)
+                    ->orWhere('c.contact_phone', 'LIKE', $like)
+                    ->orWhere('c.slug', 'LIKE', $like)
+                    ->orWhere('p.name', 'LIKE', $like);
             });
         }
 
         if ($status !== '') {
-            $query->where('status', $status);
+            $query->where('c.status', $status);
         }
 
         if ($orgType !== '' && in_array($orgType, $allowedOrg, true)) {
-            $query->where('org_type', $orgType);
+            $query->where('c.org_type', $orgType);
         }
 
         $items = $query
-            ->orderBy('created_at', $orderDir)
-            ->orderBy('id', $orderDir)
+            ->orderBy('c.created_at', $orderDir)
+            ->orderBy('c.id', $orderDir)
             ->get()
-            ->map(function ($c) {
-                $c->image_full_url = $this->imageUrl($c->image_url);
-                return $c;
-            });
+            ->map(fn ($c) => $this->decorateClient($c));
 
         return response()->json([
             'status'  => 'success',
@@ -378,10 +474,12 @@ public function index(Request $request)
         if ($resp = $this->requireRole($request, ['admin'])) return $resp;
 
         $this->logWithActor('[Clients Store] start', $request);
+        $parentId = $this->normalizeParentId($request->input('parent_id'));
 
         $data = $request->validate(
             [
                 'name'           => 'required|string|max:255',
+                'parent_id'      => 'sometimes',
                 'org_type'       => ['nullable', Rule::in(['company','hospital','clinic','ngo','individual','other'])],
                 'email'          => ['nullable','email','max:255','unique:clients,email'],
                 'phone'          => ['nullable','string','max:32','unique:clients,phone'],
@@ -406,6 +504,10 @@ public function index(Request $request)
             ]
         );
 
+        if ($resp = $this->parentValidationError($parentId)) {
+            return $resp;
+        }
+
         if (!empty($data['email']))          $data['email'] = mb_strtolower($data['email']);
         if (!empty($data['contact_email']))  $data['contact_email'] = mb_strtolower($data['contact_email']);
 
@@ -417,6 +519,7 @@ public function index(Request $request)
         try {
             $id = DB::table('clients')->insertGetId([
                 'name'           => $data['name'],
+                'parent_id'      => $parentId,
                 'org_type'       => $data['org_type'] ?? null,
                 'email'          => $data['email'] ?? null,
                 'phone'          => $data['phone'] ?? null,
@@ -446,8 +549,7 @@ public function index(Request $request)
             throw $e;
         }
 
-        $client = DB::table('clients')->where('id', $id)->first();
-        if ($client) $client->image_full_url = $this->imageUrl($client->image_url);
+        $client = $this->findById($id);
 
         // ✅ activity log
         $this->logActivity(
@@ -493,11 +595,14 @@ public function index(Request $request)
      * ========================= */
     public function show(string $slug, Request $request)
     {
-        if ($resp = $this->requireRole($request, ['admin','user'])) return $resp;
+        if ($resp = $this->requireRole($request, ['admin','user','assignee','client_user'])) return $resp;
 
         $client = $this->findBySlug($slug);
         if (!$client) return response()->json(['status'=>'error','message'=>'Client not found'], 404);
-        $client->image_full_url = $this->imageUrl($client->image_url);
+        $scopedClientIds = $this->scopedClientIdsForActor($request);
+        if ($scopedClientIds !== null && !in_array((int) $client->id, $scopedClientIds, true)) {
+            return response()->json(['status'=>'error','message'=>'Client not found'], 404);
+        }
 
         return response()->json([
             'status'  => 'success',
@@ -508,11 +613,14 @@ public function index(Request $request)
 
     public function showById(int $id, Request $request)
     {
-        if ($resp = $this->requireRole($request, ['admin','user'])) return $resp;
+        if ($resp = $this->requireRole($request, ['admin','user','assignee','client_user'])) return $resp;
 
         $client = $this->findById($id);
         if (!$client) return response()->json(['status'=>'error','message'=>'Client not found'], 404);
-        $client->image_full_url = $this->imageUrl($client->image_url);
+        $scopedClientIds = $this->scopedClientIdsForActor($request);
+        if ($scopedClientIds !== null && !in_array((int) $client->id, $scopedClientIds, true)) {
+            return response()->json(['status'=>'error','message'=>'Client not found'], 404);
+        }
 
         return response()->json([
             'status'  => 'success',
@@ -543,9 +651,15 @@ public function index(Request $request)
                 return response()->json(['status'=>'error','message'=>'Client not found'], 404);
             }
 
+            $parentWasProvided = array_key_exists('parent_id', $request->all());
+            $parentId = $parentWasProvided
+                ? $this->normalizeParentId($request->input('parent_id'))
+                : $this->normalizeParentId($client->parent_id);
+
             $data = $request->validate(
                 [
                     'name'           => 'sometimes|string|max:255',
+                    'parent_id'      => 'sometimes',
                     'org_type'       => ['sometimes','nullable', Rule::in(['company','hospital','clinic','ngo','individual','other'])],
                     'email'          => ['sometimes','nullable','email','max:255', Rule::unique('clients','email')->ignore($client->id)],
                     'phone'          => ['sometimes','nullable','string','max:32', Rule::unique('clients','phone')->ignore($client->id)],
@@ -570,6 +684,10 @@ public function index(Request $request)
                 ]
             );
 
+            if ($resp = $this->parentValidationError($parentId, (int) $client->id)) {
+                return $resp;
+            }
+
             if (array_key_exists('email', $data) && !empty($data['email'])) {
                 $data['email'] = mb_strtolower($data['email']);
             }
@@ -590,9 +708,11 @@ public function index(Request $request)
             if (array_key_exists('image_url', $data)) {
                 $update['image_url'] = $data['image_url'] ? $this->imageUrl($data['image_url']) : null;
             }
+            if ($parentWasProvided && $parentId !== $this->normalizeParentId($client->parent_id)) {
+                $update['parent_id'] = $parentId;
+            }
 
             if (empty($update)) {
-                $client->image_full_url = $this->imageUrl($client->image_url);
                 // log no-op update attempt
                 $this->logActivity($request, 'update', 'Clients', 'No changes detected', 'clients', (int) $client->id);
                 return response()->json([
@@ -616,8 +736,7 @@ public function index(Request $request)
                 throw $e;
             }
 
-            $fresh = DB::table('clients')->where('id', $client->id)->first();
-            if ($fresh) $fresh->image_full_url = $this->imageUrl($fresh->image_url);
+            $fresh = $this->findById((int) $client->id);
 
             // ✅ activity log
             $this->logActivity(
@@ -688,9 +807,15 @@ public function index(Request $request)
                 return response()->json(['status'=>'error','message'=>'Client not found'], 404);
             }
 
+            $parentWasProvided = array_key_exists('parent_id', $request->all());
+            $parentId = $parentWasProvided
+                ? $this->normalizeParentId($request->input('parent_id'))
+                : $this->normalizeParentId($client->parent_id);
+
             $data = $request->validate(
                 [
                     'name'           => 'sometimes|string|max:255',
+                    'parent_id'      => 'sometimes',
                     'org_type'       => ['sometimes','nullable', Rule::in(['company','hospital','clinic','ngo','individual','other'])],
                     'email'          => ['sometimes','nullable','email','max:255', Rule::unique('clients','email')->ignore($client->id)],
                     'phone'          => ['sometimes','nullable','string','max:32', Rule::unique('clients','phone')->ignore($client->id)],
@@ -717,6 +842,10 @@ public function index(Request $request)
                 ]
             );
 
+            if ($resp = $this->parentValidationError($parentId, (int) $client->id)) {
+                return $resp;
+            }
+
             if (array_key_exists('email', $data) && !empty($data['email'])) {
                 $data['email'] = mb_strtolower($data['email']);
             }
@@ -738,9 +867,11 @@ public function index(Request $request)
             if (array_key_exists('image_url', $data)) {
                 $update['image_url'] = $data['image_url'] ? $this->imageUrl($data['image_url']) : null;
             }
+            if ($parentWasProvided && $parentId !== $this->normalizeParentId($client->parent_id)) {
+                $update['parent_id'] = $parentId;
+            }
 
             if (empty($update)) {
-                $client->image_full_url = $this->imageUrl($client->image_url);
                 $this->logActivity($request, 'update', 'Clients', 'No changes detected', 'clients', (int) $client->id);
                 return response()->json([
                     'status'  => 'success',
@@ -763,8 +894,7 @@ public function index(Request $request)
                 throw $e;
             }
 
-            $fresh = $this->findById($client->id);
-            if ($fresh) $fresh->image_full_url = $this->imageUrl($fresh->image_url);
+            $fresh = $this->findById((int) $client->id);
 
             // ✅ activity log
             $this->logActivity(
@@ -846,8 +976,7 @@ public function index(Request $request)
             'updated_at' => now(),
         ]);
 
-        $fresh = DB::table('clients')->where('id', $client->id)->first();
-        $fresh->image_full_url = $this->imageUrl($fresh->image_url);
+        $fresh = $this->findById((int) $client->id);
 
         // ✅ activity log
         $this->logActivity(
@@ -913,8 +1042,7 @@ public function index(Request $request)
             'updated_at' => now(),
         ]);
 
-        $fresh = $this->findById($client->id);
-        if ($fresh) $fresh->image_full_url = $this->imageUrl($fresh->image_url);
+        $fresh = $this->findById((int) $client->id);
 
         // ✅ activity log
         $this->logActivity(

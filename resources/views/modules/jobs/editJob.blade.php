@@ -199,11 +199,18 @@ body{background:var(--bg-body);font-family:-apple-system,BlinkMacSystemFont,'Seg
 
         <div class="col-md-6">
           <label class="form-label">Client</label>
-          <div class="input-group">
-            <span class="input-group-text"><i class="fa-regular fa-building"></i></span>
-            <select class="form-select" id="client_id">
-              <option value="">— Select client —</option>
-            </select>
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-secondary" id="btnPickClient">
+              <i class="fa-regular fa-building me-1"></i>Choose Client
+            </button>
+            <button type="button" class="btn btn-light" id="clearClient" title="Clear client"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+          <select class="form-select" id="client_id" style="display:none">
+            <option value="">— Select client —</option>
+          </select>
+          <div class="parent-actions">
+            <span class="muted tiny">Current:</span>
+            <span id="clientCurrent" class="badge-soft">No client selected</span>
           </div>
           <div class="tiny mt-1">Client filters parent jobs, media and documents.</div>
           <div class="field-error" data-for="client_id"></div>
@@ -549,6 +556,27 @@ body{background:var(--bg-body);font-family:-apple-system,BlinkMacSystemFont,'Seg
     </div>
   </div>
 
+  <div class="modal fade" id="clientModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h6 class="modal-title"><i class="fa-regular fa-building me-2"></i>Select Client</h6>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="tiny muted mb-2">Choose a client from the hierarchy.</div>
+          <div id="clientLoad" class="row-inline mb-2" style="display:none"><div class="spinner"></div><span>Loading clients…</span></div>
+          <ul id="clientTree" class="parent-tree"></ul>
+          <div class="tiny muted">Tip: Click ▶ to expand children.</div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+          <button class="btn btn-primary" id="btnSaveClient"><i class="fa-solid fa-check me-1"></i>Use Client</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   {{-- Parent Picker Modal (beautified tree) --}}
   <div class="modal fade" id="parentModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
@@ -658,6 +686,9 @@ body{background:var(--bg-body);font-family:-apple-system,BlinkMacSystemFont,'Seg
     priority: byId('priority'),
     status: byId('status'),
     client: byId('client_id'),
+    clientCurrent: byId('clientCurrent'),
+    btnPickClient: byId('btnPickClient'),
+    clearClient: byId('clearClient'),
 
     useDocument: byId('useDocument'),
     docRow: byId('docRow'),
@@ -684,7 +715,12 @@ body{background:var(--bg-body);font-family:-apple-system,BlinkMacSystemFont,'Seg
   const hint = byId('hint');
   const overlay = byId('busyOverlay');
   const imgModal = new bootstrap.Modal(byId('imgModal'));
+  const clientModal = new bootstrap.Modal(byId('clientModal'));
   const parentModal = new bootstrap.Modal(byId('parentModal'));
+  const clientTreeEl = byId('clientTree');
+  const clientLoadEl = byId('clientLoad');
+  let clientRowsCache = [];
+  let selectedClientNode = null;
 
   // ✅ NEW: document create modal
   const docCreateModalEl = byId('docCreateModal');
@@ -772,11 +808,77 @@ body{background:var(--bg-body);font-family:-apple-system,BlinkMacSystemFont,'Seg
   function fillOptions(sel, arr, def){
     sel.innerHTML = (arr||[]).map(v=>`<option value="${esc(v)}"${v===def?' selected':''}>${v.replaceAll('_',' ')}</option>`).join('');
   }
+  function getSelectedClientName(){
+    const sel = fields.client;
+    const idx = sel ? sel.selectedIndex : -1;
+    return (idx >= 0 && sel.options[idx]) ? String(sel.options[idx].textContent || '').trim() : '';
+  }
+  function syncClientCurrentLabel(){
+    const name = getSelectedClientName();
+    fields.clientCurrent.textContent = name || 'No client selected';
+  }
+  function toClientTree(rows){
+    const map = new Map();
+    rows.forEach(r=> map.set(String(r.id), { id:r.id, title:String(r.name || (`Client #${r.id}`)).trim(), parent_id:r.parent_id || null, children:[] }));
+    const roots = [];
+    rows.forEach(r=>{
+      const node = map.get(String(r.id));
+      if (r.parent_id && map.has(String(r.parent_id))){
+        map.get(String(r.parent_id)).children.push(node);
+      } else {
+        roots.push(node);
+      }
+    });
+    const sortRec = (arr)=>{ arr.sort((a,b)=>a.title.localeCompare(b.title)); arr.forEach(n=>sortRec(n.children)); };
+    sortRec(roots);
+    return roots;
+  }
+  function renderClientTree(nodes, container){
+    container.innerHTML='';
+    const liRoot = document.createElement('li');
+    const itemRoot = document.createElement('div'); itemRoot.className='parent-item';
+    const fakeT = document.createElement('button'); fakeT.type='button'; fakeT.className='toggle'; fakeT.style.visibility='hidden'; fakeT.innerHTML='<i class="fa-solid fa-chevron-right"></i>';
+    const radioRoot = document.createElement('input'); radioRoot.type='radio'; radioRoot.name='clientPick'; radioRoot.value='';
+    if (!fields.client.value) radioRoot.checked = true;
+    const titleRoot = document.createElement('div'); titleRoot.className='parent-title';
+    titleRoot.innerHTML='<strong>No client selected</strong> <span class="chip">Clear selection</span>';
+    itemRoot.appendChild(fakeT); itemRoot.appendChild(radioRoot); itemRoot.appendChild(titleRoot);
+    liRoot.appendChild(itemRoot); container.appendChild(liRoot);
+    radioRoot.addEventListener('change', ()=>{ selectedClientNode = null; });
+    nodes.forEach(node=> container.appendChild(renderClientNode(node)));
+  }
+  function renderClientNode(node){
+    const li = document.createElement('li');
+    const item = document.createElement('div'); item.className='parent-item';
+    const toggle = document.createElement('button'); toggle.type='button'; toggle.className='toggle'; toggle.innerHTML='<i class="fa-solid fa-chevron-right"></i>'; toggle.title='Expand';
+    if (!node.children || !node.children.length) toggle.style.visibility='hidden';
+    const radio = document.createElement('input'); radio.type='radio'; radio.name='clientPick'; radio.value=String(node.id);
+    if (fields.client.value && String(node.id)===String(fields.client.value)) radio.checked = true;
+    const title = document.createElement('div'); title.className='parent-title';
+    title.innerHTML = `<strong>${esc(node.title)}</strong> <span class="chip">#${node.id}${node.parent_id?' • child':''}</span>`;
+    item.appendChild(toggle); item.appendChild(radio); item.appendChild(title);
+    li.appendChild(item);
+    const kids = document.createElement('ul'); kids.className='parent-children parent-tree';
+    li.appendChild(kids);
+
+    if (node.children && node.children.length){
+      node.children.forEach(ch=> kids.appendChild(renderClientNode(ch)));
+      toggle.addEventListener('click', ()=>{
+        const open = kids.style.display==='block';
+        kids.style.display = open?'none':'block';
+        toggle.classList.toggle('open', !open);
+      });
+    }
+    radio.addEventListener('change', ()=>{ selectedClientNode = { id: node.id, title: node.title }; });
+    return li;
+  }
   async function loadClients(){
     try{
       const j = await fetchJSON(API.clients);
       const rows = Array.isArray(j.data) ? j.data : [];
+      clientRowsCache = rows;
       fields.client.innerHTML = '<option value="">— Select client —</option>' + rows.map(c=>`<option value="${c.id}">${esc(c.name||('Client #'+c.id))}</option>`).join('');
+      syncClientCurrentLabel();
     }catch{ err('Failed to load clients'); }
   }
 
@@ -822,6 +924,7 @@ body{background:var(--bg-body);font-family:-apple-system,BlinkMacSystemFont,'Seg
 
       if (data.client_id) fields.client.value = String(data.client_id);
       else fields.client.value = '';
+      syncClientCurrentLabel();
 
       // parent
       if (data.parent_id && data.parent_id !== 'self'){
@@ -880,19 +983,36 @@ body{background:var(--bg-body);font-family:-apple-system,BlinkMacSystemFont,'Seg
     }
   }
 
-  function getSelectedClientName(){
-    const sel = fields.client;
-    const idx = sel ? sel.selectedIndex : -1;
-    return (idx >= 0 && sel.options[idx]) ? String(sel.options[idx].textContent || '').trim() : '';
-  }
-
   fields.client.addEventListener('change', ()=>{
+    syncClientCurrentLabel();
     fields.parentId.value=''; fields.parentCurrent.textContent='Self (Root)';
     if (fields.useDocument.checked) loadDocuments();
     if (fields.btnAddDocument){
       fields.btnAddDocument.disabled = !(fields.useDocument.checked && !!fields.client.value);
     }
     refreshMedia();
+  });
+
+  fields.btnPickClient.addEventListener('click', async ()=>{
+    try{
+      if (!clientRowsCache.length) await loadClients();
+      selectedClientNode = fields.client.value ? { id: fields.client.value, title: getSelectedClientName() } : null;
+      renderClientTree(toClientTree(clientRowsCache), clientTreeEl);
+      clientModal.show();
+    }catch{
+      err('Failed to load clients');
+    }
+  });
+
+  fields.clearClient.addEventListener('click', ()=>{
+    fields.client.value = '';
+    fields.client.dispatchEvent(new Event('change'));
+  });
+
+  byId('btnSaveClient').addEventListener('click', ()=>{
+    fields.client.value = selectedClientNode ? String(selectedClientNode.id) : '';
+    fields.client.dispatchEvent(new Event('change'));
+    clientModal.hide();
   });
 
   /* Documents */

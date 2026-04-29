@@ -1,4 +1,14 @@
 <!DOCTYPE html>
+@php
+  $portalPrefix = $portalPrefix ?? 'assignee';
+  $portalLabel = $portalLabel ?? 'Portal';
+  $portalDashboardUrl = $portalDashboardUrl ?? '/' . $portalPrefix . '/dashboard';
+  $portalJobsUrl = $portalJobsUrl ?? '/' . $portalPrefix . '/jobs/view';
+  $portalNotificationsUrl = $portalNotificationsUrl ?? '/' . $portalPrefix . '/notifications';
+  $portalLoginUrl = $portalLoginUrl ?? '/' . $portalPrefix . '/login';
+  $portalLogoutApi = $portalLogoutApi ?? ($portalPrefix === 'client-user' ? '/api/client-users/logout' : '/api/assignedpeople/logout');
+  $portalThemeKey = $portalThemeKey ?? 'theme:' . $portalPrefix;
+@endphp
 <html lang="en" class="">
 <head>
   <meta charset="UTF-8"/>
@@ -413,12 +423,12 @@ html.theme-dark .btn-secondary { background: rgba(255,255,255,0.02); border-colo
 
   <!-- ===== Left: Icon Rail ===== -->
   <aside class="rail" id="rail" aria-label="Icon rail">
-    <a href="/dashboard" class="logo mt-1" aria-label="Home">
+    <a href="{{ $portalDashboardUrl }}" class="logo mt-1" aria-label="Home">
       <img id="railLogo" src="{{ asset('/assets/media/images/legmedlogo_small.webp') }}" alt="Logo" style="max-height:32px;width:auto;">
     </a>
 
     <nav class="rail-nav" role="navigation" aria-label="Primary">
-      <a class="rail-btn" data-open="drawer" href="/assignee/dashboard" title="Dashboard" id="railDashboard">
+      <a class="rail-btn" data-open="drawer" href="{{ $portalDashboardUrl }}" title="Dashboard" id="railDashboard">
         <i class="fa-solid fa-gauge"></i>
       </a>
       <!-- Jobs group kicker -->
@@ -445,14 +455,14 @@ html.theme-dark .btn-secondary { background: rgba(255,255,255,0.02); border-colo
   <!-- ===== Left Drawer (nav) ===== -->
   <aside class="drawer" id="drawer" aria-label="Navigation drawer" aria-hidden="true">
     <div class="drawer-head">
-      <a href="/dashboard" class="d-inline-flex align-items-center">
+      <a href="{{ $portalDashboardUrl }}" class="d-inline-flex align-items-center">
         <img id="drawerLogo" src="{{ asset('/assets/media/images/legmedlogo.png') }}" alt="Logo" style="max-height:36px;width:auto;">
       </a>
       <button class="btn btn-sm btn-light d-lg-none" id="closeDrawer" aria-label="Close drawer"><i class="fa fa-times"></i></button>
     </div>
 
     <div class="nav-scroll">
-      <a href="/assignee/dashboard" class="nav-link"><i class="fa-solid fa-gauge"></i><span>Dashboard</span></a>
+      <a href="{{ $portalDashboardUrl }}" class="nav-link"><i class="fa-solid fa-gauge"></i><span>Dashboard</span></a>
       <!-- Jobs -->
       <div class="nav-group" data-section="jobs">
         <a href="#" class="nav-link group-toggle" data-target="sm-jobs" aria-expanded="false">
@@ -460,7 +470,7 @@ html.theme-dark .btn-secondary { background: rgba(255,255,255,0.02); border-colo
           <i class="fa fa-chevron-down ms-auto chev"></i>
         </a>
         <div id="sm-jobs" class="submenu" role="group" aria-label="Jobs submenu">
-          <a href="/assignee/jobs/view" class="nav-link">View Jobs</a>
+          <a href="{{ $portalJobsUrl }}" class="nav-link">View Jobs</a>
           <a href="/job-expense/claim" class="nav-link">Claim Job Expenses</a>
         </div>
       </div>
@@ -555,7 +565,7 @@ html.theme-dark .btn-secondary { background: rgba(255,255,255,0.02); border-colo
     <div class="p-3 text-center text-muted small">Loading…</div>
   </div>
   <div class="nd-foot">
-    <a href="/assignee/notifications" class="btn btn-sm btn-primary" id="notifViewAllBtn">View all</a>
+    <a href="{{ $portalNotificationsUrl }}" class="btn btn-sm btn-primary" id="notifViewAllBtn">View all</a>
     <button class="btn btn-sm btn-outline-secondary" id="notifRefreshBtn">Refresh</button>
   </div>
 </aside>
@@ -588,7 +598,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
   const openDrawerMobileTop  = document.getElementById('openDrawerMobileTop');
   const closeDrawerBtn       = document.getElementById('closeDrawer');
 
-  const THEME_KEY   = 'theme:assignee';
+  const THEME_KEY   = @json($portalThemeKey);
   const themeIcon   = document.getElementById('themeIcon');
   const themeIconDrawer = document.getElementById('themeIconDrawer');
   const toggleTheme = document.getElementById('toggleTheme');
@@ -653,7 +663,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
       }
     }
   });
-  if(path === '/dashboard'){ document.getElementById('railDashboard')?.classList.add('active'); }
+  const DASHBOARD_PATH = @json(parse_url($portalDashboardUrl, PHP_URL_PATH) ?: $portalDashboardUrl);
+  if(path === DASHBOARD_PATH){ document.getElementById('railDashboard')?.classList.add('active'); }
 
   // Theme
   function setLogos(mode){
@@ -730,7 +741,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
   // Logout (assignee-first)
   async function doLogout(){
     Swal.fire({title:'Logging out...', didOpen:()=>Swal.showLoading(), allowOutsideClick:false});
-    const endpoints = ['/api/assignee/logout','/api/admin/logout','/api/logout'];
+    const endpoints = [@json($portalLogoutApi), '/api/assignedpeople/logout', '/api/admin/logout', '/api/logout'];
     const token = sessionStorage.getItem('token');
     try{
       let ok = false, lastErr = null;
@@ -744,8 +755,11 @@ document.addEventListener('DOMContentLoaded', ()=>{
       Swal.close();
       if(!ok && lastErr) console.warn(lastErr);
       await Swal.fire({ icon:'success', title:'Logged out', timer:1000, showConfirmButton:false });
-      sessionStorage.removeItem('token'); localStorage.removeItem('token');
-      window.location.href = '/assignee/login';
+      sessionStorage.removeItem('token');
+      sessionStorage.removeItem('role');
+      localStorage.removeItem('token');
+      localStorage.removeItem('type');
+      window.location.href = '/';
     }catch(err){
       Swal.close();
       Swal.fire('Error', err.message || 'Unable to logout', 'error');
@@ -774,7 +788,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
    Notifications — Drawer
    =========================== */
 (function(){
-  const NOTIF_HISTORY_URL = '/assignee/notifications';
+  const NOTIF_HISTORY_URL = @json($portalNotificationsUrl);
   const FORCE_ROLE_FILTER = false; // set true only if you require strict role scoping
 
   // Elements
@@ -1030,7 +1044,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
       }
     }
   });
-  if (path === '/dashboard') { document.getElementById('railDashboard')?.classList.add('active'); }
+  if (path === DASHBOARD_PATH) { document.getElementById('railDashboard')?.classList.add('active'); }
 })();
 </script>
 </body>

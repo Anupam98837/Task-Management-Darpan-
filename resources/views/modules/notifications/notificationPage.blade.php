@@ -270,6 +270,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   const TOKEN = (sessionStorage.getItem('token') || localStorage.getItem('token') || '').trim();
   const role = (sessionStorage.getItem('role') || localStorage.getItem('type') || '').toLowerCase();
   const IS_ASSIGNEE = role === 'assignee';
+  const IS_CLIENT_USER = role === 'client_user';
+  const IS_READ_ONLY = IS_ASSIGNEE || IS_CLIENT_USER;
 
   console.log('🔔 Notification System - Role Based Access Control');
   console.log('Role:', role, 'IS_ASSIGNEE:', IS_ASSIGNEE);
@@ -297,7 +299,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   /* ===== Role-based UI hiding (following your existing pattern) ===== */
   function applyRoleVisibility(){
-    if(!IS_ASSIGNEE) return;
+    if(!IS_READ_ONLY) return;
     
     // Hide delete buttons from existing notifications if any
     document.querySelectorAll('.notif-delete-btn').forEach(btn => {
@@ -444,7 +446,7 @@ document.addEventListener('DOMContentLoaded', async () => {
               <span><i class="fa-regular fa-clock me-1"></i>${timestamp}</span>
               ${notif.type ? `<span><i class="fa-solid fa-tag me-1"></i>${notif.type}</span>` : ''}
               ${isRead ? '<span class="text-success"><i class="fa-solid fa-check me-1"></i>Read</span>' : ''}
-              ${!IS_ASSIGNEE ? '<span class="text-info"><i class="fa-solid fa-shield me-1"></i>Admin</span>' : ''}
+              ${!IS_READ_ONLY ? '<span class="text-info"><i class="fa-solid fa-shield me-1"></i>Admin</span>' : ''}
             </div>
             <div class="notification-actions">
               ${!isRead ? `
@@ -452,7 +454,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                   <i class="fa-solid fa-check"></i>Mark as Read
                 </button>
               ` : ''}
-              ${!IS_ASSIGNEE ? `
+              ${!IS_READ_ONLY ? `
                 <button class="btn btn-sm btn-outline-danger notif-delete-btn" data-id="${notif.id}" title="Delete">
                   <i class="fa-solid fa-trash"></i>
                 </button>
@@ -602,7 +604,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     // Delete buttons (only visible for non-assignees)
-    if (!IS_ASSIGNEE) {
+    if (!IS_READ_ONLY) {
       document.querySelectorAll('.notif-delete-btn').forEach(btn => {
         btn.addEventListener('click', async (e) => {
           e.preventDefault();

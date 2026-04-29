@@ -38,6 +38,19 @@
 
   /* Actions row matches other forms */
   .actions{ display:flex; gap:10px; justify-content:flex-end; margin-top:16px; }
+  .tree-current{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:12px;color:#64748b}
+  .tree-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:var(--bg-body);border:1px solid var(--border-color);color:var(--text-color);font-weight:600}
+  .tree-list{list-style:none;margin:0;padding:0 0 0 8px;position:relative}
+  .tree-list::before{content:"";position:absolute;left:14px;top:0;bottom:8px;width:1px;background:var(--border-color)}
+  .tree-list>li{position:relative;margin:0 0 8px 0;padding-left:24px}
+  .tree-list>li::before{content:"";position:absolute;left:14px;top:16px;width:16px;height:1px;background:var(--border-color)}
+  .tree-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--border-color);border-radius:12px;background:var(--surface)}
+  .tree-toggle{width:28px;height:28px;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-body);display:inline-flex;align-items:center;justify-content:center}
+  .tree-toggle.open i{transform:rotate(90deg)}
+  .tree-children{margin:8px 0 10px 0;padding-left:24px;display:none}
+  .tree-children .tree-children{margin-left:16px}
+  .tree-title{display:flex;flex-direction:column;gap:2px}
+  .tree-title small{color:#64748b}
 
   /* Minor consistency tweaks */
   .form-control, .form-select{
@@ -88,6 +101,23 @@
             <option value="other">Other</option>
           </select>
           <div class="err" data-error="org_type"></div>
+        </div>
+        <div class="col-md-6">
+          <label class="field-label">Parent Client</label>
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-outline-secondary" id="btnPickParentClient">
+              <i class="fa-solid fa-sitemap"></i> Choose Parent
+            </button>
+            <button type="button" class="btn btn-outline-secondary" id="btnClearParentClient" title="Clear parent">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+          <input type="hidden" name="parent_id" id="parent_id">
+          <div class="tree-current">
+            <span>Current:</span>
+            <span class="tree-badge" id="parentClientCurrent">Self (Root)</span>
+          </div>
+          <div class="err" data-error="parent_id"></div>
         </div>
       </div>
 
@@ -198,6 +228,25 @@
     </form>
   </div>
 </div>
+
+<div class="modal fade" id="parentClientModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fa-solid fa-sitemap me-2"></i>Choose Parent Client</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="parentClientLoading" class="text-muted small mb-3" style="display:none;">Loading clients…</div>
+        <ul id="parentClientTree" class="tree-list"></ul>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" id="btnSaveParentClient">Use Selection</button>
+      </div>
+    </div>
+  </div>
+</div>
 @endsection
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -211,6 +260,16 @@
   // === Config ===
   const API_BASE   = @json(url('/api'));
   const MANAGE_URL = @json(url('/admin/client/manage'));
+  const parentClientModal = window.bootstrap ? new bootstrap.Modal(document.getElementById('parentClientModal')) : null;
+  const parentClientTree = document.getElementById('parentClientTree');
+  const parentClientLoading = document.getElementById('parentClientLoading');
+  const parentIdInput = document.getElementById('parent_id');
+  const parentCurrent = document.getElementById('parentClientCurrent');
+  const btnPickParent = document.getElementById('btnPickParentClient');
+  const btnClearParent = document.getElementById('btnClearParentClient');
+  const btnSaveParent = document.getElementById('btnSaveParentClient');
+  let clientTreeRows = [];
+  let selectedParentClient = null;
 
   // === SweetAlert helpers ===
   const Toast = Swal.mixin({
@@ -245,6 +304,139 @@
     document.querySelectorAll('[data-error]').forEach(e => e.textContent = '');
   }
 
+  function esc(s) {
+    return String(s ?? '').replace(/[&<>"']/g, m => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[m]));
+  }
+
+  function syncParentLabel(id) {
+    const match = clientTreeRows.find(row => String(row.id) === String(id || ''));
+    parentCurrent.textContent = match ? `${match.name || `Client #${match.id}`}` : 'Self (Root)';
+  }
+
+  function normalizeNodes(rows) {
+    const map = new Map();
+    rows.forEach(row => {
+      map.set(String(row.id), {
+        id: row.id,
+        name: String(row.name || `Client #${row.id}`),
+        parent_id: row.parent_id || null,
+        children: []
+      });
+    });
+    const roots = [];
+    rows.forEach(row => {
+      const node = map.get(String(row.id));
+      if (row.parent_id && map.has(String(row.parent_id))) {
+        map.get(String(row.parent_id)).children.push(node);
+      } else {
+        roots.push(node);
+      }
+    });
+    const sortRec = (arr) => {
+      arr.sort((a, b) => a.name.localeCompare(b.name));
+      arr.forEach(node => sortRec(node.children));
+    };
+    sortRec(roots);
+    return roots;
+  }
+
+  function renderTreeNode(node) {
+    const li = document.createElement('li');
+    const item = document.createElement('div');
+    item.className = 'tree-item';
+
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'tree-toggle';
+    toggle.innerHTML = '<i class="fa-solid fa-chevron-right"></i>';
+    if (!node.children.length) toggle.style.visibility = 'hidden';
+
+    const radio = document.createElement('input');
+    radio.type = 'radio';
+    radio.name = 'parentClientPick';
+    radio.value = String(node.id);
+    if (String(parentIdInput.value || '') === String(node.id)) radio.checked = true;
+
+    const title = document.createElement('div');
+    title.className = 'tree-title';
+    title.innerHTML = `<strong>${esc(node.name)}</strong><small>#${esc(node.id)}</small>`;
+
+    item.appendChild(toggle);
+    item.appendChild(radio);
+    item.appendChild(title);
+    li.appendChild(item);
+
+    const children = document.createElement('ul');
+    children.className = 'tree-children tree-list';
+    li.appendChild(children);
+
+    if (node.children.length) {
+      node.children.forEach(child => children.appendChild(renderTreeNode(child)));
+      toggle.addEventListener('click', () => {
+        const open = children.style.display === 'block';
+        children.style.display = open ? 'none' : 'block';
+        toggle.classList.toggle('open', !open);
+      });
+    }
+
+    radio.addEventListener('change', () => {
+      selectedParentClient = { id: node.id, name: node.name };
+    });
+
+    return li;
+  }
+
+  function renderParentClientTree() {
+    parentClientTree.innerHTML = '';
+
+    const rootLi = document.createElement('li');
+    const rootItem = document.createElement('div');
+    rootItem.className = 'tree-item';
+
+    const fakeToggle = document.createElement('button');
+    fakeToggle.type = 'button';
+    fakeToggle.className = 'tree-toggle';
+    fakeToggle.style.visibility = 'hidden';
+    fakeToggle.innerHTML = '<i class="fa-solid fa-chevron-right"></i>';
+
+    const rootRadio = document.createElement('input');
+    rootRadio.type = 'radio';
+    rootRadio.name = 'parentClientPick';
+    rootRadio.value = 'self';
+    if (!parentIdInput.value) rootRadio.checked = true;
+
+    const rootTitle = document.createElement('div');
+    rootTitle.className = 'tree-title';
+    rootTitle.innerHTML = '<strong>Self (Root)</strong><small>No parent client</small>';
+
+    rootItem.appendChild(fakeToggle);
+    rootItem.appendChild(rootRadio);
+    rootItem.appendChild(rootTitle);
+    rootLi.appendChild(rootItem);
+    parentClientTree.appendChild(rootLi);
+
+    rootRadio.addEventListener('change', () => {
+      selectedParentClient = null;
+    });
+
+    normalizeNodes(clientTreeRows).forEach(node => parentClientTree.appendChild(renderTreeNode(node)));
+  }
+
+  async function ensureClientTreeRows() {
+    if (clientTreeRows.length) return;
+    parentClientLoading.style.display = 'block';
+    try {
+      const res = await fetch(`${API_BASE}/clients/all?sort=asc`, { headers });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.message || 'Failed to load clients');
+      clientTreeRows = Array.isArray(data?.data) ? data.data : [];
+    } finally {
+      parentClientLoading.style.display = 'none';
+    }
+  }
+
   /* NEW: generic loading toggles */
   function setBtnLoading(btn, on=true, labelWhenOn='Saving...'){
     if(!btn) return;
@@ -269,6 +461,34 @@
   // === Submit Form ===
   const form = document.getElementById('clientForm');
   const saveBtn = document.getElementById('saveClientBtn');
+
+  btnPickParent?.addEventListener('click', async () => {
+    try {
+      selectedParentClient = parentIdInput.value
+        ? { id: parentIdInput.value, name: parentCurrent.textContent }
+        : null;
+      await ensureClientTreeRows();
+      renderParentClientTree();
+      parentClientModal?.show();
+    } catch (err) {
+      await swalError('Unable to load clients', String(err.message || err));
+    }
+  });
+
+  btnClearParent?.addEventListener('click', () => {
+    parentIdInput.value = '';
+    syncParentLabel('');
+  });
+
+  btnSaveParent?.addEventListener('click', () => {
+    if (selectedParentClient && selectedParentClient.id !== 'self') {
+      parentIdInput.value = String(selectedParentClient.id);
+    } else {
+      parentIdInput.value = '';
+    }
+    syncParentLabel(parentIdInput.value);
+    parentClientModal?.hide();
+  });
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();

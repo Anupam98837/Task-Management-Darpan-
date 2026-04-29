@@ -519,6 +519,10 @@
         .portal-card:nth-child(3) {
             animation-delay: 0.25s;
         }
+
+        .portal-card:nth-child(4) {
+            animation-delay: 0.35s;
+        }
         
         .divider {
             opacity: 0;
@@ -708,6 +712,23 @@
                                 </h3>
                                 <p class="portal-description">
                                     Access your assigned tasks, update progress, and collaborate
+                                </p>
+                            </div>
+                        </div>
+                    </a>
+
+                    <a href="/client-user/login" class="portal-card">
+                        <div class="portal-content">
+                            <div class="portal-icon-wrapper">
+                                <i class="fas fa-building-user"></i>
+                            </div>
+                            <div class="portal-info">
+                                <h3 class="portal-name">
+                                    Client User Portal
+                                    <i class="fas fa-arrow-right portal-arrow"></i>
+                                </h3>
+                                <p class="portal-description">
+                                    View jobs and client-related work inside your assigned client scope
                                 </p>
                             </div>
                         </div>

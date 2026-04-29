@@ -52,6 +52,7 @@ tbody td {padding: 16px 18px;font-size: 14px;color: var(--text-color);vertical-a
 .client-info {display: flex;flex-direction: column;gap: 2px;}
 .client-name {font-weight: 600;color: var(--text-color);}
 .client-type {font-size: 12px;color: #94a3b8;}
+.client-parent {font-size: 12px;color: #64748b;}
 .contact-link {color: #3b82f6;text-decoration: none;font-size: 13px;}
 .contact-link:hover {text-decoration: underline;}
 .badge {display: inline-flex;align-items: center;gap: 6px;padding: 6px 12px;border-radius: 8px;font-size: 12px;font-weight: 600;}
@@ -97,6 +98,19 @@ tbody td {padding: 16px 18px;font-size: 14px;color: var(--text-color);vertical-a
 .form-control:focus {outline: none;border-color: #3b82f6;box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);}
 .form-select {height: 44px;padding: 0 38px 0 14px;background: #fff url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M6 8l4 4 4-4' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 12px center;appearance: none;}
 .modal-footer {padding: 20px 28px;border-top: 1px solid #f1f5f9;display: flex;justify-content: flex-end;gap: 10px;}
+.tree-current {display:flex;align-items:center;gap:8px;margin-top:8px;font-size:12px;color:#64748b}
+.tree-badge {display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:var(--bg-body);border:1px solid #e2e8f0;color:var(--text-color);font-weight:600}
+.tree-list {list-style:none;margin:0;padding:0 0 0 8px;position:relative}
+.tree-list::before {content:"";position:absolute;left:14px;top:0;bottom:8px;width:1px;background:#e2e8f0}
+.tree-list>li {position:relative;margin:0 0 8px 0;padding-left:24px}
+.tree-list>li::before {content:"";position:absolute;left:14px;top:16px;width:16px;height:1px;background:#e2e8f0}
+.tree-item {display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid #e2e8f0;border-radius:12px;background:var(--surface)}
+.tree-toggle {width:28px;height:28px;border:1px solid #e2e8f0;border-radius:8px;background:var(--bg-body);display:inline-flex;align-items:center;justify-content:center}
+.tree-toggle.open i {transform:rotate(90deg)}
+.tree-children {margin:8px 0 10px 0;padding-left:24px;display:none}
+.tree-children .tree-children {margin-left:16px}
+.tree-title {display:flex;flex-direction:column;gap:2px}
+.tree-title small {color:#64748b}
 
 @media (max-width: 768px) {
   .toolbar {flex-direction: column;}
@@ -236,6 +250,23 @@ table tbody td:first-child {
                 <option value="other">Other</option>
               </select>
             </div>
+
+            <div class="col-md-12">
+              <label class="form-label">Parent Client</label>
+              <div class="d-flex gap-2">
+                <button type="button" class="btn btn-secondary" id="btnEditPickParentClient">
+                  <i class="fa-solid fa-sitemap me-1"></i>Choose Parent
+                </button>
+                <button type="button" class="btn btn-secondary" id="btnEditClearParentClient" title="Clear parent">
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+              </div>
+              <input type="hidden" id="ec_parent_id">
+              <div class="tree-current">
+                <span>Current:</span>
+                <span class="tree-badge" id="ec_parent_current">Self (Root)</span>
+              </div>
+            </div>
  
             <div class="col-md-6">
               <label class="form-label">Email</label>
@@ -310,6 +341,25 @@ table tbody td:first-child {
   </div>
 </div>
 
+<div class="modal fade" id="editParentClientModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fa-solid fa-sitemap me-2"></i>Choose Parent Client</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="editParentClientLoading" class="text-muted small mb-3" style="display:none;">Loading clients…</div>
+        <ul id="editParentClientTree" class="tree-list"></ul>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" id="btnSaveEditParentClient">Use Selection</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 @endsection
 
 @push('scripts')
@@ -354,10 +404,20 @@ table tbody td:first-child {
 
   const modalEl = document.getElementById('editClientModal');
   const modal = window.bootstrap ? new bootstrap.Modal(modalEl) : null;
+  const editParentClientModalEl = document.getElementById('editParentClientModal');
+  const editParentClientModal = window.bootstrap ? new bootstrap.Modal(editParentClientModalEl) : null;
+  const editParentTree = document.getElementById('editParentClientTree');
+  const editParentLoading = document.getElementById('editParentClientLoading');
+  let clientTreeRows = [];
+  let selectedEditParent = null;
   const f = {
     form: document.getElementById('editClientForm'),
     slug: document.getElementById('ec_slug'),
     id: document.getElementById('ec_id'),
+    parent_id: document.getElementById('ec_parent_id'),
+    parent_current: document.getElementById('ec_parent_current'),
+    btnPickParent: document.getElementById('btnEditPickParentClient'),
+    btnClearParent: document.getElementById('btnEditClearParentClient'),
     name: document.getElementById('ec_name'),
     org_type: document.getElementById('ec_org_type'),
     email: document.getElementById('ec_email'),
@@ -387,6 +447,168 @@ table tbody td:first-child {
       ngo: 'NGO', individual: 'Individual', other: 'Other'
     };
     return map[String(v || '').toLowerCase()] || v || '';
+  }
+
+  function syncEditParentLabel(id) {
+    const match = clientTreeRows.find(row => String(row.id) === String(id || ''));
+    f.parent_current.textContent = match ? `${match.name || `Client #${match.id}`}` : 'Self (Root)';
+  }
+
+  function buildTree(rows) {
+    const map = new Map();
+    rows.forEach(row => {
+      map.set(String(row.id), {
+        id: row.id,
+        name: String(row.name || `Client #${row.id}`),
+        parent_id: row.parent_id || null,
+        children: []
+      });
+    });
+    const roots = [];
+    rows.forEach(row => {
+      const node = map.get(String(row.id));
+      if (row.parent_id && map.has(String(row.parent_id))) {
+        map.get(String(row.parent_id)).children.push(node);
+      } else {
+        roots.push(node);
+      }
+    });
+    const sortRec = (arr) => {
+      arr.sort((a, b) => a.name.localeCompare(b.name));
+      arr.forEach(node => sortRec(node.children));
+    };
+    sortRec(roots);
+    return roots;
+  }
+
+  function descendantIdSet(rootId) {
+    const childrenByParent = new Map();
+    clientTreeRows.forEach(row => {
+      const pid = row.parent_id ? String(row.parent_id) : '';
+      if (!childrenByParent.has(pid)) childrenByParent.set(pid, []);
+      childrenByParent.get(pid).push(String(row.id));
+    });
+    const blocked = new Set([String(rootId)]);
+    const queue = [String(rootId)];
+    while (queue.length) {
+      const current = queue.shift();
+      const kids = childrenByParent.get(current) || [];
+      kids.forEach(childId => {
+        if (!blocked.has(childId)) {
+          blocked.add(childId);
+          queue.push(childId);
+        }
+      });
+    }
+    return blocked;
+  }
+
+  function renderTreeNode(node, blockedIds) {
+    if (blockedIds.has(String(node.id))) return null;
+
+    const li = document.createElement('li');
+    const item = document.createElement('div');
+    item.className = 'tree-item';
+
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'tree-toggle';
+    toggle.innerHTML = '<i class="fa-solid fa-chevron-right"></i>';
+    if (!node.children.length) toggle.style.visibility = 'hidden';
+
+    const radio = document.createElement('input');
+    radio.type = 'radio';
+    radio.name = 'editParentClientPick';
+    radio.value = String(node.id);
+    if (String(f.parent_id.value || '') === String(node.id)) radio.checked = true;
+
+    const title = document.createElement('div');
+    title.className = 'tree-title';
+    title.innerHTML = `<strong>${esc(node.name)}</strong><small>#${esc(node.id)}</small>`;
+
+    item.appendChild(toggle);
+    item.appendChild(radio);
+    item.appendChild(title);
+    li.appendChild(item);
+
+    const children = document.createElement('ul');
+    children.className = 'tree-children tree-list';
+    li.appendChild(children);
+
+    if (node.children.length) {
+      node.children.forEach(child => {
+        const rendered = renderTreeNode(child, blockedIds);
+        if (rendered) children.appendChild(rendered);
+      });
+      if (!children.childElementCount) {
+        toggle.style.visibility = 'hidden';
+      } else {
+        toggle.addEventListener('click', () => {
+          const open = children.style.display === 'block';
+          children.style.display = open ? 'none' : 'block';
+          toggle.classList.toggle('open', !open);
+        });
+      }
+    }
+
+    radio.addEventListener('change', () => {
+      selectedEditParent = { id: node.id, name: node.name };
+    });
+
+    return li;
+  }
+
+  function renderEditParentTree() {
+    editParentTree.innerHTML = '';
+    const blockedIds = f.id.value ? descendantIdSet(f.id.value) : new Set();
+
+    const rootLi = document.createElement('li');
+    const rootItem = document.createElement('div');
+    rootItem.className = 'tree-item';
+
+    const fakeToggle = document.createElement('button');
+    fakeToggle.type = 'button';
+    fakeToggle.className = 'tree-toggle';
+    fakeToggle.style.visibility = 'hidden';
+    fakeToggle.innerHTML = '<i class="fa-solid fa-chevron-right"></i>';
+
+    const rootRadio = document.createElement('input');
+    rootRadio.type = 'radio';
+    rootRadio.name = 'editParentClientPick';
+    rootRadio.value = 'self';
+    if (!f.parent_id.value) rootRadio.checked = true;
+
+    const rootTitle = document.createElement('div');
+    rootTitle.className = 'tree-title';
+    rootTitle.innerHTML = '<strong>Self (Root)</strong><small>No parent client</small>';
+
+    rootItem.appendChild(fakeToggle);
+    rootItem.appendChild(rootRadio);
+    rootItem.appendChild(rootTitle);
+    rootLi.appendChild(rootItem);
+    editParentTree.appendChild(rootLi);
+
+    rootRadio.addEventListener('change', () => {
+      selectedEditParent = null;
+    });
+
+    buildTree(clientTreeRows).forEach(node => {
+      const rendered = renderTreeNode(node, blockedIds);
+      if (rendered) editParentTree.appendChild(rendered);
+    });
+  }
+
+  async function ensureClientTreeRows() {
+    if (clientTreeRows.length) return;
+    editParentLoading.style.display = 'block';
+    try {
+      const res = await fetch(`${API_BASE}/clients/all?sort=asc`, { headers });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.message || 'Failed to load clients');
+      clientTreeRows = Array.isArray(data?.data) ? data.data : [];
+    } finally {
+      editParentLoading.style.display = 'none';
+    }
   }
 
   function statusLabel(s) {
@@ -494,6 +716,7 @@ table tbody td:first-child {
             <div class="client-info">
               <div class="client-name">${esc(name)}</div>
               <div class="client-type">${esc(orgLabel(org))}</div>
+              ${c.parent_name ? `<div class="client-parent">Child of ${esc(c.parent_name)}</div>` : ''}
             </div>
           </div>
         </td>
@@ -646,6 +869,8 @@ table tbody td:first-child {
 
     f.slug.value = data.slug ?? '';
     f.id.value = data.id ?? '';
+    f.parent_id.value = data.parent_id ? String(data.parent_id) : '';
+    f.parent_current.textContent = data.parent_name ? String(data.parent_name) : 'Self (Root)';
     f.name.value = data.name ?? '';
     f.org_type.value = (data.org_type ?? '').toLowerCase();
     f.email.value = data.email ?? '';
@@ -662,6 +887,34 @@ table tbody td:first-child {
     f.status.value = (data.status ?? 'active').toLowerCase();
 
     modal.show();
+  });
+
+  f.btnPickParent?.addEventListener('click', async () => {
+    try {
+      selectedEditParent = f.parent_id.value
+        ? { id: f.parent_id.value, name: f.parent_current.textContent }
+        : null;
+      await ensureClientTreeRows();
+      renderEditParentTree();
+      editParentClientModal?.show();
+    } catch (err) {
+      Swal.fire({ icon: 'error', title: 'Unable to load clients', text: String(err.message || err) });
+    }
+  });
+
+  f.btnClearParent?.addEventListener('click', () => {
+    f.parent_id.value = '';
+    syncEditParentLabel('');
+  });
+
+  document.getElementById('btnSaveEditParentClient')?.addEventListener('click', () => {
+    if (selectedEditParent && selectedEditParent.id !== 'self') {
+      f.parent_id.value = String(selectedEditParent.id);
+    } else {
+      f.parent_id.value = '';
+    }
+    syncEditParentLabel(f.parent_id.value);
+    editParentClientModal?.hide();
   });
 
   // --------- Save client with loader on button ---------
@@ -687,6 +940,7 @@ table tbody td:first-child {
 
     const payload = {
       name: f.name.value?.trim(),
+      parent_id: f.parent_id.value ? parseInt(f.parent_id.value, 10) : null,
       org_type: f.org_type.value || null,
       email: f.email.value?.trim() || null,
       phone: f.phone.value?.trim() || null,

@@ -11,6 +11,8 @@ use App\Http\Controllers\API\MailerController;
 use App\Http\Controllers\API\ActivityLogsController;
 use App\Http\Controllers\API\JobDetailsController;
 use App\Http\Controllers\API\AssignedPeopleController;
+use App\Http\Controllers\API\ClientUserController;
+use App\Http\Controllers\API\ClientUserDashboardController;
 use App\Http\Controllers\API\AdminDashboardController;
 use App\Http\Controllers\API\AssigneeDashboardController;
 use App\Http\Controllers\API\NotificationController;
@@ -39,9 +41,15 @@ Route::prefix('assignedpeople')->group(function () {
 
 });
 
+Route::prefix('client-users')->group(function () {
+    Route::post('/login', [ClientUserController::class, 'login']);
+    Route::post('/logout', [ClientUserController::class, 'logout'])->middleware('check.role:client_user');
+    Route::get('/me', [ClientUserController::class, 'me'])->middleware('check.role:client_user');
+});
+
 
 // READ (admin or user)
-Route::middleware('check.role:admin,assignee')->group(function () {
+Route::middleware('check.role:admin,assignee,client_user')->group(function () {
     Route::get('/clients',        [ClientController::class, 'index']);
     Route::get('/clients/all',    [ClientController::class, 'all']);
     Route::get('/clients/{slug}', [ClientController::class, 'show']);
@@ -200,6 +208,18 @@ Route::get('/{job}/export-report', [JobDetailsController::class, 'exportJobRepor
 
 });
 
+Route::prefix('job-details')->middleware('check.role:client_user')->group(function () {
+    Route::get('/', [JobDetailsController::class, 'index']);
+    Route::get('/enums', [JobDetailsController::class, 'enums']);
+    Route::get('/{id}', [JobDetailsController::class, 'show'])->whereNumber('id');
+    Route::get('/{job}/assignees', [JobDetailsController::class, 'listAssignees'])->whereNumber('job');
+    Route::get('/{job}/messages', [JobDetailsController::class, 'listMessages'])->whereNumber('job');
+    Route::get('messages/{messageId}/can-edit', [JobDetailsController::class, 'canEditMessage'])
+        ->name('client-job-messages.can-edit');
+    Route::get('/{job}/export-chats', [JobDetailsController::class, 'exportChats']);
+    Route::get('/{job}/export-report', [JobDetailsController::class, 'exportJobReport']);
+});
+
 /* =========================================
 |  ASSIGNEE "MY JOBS"
 |  - allow user OR assignee per your controller
@@ -218,6 +238,14 @@ Route::middleware('check.role:admin')->group(function () {
     Route::patch('/assigned-people/{id}', [AssignedPeopleController::class, 'update']); // partial update
     Route::delete('/assigned-people/{id}',[AssignedPeopleController::class, 'destroy']); // delete by id
     Route::patch('/assigned-people/{id}/toggle', [AssignedPeopleController::class, 'toggle']); // toggle status
+
+    Route::get('/client-users', [ClientUserController::class, 'index']);
+    Route::get('/client-users/{id}', [ClientUserController::class, 'show'])->whereNumber('id');
+    Route::post('/client-users', [ClientUserController::class, 'store']);
+    Route::put('/client-users/{id}', [ClientUserController::class, 'update'])->whereNumber('id');
+    Route::patch('/client-users/{id}', [ClientUserController::class, 'update'])->whereNumber('id');
+    Route::patch('/client-users/{id}/toggle', [ClientUserController::class, 'toggle'])->whereNumber('id');
+    Route::delete('/client-users/{id}', [ClientUserController::class, 'destroy'])->whereNumber('id');
 });
 // Admin dashboard (admin only)
 Route::middleware('check.role:admin, assignee')->group(function () {
@@ -229,6 +257,10 @@ Route::get('/assignee-dashboard', [AdminDashboardController::class, 'assigneeDas
         '/admin/dashboard/recent-activity',
         [\App\Http\Controllers\API\AdminDashboardController::class, 'recentActivity']
     )->name('api.admin.dashboard.recent');
+});
+Route::middleware('check.role:client_user')->group(function () {
+    Route::get('/client-users/dashboard', ClientUserDashboardController::class)
+        ->name('api.client-users.dashboard');
 });
 // Route::middleware(['auth:sanctum'])->prefix('assignee')->group(function () {
 //     Route::get('/dashboard', function () {
@@ -247,22 +279,18 @@ Route::middleware(['check.role:assignee'])->group(function () {
 
 });
 /** ---------------- Notifications (admin & assignee) ---------------- */
-Route::middleware(['check.role:admin,assignee'])->group(function () {
+Route::middleware(['check.role:admin,assignee,client_user'])->group(function () {
     // List of notifications for the actor with various filters: role, unread, type, priority, status, before_id, since_id, limit, page
     Route::get('/notifications/my', [NotificationController::class, 'my'])
         ->name('notifications.my');
-
-    // Get single notification details
-    Route::get('/notifications/{id}', [NotificationController::class, 'show'])
-        ->name('notifications.show');
 
     // Unread count for the actor with optional role/type/priority filters
     Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount'])
         ->name('notifications.unreadCount');
 
-    // Create a notification (server stamps sender via token if you add it)
-    Route::post('/notifications', [NotificationController::class, 'store'])
-        ->name('notifications.store');
+    // Get single notification details
+    Route::get('/notifications/{id}', [NotificationController::class, 'show'])
+        ->name('notifications.show');
 
     // Mark one notification as read/unread (body: { read: true|false, role?: string })
     Route::patch('/notifications/{id}/read', [NotificationController::class, 'markRead'])
@@ -275,12 +303,13 @@ Route::middleware(['check.role:admin,assignee'])->group(function () {
     // Mark all notifications as read for the actor (optional role)
     Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllRead'])
         ->name('notifications.markAllRead');
+});
 
-    // Archive a specific notification
+Route::middleware(['check.role:admin,assignee'])->group(function () {
+    Route::post('/notifications', [NotificationController::class, 'store'])
+        ->name('notifications.store');
     Route::patch('/notifications/{id}/archive', [NotificationController::class, 'archive'])
         ->name('notifications.archive');
-
-    // Soft delete a notification (sets status to 'deleted')
     Route::delete('/notifications/{id}', [NotificationController::class, 'destroy'])
         ->name('notifications.destroy');
 });
@@ -312,26 +341,19 @@ Route::prefix('expense-heads')->middleware('check.role:admin,assignee')->group(f
         Route::patch('/{id}/toggle-status', [ExpenseHeadController::class, 'toggleStatus'])
             ->name('api.expense-heads.toggle');
     });
-Route::prefix('job-details')->middleware('check.role:admin,assignee')->group(function () {
-
-    // List expenses for a job
+Route::prefix('job-details')->middleware('check.role:admin,assignee,client_user')->group(function () {
     Route::get('{job}/expenses', [ExpenseController::class, 'listExpenses'])
         ->name('job.expenses.list');
+});
+
+Route::prefix('job-details')->middleware('check.role:admin,assignee')->group(function () {
     Route::get('{job}/expenses/export', [ExpenseController::class, 'exportExpenses']);
-
-
-    // Create an expense for a job (multipart/form-data)
     Route::post('{job}/expenses', [ExpenseController::class, 'postExpense'])
         ->name('job.expenses.create');
-
-    // Update an expense by id (patch)
     Route::patch('expenses/{expense}', [ExpenseController::class, 'updateExpense'])
         ->name('job.expenses.update');
-
-    // Delete an expense by id
     Route::delete('expenses/{expense}', [ExpenseController::class, 'deleteExpense'])
         ->name('job.expenses.delete');
-
 });
 
 Route::prefix('job-expense-claims')->middleware('check.role:admin,assignee')->group(function () {

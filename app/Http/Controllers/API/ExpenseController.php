@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Services\ClientUserScopeService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -16,6 +17,10 @@ use Illuminate\Support\Facades\Schema;
 
 class ExpenseController extends Controller
 {
+    public function __construct(private ClientUserScopeService $scopeService)
+    {
+    }
+
     // =========================
     // Public endpoints
     // =========================
@@ -25,8 +30,8 @@ class ExpenseController extends Controller
 /** GET /api/job-details/{job}/expenses?page=&per_page= */
 public function listExpenses(Request $r, int $jobId)
 {
-    if ($resp = $this->requireRole($r, ['admin','assignee'])) return $resp;
-    if (($r->attributes->get('auth_role') ?? null) === 'assignee') {
+    if ($resp = $this->requireRole($r, ['admin','assignee','client_user'])) return $resp;
+    if (($r->attributes->get('auth_role') ?? null) !== 'admin') {
         if ($resp = $this->forbidIfNoAccess($r, $jobId)) return $resp;
     }
 
@@ -477,6 +482,9 @@ $actorEmail = $this->actorEmail($actor);
                 ->where('status', 'active')
                 ->exists();
         }
+        if (($a['role'] ?? null) === 'client_user' && ($a['id'] ?? 0)) {
+            return $this->scopeService->userCanSeeJob((int) $a['id'], $jobId);
+        }
         return false;
     }
 
@@ -523,36 +531,7 @@ $actorEmail = $this->actorEmail($actor);
 
     private function persistNotification(array $payload): void
     {
-        $title     = (string)($payload['title']    ?? 'Notification');
-        $message   = (string)($payload['message']  ?? '');
-        $receivers = array_values(array_map(function($x){
-            return [
-                'id'   => isset($x['id']) ? (int)$x['id'] : null,
-                'role' => (string)($x['role'] ?? 'unknown'),
-                'read' => (int)($x['read'] ?? 0),
-            ];
-        }, $payload['receivers'] ?? []));
-
-        $metadata = $payload['metadata'] ?? [];
-        $type     = (string)($payload['type'] ?? 'general');
-        $linkUrl  = $payload['link_url'] ?? null;
-        $priority = in_array(($payload['priority'] ?? 'normal'), ['low','normal','high','urgent'], true)
-                    ? $payload['priority'] : 'normal';
-        $status   = in_array(($payload['status'] ?? 'active'), ['active','archived','deleted'], true)
-                    ? $payload['status'] : 'active';
-
-        DB::table('notifications')->insert([
-            'title'      => $title,
-            'message'    => $message,
-            'receivers'  => json_encode($receivers, JSON_UNESCAPED_UNICODE),
-            'metadata'   => $metadata ? json_encode($metadata, JSON_UNESCAPED_UNICODE) : null,
-            'type'       => $type,
-            'link_url'   => $linkUrl,
-            'priority'   => $priority,
-            'status'     => $status,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        app(\App\Services\NotificationDispatchService::class)->dispatch($payload);
     }
 
     private function adminReceivers(array $excludeIds = []): array

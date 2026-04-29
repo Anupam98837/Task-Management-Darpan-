@@ -646,28 +646,7 @@ private function decoratePaidByName($row)
 
     private function persistNotification(array $payload): void
     {
-        $title     = (string)($payload['title']    ?? 'Notification');
-        $message   = (string)($payload['message']  ?? '');
-        $receivers = array_values(array_map(function($x){
-            return [
-                'id'   => isset($x['id']) ? (int)$x['id'] : null,
-                'role' => (string)($x['role'] ?? 'unknown'),
-                'read' => (int)($x['read'] ?? 0),
-            ];
-        }, $payload['receivers'] ?? []));
-
-        DB::table('notifications')->insert([
-            'title'      => $title,
-            'message'    => $message,
-            'receivers'  => json_encode($receivers, JSON_UNESCAPED_UNICODE),
-            'metadata'   => !empty($payload['metadata']) ? json_encode($payload['metadata'], JSON_UNESCAPED_UNICODE) : null,
-            'type'       => (string)($payload['type'] ?? 'general'),
-            'link_url'   => $payload['link_url'] ?? null,
-            'priority'   => in_array(($payload['priority'] ?? 'normal'), ['low','normal','high','urgent'], true) ? $payload['priority'] : 'normal',
-            'status'     => in_array(($payload['status'] ?? 'active'), ['active','archived','deleted'], true) ? $payload['status'] : 'active',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        app(\App\Services\NotificationDispatchService::class)->dispatch($payload);
     }
 
     private function adminReceivers(array $excludeIds = []): array

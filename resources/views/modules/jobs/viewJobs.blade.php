@@ -11,6 +11,18 @@
 .search-box{position:relative;flex:1;min-width:280px;max-width:420px}.search-box input{width:100%;height:44px;padding:0 16px 0 42px;border:1px solid #e2e8f0;border-radius:12px;font-size:14px;background:var(--surface);color:var(--text-color);transition:.2s}.search-box input:focus{outline:0;border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.1)}.search-box svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);pointer-events:none}
 .select-box{height:44px;padding:0 38px 0 14px;border:1px solid #e2e8f0;border-radius:12px;font-size:14px;background:var(--surface) url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M6 8l4 4 4-4' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 12px center;appearance:none;color:var(--text-color);cursor:pointer;transition:.2s}.select-box:focus{outline:0;border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.1)}
 .btn{display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 20px;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;transition:.2s;border:0;text-decoration:none}.btn-primary{background:linear-gradient(135deg,#3b82f6 0%,#2563eb 100%);color:#fff;box-shadow:0 2px 8px rgba(59,130,246,.25)}.btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(59,130,246,.35)}.btn-secondary{background:var(--surface);color:var(--text-color);border:1px solid #e2e8f0}.btn-secondary:hover{background:var(--primary-color);border-color:var(--primary-color);color:#fff}
+.filter-tree-current{font-size:12px;color:#64748b;padding-left:2px}
+.picker-tree{list-style:none;margin:0;padding:0 0 0 8px;position:relative}
+.picker-tree::before{content:"";position:absolute;left:14px;top:0;bottom:8px;width:1px;background:#e2e8f0}
+.picker-tree>li{position:relative;margin:0 0 8px 0;padding-left:24px}
+.picker-tree>li::before{content:"";position:absolute;left:14px;top:16px;width:16px;height:1px;background:#e2e8f0}
+.picker-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid #e2e8f0;border-radius:12px;background:var(--surface)}
+.picker-toggle{width:28px;height:28px;border:1px solid #e2e8f0;border-radius:8px;background:var(--bg-body);display:inline-flex;align-items:center;justify-content:center}
+.picker-toggle.open i{transform:rotate(90deg)}
+.picker-children{margin:8px 0 10px 0;padding-left:24px;display:none}
+.picker-children .picker-children{margin-left:16px}
+.picker-title{display:flex;flex-direction:column;gap:2px}
+.picker-title small{color:#64748b}
 .data-card{background:var(--surface);border-radius:16px;box-shadow:0 1px 3px rgba(0,0,0,.04);overflow:hidden}.table-container{overflow-x:auto}table{width:100%;border-collapse:collapse;color:var(--text-color)}thead{background:var(--light-color)}thead th{padding:14px 18px;text-align:left;font-size:12px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e2e8f0;white-space:nowrap}tbody tr{border-bottom:1px solid #f1f5f9;transition:background .15s;background:var(--surface)}tbody tr:hover{opacity:.95}tbody tr.child-row{background:var(--light-color)}tbody td{padding:16px 18px;font-size:14px;color:var(--text-color);vertical-align:middle}tbody tr.child-row td:first-child{padding-left:calc(18px + var(--indent,0px))!important}
 .badge{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:600}.badge::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor}.badge.planned{background:#fef3c7;color:#d97706}.badge.in_progress{background:#dbeafe;color:#2563eb}.badge.completed{background:#dcfce7;color:#16a34a}.badge.on_hold{background:#f1f5f9;color:#64748b}.badge.cancelled{background:#fee2e2;color:#dc2626}.badge.low{background:#f1f5f9;color:#64748b}.badge.normal{background:#dbeafe;color:#2563eb}.badge.high{background:#fef3c7;color:#d97706}.badge.urgent{background:#fee2e2;color:#dc2626}
 .expander{width:26px;height:26px;border:1px solid #e2e8f0;border-radius:6px;background:var(--light-color);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:.2s}.expander:hover{background:#3b82f6;border-color:#3b82f6;color:#fff}.expander[aria-busy=true]{opacity:.6;cursor:progress}
@@ -205,9 +217,18 @@ th.sortable{cursor:pointer;user-select:none}th.sortable:hover{color:#3b82f6}.tin
     <div class="filter-group">
       <div class="filter-field" style="min-width:180px">
         <label for="filterClient">Client</label>
-        <select id="filterClient" class="select-box">
+        <div class="d-flex gap-2">
+          <button type="button" id="btnPickFilterClient" class="btn btn-secondary" style="height:44px;padding:0 14px;min-width:0;">
+            <i class="fa-regular fa-building"></i><span>Choose Client</span>
+          </button>
+          <button type="button" id="clearFilterClient" class="btn btn-secondary" style="height:44px;padding:0 12px;min-width:0;" title="Clear client filter">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <select id="filterClient" class="select-box" style="display:none">
           <option value="">All Clients</option>
         </select>
+        <div id="filterClientCurrent" class="filter-tree-current">All Clients</div>
       </div>
 
       <div class="filter-field" style="min-width:130px">
@@ -301,6 +322,26 @@ th.sortable{cursor:pointer;user-select:none}th.sortable:hover{color:#3b82f6}.tin
         Showing 0-0 of 0 jobs
       </div>
       <div class="pagination-controls" id="pager"></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="filterClientModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6 class="modal-title"><i class="fa-regular fa-building me-2"></i>Choose Client Filter</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="filterClientLoad" class="text-muted small mb-2" style="display:none;">Loading clients…</div>
+        <ul id="filterClientTree" class="picker-tree"></ul>
+        <div class="tiny muted">Selecting a parent client includes its child clients too.</div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-primary" id="btnSaveFilterClient"><i class="fa-solid fa-check me-1"></i>Apply Filter</button>
+      </div>
     </div>
   </div>
 </div>
@@ -596,8 +637,13 @@ th.sortable{cursor:pointer;user-select:none}th.sortable:hover{color:#3b82f6}.tin
 const TOKEN=sessionStorage.getItem('token')||localStorage.getItem('token')||'';
 const role =(sessionStorage.getItem('role')||localStorage.getItem('type')||'').toLowerCase();
 const IS_ASSIGNEE = role==='assignee';
+const IS_CLIENT_USER = role==='client_user';
+const IS_READ_ONLY = IS_ASSIGNEE || IS_CLIENT_USER;
+const LOGIN_REDIRECT = window.location.pathname.startsWith('/client-user/')
+  ? '/client-user/login'
+  : (window.location.pathname.startsWith('/assignee/') ? '/assignee/login' : '/');
 if(!TOKEN){
-  Swal.fire('Auth Required','Session expired. Please login again.','warning').then(()=>location.href='/');
+  Swal.fire('Auth Required','Session expired. Please login again.','warning').then(()=>location.href=LOGIN_REDIRECT);
   return;
 }
 const H={'Authorization':'Bearer '+TOKEN,'Accept':'application/json'};
@@ -765,9 +811,17 @@ async function generateEnhancedPDF(htmlContent, jobId, type) {
 
 /* ================== ROLE / ENUMS / CLIENTS ================== */
 function applyRoleVisibility(){
-  if(!IS_ASSIGNEE)return;
-  const c=byId('filterClient'); if(c) c.closest('.filter-field').style.display='none';
-  const a=document.querySelector('a.btn.btn-primary[href="/admin/jobs/add"]'); if(a) a.style.display='none';
+  if(IS_ASSIGNEE){
+    const c=byId('filterClient'); if(c) c.closest('.filter-field').style.display='none';
+  }
+  if(IS_READ_ONLY){
+    const a=document.querySelector('a.btn.btn-primary[href="/admin/jobs/add"]'); if(a) a.style.display='none';
+    const composerWrap = document.querySelector('.composer-sticky'); if (composerWrap) composerWrap.style.display = 'none';
+    if (typeof btnAddExpense !== 'undefined' && btnAddExpense) btnAddExpense.style.display = 'none';
+    if (typeof expenseForm !== 'undefined' && expenseForm) expenseForm.style.display = 'none';
+    if (typeof dSaveStatus !== 'undefined' && dSaveStatus) dSaveStatus.style.display = 'none';
+    if (typeof dStatus !== 'undefined' && dStatus) dStatus.disabled = true;
+  }
 }
 
 const tbody   = byId('jTbody'),
@@ -779,6 +833,14 @@ let roots=[], viewRows=[], page=1, perPage=10, q='',
     sortKey='created', sortDir='desc';
 
 const childrenCache=new Map(), expanded=new Set(), jobsById=new Map();
+const filterClientModal = new bootstrap.Modal(byId('filterClientModal'));
+const filterClientTreeEl = byId('filterClientTree');
+const filterClientLoadEl = byId('filterClientLoad');
+const filterClientCurrent = byId('filterClientCurrent');
+const btnPickFilterClient = byId('btnPickFilterClient');
+const btnClearFilterClient = byId('clearFilterClient');
+let clientRowsCache = [];
+let selectedFilterClient = null;
 
 const API={
   jobs:'/api/job-details',
@@ -842,6 +904,7 @@ function renderAppliedFilterPill() {
     if(filterClient) filterClient.value = '';
     if(filterType) filterType.value = '';
     if(filterPriority) filterPriority.value = '';
+    syncFilterClientLabel();
     loadJobs();
     renderAppliedFilterPill();
   };
@@ -849,6 +912,70 @@ function renderAppliedFilterPill() {
 
 function fillOpts(sel,arr){
   sel.innerHTML=(arr||[]).map(v=>v===''?'<option value="">All</option>':`<option value="${esc(v)}">${esc(v.replaceAll('_',' '))}</option>`).join('')
+}
+function getSelectedFilterClientName(){
+  const idx = filterClient ? filterClient.selectedIndex : -1;
+  return (idx >= 0 && filterClient.options[idx]) ? String(filterClient.options[idx].textContent || '').trim() : '';
+}
+function syncFilterClientLabel(){
+  filterClientCurrent.textContent = getSelectedFilterClientName() || 'All Clients';
+}
+function toClientTree(rows){
+  const map = new Map();
+  rows.forEach(r => map.set(String(r.id), {
+    id: r.id,
+    title: String(r.name || (`Client #${r.id}`)).trim(),
+    parent_id: r.parent_id || null,
+    children: []
+  }));
+  const roots = [];
+  rows.forEach(r => {
+    const node = map.get(String(r.id));
+    if (r.parent_id && map.has(String(r.parent_id))) {
+      map.get(String(r.parent_id)).children.push(node);
+    } else {
+      roots.push(node);
+    }
+  });
+  const sortRec = (arr) => { arr.sort((a,b)=>a.title.localeCompare(b.title)); arr.forEach(n=>sortRec(n.children)); };
+  sortRec(roots);
+  return roots;
+}
+function renderFilterClientTree(nodes, container){
+  container.innerHTML = '';
+  const liRoot = document.createElement('li');
+  const itemRoot = document.createElement('div'); itemRoot.className='picker-item';
+  const fakeT = document.createElement('button'); fakeT.type='button'; fakeT.className='picker-toggle'; fakeT.style.visibility='hidden'; fakeT.innerHTML='<i class="fa-solid fa-chevron-right"></i>';
+  const radioRoot = document.createElement('input'); radioRoot.type='radio'; radioRoot.name='filterClientPick'; radioRoot.value='';
+  if (!filterClient.value) radioRoot.checked = true;
+  const titleRoot = document.createElement('div'); titleRoot.className='picker-title';
+  titleRoot.innerHTML='<strong>All Clients</strong><small>Clear the client filter</small>';
+  itemRoot.appendChild(fakeT); itemRoot.appendChild(radioRoot); itemRoot.appendChild(titleRoot);
+  liRoot.appendChild(itemRoot); container.appendChild(liRoot);
+  radioRoot.addEventListener('change', ()=>{ selectedFilterClient = null; });
+  nodes.forEach(node=> container.appendChild(renderFilterClientNode(node)));
+}
+function renderFilterClientNode(node){
+  const li = document.createElement('li');
+  const item = document.createElement('div'); item.className='picker-item';
+  const toggle = document.createElement('button'); toggle.type='button'; toggle.className='picker-toggle'; toggle.innerHTML='<i class="fa-solid fa-chevron-right"></i>';
+  if (!node.children || !node.children.length) toggle.style.visibility='hidden';
+  const radio = document.createElement('input'); radio.type='radio'; radio.name='filterClientPick'; radio.value=String(node.id);
+  if (filterClient.value && String(node.id) === String(filterClient.value)) radio.checked = true;
+  const title = document.createElement('div'); title.className='picker-title';
+  title.innerHTML = `<strong>${esc(node.title)}</strong><small>#${node.id}${node.parent_id ? ' • child' : ''}</small>`;
+  item.appendChild(toggle); item.appendChild(radio); item.appendChild(title); li.appendChild(item);
+  const kids = document.createElement('ul'); kids.className='picker-children picker-tree'; li.appendChild(kids);
+  if (node.children && node.children.length){
+    node.children.forEach(ch=> kids.appendChild(renderFilterClientNode(ch)));
+    toggle.addEventListener('click', ()=>{
+      const open = kids.style.display === 'block';
+      kids.style.display = open ? 'none' : 'block';
+      toggle.classList.toggle('open', !open);
+    });
+  }
+  radio.addEventListener('change', ()=>{ selectedFilterClient = { id: node.id, title: node.title }; });
+  return li;
 }
 async function loadEnumsAndClients(){
   try{
@@ -860,7 +987,9 @@ async function loadEnumsAndClients(){
   }catch{}
   try{
     const cj=await GET(API.clients), rows=Array.isArray(cj.data)?cj.data:[];
+    clientRowsCache = rows;
     filterClient.innerHTML=['<option value="">All Clients</option>'].concat(rows.map(c=>`<option value="${c.id}">${esc(c.name||('Client #'+c.id))}</option>`)).join('');
+    syncFilterClientLabel();
   }catch{}
 }
 
@@ -1074,16 +1203,16 @@ function ensureActionsMenu(){
     if(act==='open') return openDrawer(id);
     if(act==='view') return openViewer(id);
     if(act==='viewdoc') return viewDocument(id);
-    if(act==='assign'){ if(IS_ASSIGNEE){info('You do not have permission for this action.');return}
+    if(act==='assign'){ if(IS_READ_ONLY){info('You do not have permission for this action.');return}
       const tr = tbody.querySelector(`tr[data-id="${id}"]`); return openAssignModal(id, tr?.dataset?.title||(`#${id}`))
     }
-    if(act==='export'){ if(IS_ASSIGNEE){info('You do not have permission for this action.');return}
+    if(act==='export'){ if(IS_READ_ONLY){info('You do not have permission for this action.');return}
       return exportReport(id);
     }
-    if(act==='edit'){ if(IS_ASSIGNEE){info('You do not have permission for this action.');return}
+    if(act==='edit'){ if(IS_READ_ONLY){info('You do not have permission for this action.');return}
       location.href=`/admin/jobs/edit/${id}`; return;
     }
-    if(act==='delete'){ if(IS_ASSIGNEE){info('You do not have permission for this action.');return}
+    if(act==='delete'){ if(IS_READ_ONLY){info('You do not have permission for this action.');return}
       const ask=await Swal.fire({title:'Delete Job?',text:'This job will be permanently removed (including children).',icon:'warning',showCancelButton:true,confirmButtonText:'Delete',confirmButtonColor:'#dc2626'});
       if(!ask.isConfirmed) return;
       try{
@@ -1116,7 +1245,7 @@ function openActionsMenu(btn, id){
     list.push(`<a href="#" data-am-act="viewdoc" data-id="${id}" style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;color:var(--text-color);text-decoration:none"><i class="fa fa-file-pdf"></i><span>View document</span></a>`);
   }
   
-  if(!IS_ASSIGNEE){
+  if(!IS_READ_ONLY){
     list.push(`<a href="#" data-am-act="assign" data-id="${id}" style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;color:var(--text-color);text-decoration:none"><i class="fa fa-user-plus"></i><span>Assign people</span></a>`);
     list.push(`<a href="#" data-am-act="export" data-id="${id}" style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;color:var(--text-color);text-decoration:none"><i class="fa fa-download"></i><span>Export report</span></a>`);
     list.push(`<a href="/admin/jobs/edit/${id}" data-am-act="edit" data-id="${id}" style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;color:var(--text-color);text-decoration:none"><i class="fa fa-pen"></i><span>Edit</span></a>`);
@@ -1309,8 +1438,34 @@ byId('searchInput').addEventListener('input',e=>{
   // user manually changed a filter — cancel dashboard filter
   appliedFilter = '';
   fClient=filterClient.value||''; fType=filterType.value||''; fPriority=filterPriority.value||''; fStatus=filterStatus.value||'';
+  syncFilterClientLabel();
   page=1; expanded.clear(); childrenCache.clear(); loadJobs();
 }));
+
+btnPickFilterClient?.addEventListener('click', async ()=>{
+  try{
+    if (!clientRowsCache.length) {
+      filterClientLoadEl.style.display = 'block';
+      await loadEnumsAndClients();
+    }
+    selectedFilterClient = filterClient.value ? { id: filterClient.value, title: getSelectedFilterClientName() } : null;
+    renderFilterClientTree(toClientTree(clientRowsCache), filterClientTreeEl);
+    filterClientModal.show();
+  } finally {
+    filterClientLoadEl.style.display = 'none';
+  }
+});
+
+btnClearFilterClient?.addEventListener('click', ()=>{
+  filterClient.value = '';
+  filterClient.dispatchEvent(new Event('change'));
+});
+
+byId('btnSaveFilterClient')?.addEventListener('click', ()=>{
+  filterClient.value = selectedFilterClient ? String(selectedFilterClient.id) : '';
+  filterClient.dispatchEvent(new Event('change'));
+  filterClientModal.hide();
+});
 
 byId('perPage').addEventListener('change',e=>{perPage=parseInt(e.target.value,10)||10;page=1;renderPage()});
 document.querySelectorAll('th.sortable').forEach(th=>th.addEventListener('click',()=>{
@@ -1332,7 +1487,7 @@ tbody.addEventListener('click',async e=>{
   const actBtn=e.target.closest('.btn-actions');
   if(actBtn){ e.preventDefault(); openActionsMenu(actBtn, id); return }
 
-  if(IS_ASSIGNEE&&(e.target.closest('.js-assign')||e.target.closest('.js-del')||e.target.closest('.btn-edit'))){
+  if(IS_READ_ONLY&&(e.target.closest('.js-assign')||e.target.closest('.js-del')||e.target.closest('.btn-edit'))){
     e.preventDefault(); info('You do not have permission for this action.'); return;
   }
   if(e.target.closest('.js-expand')){
@@ -2027,6 +2182,10 @@ function hideSendingState(){
   a.disabled=false; c.setAttribute('contenteditable','true');
 }
 async function sendMessage(){
+  if (IS_CLIENT_USER) {
+    info('You do not have permission for this action.');
+    return;
+  }
   if(!dJob) return;
   const html=(composer.innerHTML||'').trim();
   const files=editMode?editNewFiles.slice():attachmentPreviews.map(p=>p.file);
@@ -2087,6 +2246,10 @@ if (expenseDate) {
 // Event listeners for expense functionality
 if (btnAddExpense) {
   btnAddExpense.addEventListener('click', () => {
+    if (IS_CLIENT_USER) {
+      info('You do not have permission for this action.');
+      return;
+    }
     expenseForm.style.display = 'block';
     expensesList.style.display = 'none';
     expensesEmpty.style.display = 'none';
@@ -2944,6 +3107,10 @@ async function loadMessages(initial=false){
 }
  
 dSaveStatus.addEventListener('click',async()=>{
+  if (IS_CLIENT_USER) {
+    info('You do not have permission for this action.');
+    return;
+  }
   if(!dJob) return;
   dSaveStatus.disabled=true; dStatus.disabled=true; dStatusSpin.style.display='inline-block';
   const row=tbody.querySelector(`tr[data-id="${dJob.id}"]`); let cell=null, prev='';
@@ -3453,12 +3620,12 @@ function downloadExpensesWord(expenses, jobId) {
   // render pill (if UI has it)
   renderAppliedFilterPill();
 
-  // Load expense heads
-  await loadExpenseHeads();
+  if (!IS_READ_ONLY) {
+    await loadExpenseHeads();
+  }
 
   await loadJobs();
 })();
 })();
 </script>
 @endpush
- 

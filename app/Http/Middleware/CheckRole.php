@@ -15,7 +15,7 @@ class CheckRole
      * Canonical role names we support.
      * Add new ones here.
      */
-    private const ROLES = ['admin', 'user', 'assignee'];
+    private const ROLES = ['admin', 'user', 'assignee', 'client_user'];
 
     /**
      * Synonyms accepted for each role (lowercased, singular where possible).
@@ -34,6 +34,10 @@ class CheckRole
             'taskassignee', 'taskowner', 'issueassignee', 'owner',
             // model-style slugs you might see in tokenable_type
             'assigneeuser', 'assigneeaccount', 'assignedpersonmodel', 'assignedpeoplemodel',
+        ],
+        'client_user' => [
+            'clientuser', 'clientusers', 'client_user', 'client_users', 'clientaccount',
+            'clientportaluser', 'clientmember', 'portalclientuser',
         ],
     ];
 
@@ -156,6 +160,13 @@ class CheckRole
             str_contains($norm, 'assignedpeople')
         ) {
             return 'assignee';
+        }
+        if (
+            str_contains($norm, 'clientuser') ||
+            str_contains($norm, 'clientaccount') ||
+            str_contains($norm, 'clientmember')
+        ) {
+            return 'client_user';
         }
 
         return null;

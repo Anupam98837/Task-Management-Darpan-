@@ -202,20 +202,20 @@ class NotificationController extends Controller
             ];
         }, $data['receivers']);
 
-        $now = now();
-
-        $id = DB::table('notifications')->insertGetId([
-            'title'      => (string)$data['title'],
-            'message'    => (string)$data['message'],
-            'receivers'  => json_encode($receivers, JSON_UNESCAPED_UNICODE),
-            'metadata'   => isset($data['metadata']) ? json_encode($data['metadata'], JSON_UNESCAPED_UNICODE) : null,
-            'type'       => (string)($data['type'] ?? 'general'),
-            'link_url'   => $data['link_url'] ?? null,
-            'priority'   => (string)($data['priority'] ?? 'normal'),
-            'status'     => (string)($data['status'] ?? 'active'),
-            'created_at' => $now,
-            'updated_at' => $now,
+        $id = app(\App\Services\NotificationDispatchService::class)->dispatch([
+            'title' => (string) $data['title'],
+            'message' => (string) $data['message'],
+            'receivers' => $receivers,
+            'metadata' => $data['metadata'] ?? [],
+            'type' => (string) ($data['type'] ?? 'general'),
+            'link_url' => $data['link_url'] ?? null,
+            'priority' => (string) ($data['priority'] ?? 'normal'),
+            'status' => (string) ($data['status'] ?? 'active'),
         ]);
+
+        if (!$id) {
+            return response()->json(['message' => 'Failed to create notification'], 500);
+        }
 
         $row = DB::table('notifications')->where('id', $id)->first();
         $row->receivers = $this->normalizeReceivers($this->decodeJsonArray($row->receivers ?? '[]'));

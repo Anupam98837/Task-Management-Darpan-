@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API;
  
 use App\Http\Controllers\Controller;
+use App\Services\ClientUserScopeService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -23,6 +24,10 @@ use App\Services\FCMService;
  
 class JobDetailsController extends Controller
 {
+    public function __construct(private ClientUserScopeService $scopeService)
+    {
+    }
+
     /** =========================
      *   Enumerations
      * ========================= */
@@ -127,6 +132,39 @@ class JobDetailsController extends Controller
         $parentId ? $q->where('parent_id', $parentId) : $q->whereNull('parent_id');
         $max = $q->max('ordering');
         return is_null($max) ? 1 : ((int)$max + 1);
+    }
+
+    private function collectClientSubtreeIds(int $rootId): array
+    {
+        if ($rootId <= 0) {
+            return [];
+        }
+
+        $seen = [];
+        $queue = [$rootId];
+
+        while (!empty($queue)) {
+            $current = array_shift($queue);
+            if ($current <= 0 || isset($seen[$current])) {
+                continue;
+            }
+
+            $seen[$current] = true;
+
+            $children = DB::table('clients')
+                ->where('parent_id', $current)
+                ->pluck('id')
+                ->map(fn ($id) => (int) $id)
+                ->all();
+
+            foreach ($children as $childId) {
+                if (!isset($seen[$childId])) {
+                    $queue[] = $childId;
+                }
+            }
+        }
+
+        return array_map('intval', array_keys($seen));
     }
  
     private function findJob(int $id): ?object
@@ -289,6 +327,9 @@ private function userCanSeeJob(Request $r, int $jobId): bool
             ->where('status', 'active')
             ->exists();
     }
+    if (($a['role'] ?? null) === 'client_user' && ($a['id'] ?? 0)) {
+        return $this->scopeService->userCanSeeJob((int) $a['id'], $jobId);
+    }
     return false;
 }
 private function forbidIfNoAccess(Request $r, int $jobId)
@@ -306,6 +347,7 @@ private function actorEmail(array $a): ?string
     if (!($a['id'] ?? 0)) return null;
     return DB::table('admins')->where('id',$a['id'])->value('email')
      ?: DB::table('assigned_people')->where('id',$a['id'])->value('email')
+     ?: DB::table('client_users')->where('id',$a['id'])->value('email')
         ?: DB::table('users')->where('id',$a['id'])->value('email');
 }
 
@@ -526,7 +568,7 @@ private function jobCard(int $jobId): ?array
      * ========================= */
 public function index(Request $request)
 {
-    if ($resp = $this->requireRole($request, ['admin','assignee'])) return $resp;
+    if ($resp = $this->requireRole($request, ['admin','assignee','client_user'])) return $resp;
 
     $page     = max(1, (int) $request->query('page', 1));
     $perPage  = min(100, max(1, (int) $request->query('per_page', 10)));
@@ -587,6 +629,14 @@ public function index(Request $request)
               ->where('me.assigned_person_id', $aid);
         });
     }
+    if (($actor['role'] ?? null) === 'client_user' && ($actor['id'] ?? 0)) {
+        $visibleClientIds = $this->scopeService->visibleClientIdsForUser((int) $actor['id']);
+        if (empty($visibleClientIds)) {
+            $qBuilder->whereRaw('1 = 0');
+        } else {
+            $qBuilder->whereIn('j.client_id', $visibleClientIds);
+        }
+    }
 
     if ($q !== '') {
         $like = "%{$q}%";
@@ -595,7 +645,10 @@ public function index(Request $request)
               ->orWhere('j.description', 'LIKE', $like);
         });
     }
-    if ($clientId > 0) $qBuilder->where('j.client_id', $clientId);
+    if ($clientId > 0) {
+        $clientIds = $this->collectClientSubtreeIds($clientId);
+        $qBuilder->whereIn('j.client_id', !empty($clientIds) ? $clientIds : [$clientId]);
+    }
     if (!is_null($parentId)) $qBuilder->where('j.parent_id', $parentId);
     if ($type !== '' && in_array($type, $this->TYPES, true)) $qBuilder->where('j.type', $type);
     if ($priority !== '' && in_array($priority, $this->PRIORITY, true)) $qBuilder->where('j.priority', $priority);
@@ -672,10 +725,10 @@ public function index(Request $request)
  * ========================= */
 public function show(Request $request, int $id)
 {
-    if ($resp = $this->requireRole($request, ['admin','assignee'])) return $resp;
-    if (($request->attributes->get('auth_role') ?? null) === 'assignee') {
-    if ($resp = $this->forbidIfNoAccess($request, $id)) return $resp;
-}
+    if ($resp = $this->requireRole($request, ['admin','assignee','client_user'])) return $resp;
+    if (($request->attributes->get('auth_role') ?? null) !== 'admin') {
+        if ($resp = $this->forbidIfNoAccess($request, $id)) return $resp;
+    }
 
 
     $job = DB::table('job_details as j')
@@ -724,7 +777,7 @@ public function show(Request $request, int $id)
      * ========================= */
     public function enums(Request $request)
     {
-        if ($resp = $this->requireRole($request, ['admin','assignee'])) return $resp;
+        if ($resp = $this->requireRole($request, ['admin','assignee','client_user'])) return $resp;
  
         return response()->json([
             'status' => 'success',
@@ -1396,10 +1449,10 @@ public function changeStatus(Request $r, int $id)
     /** GET /api/job-details/{job}/assignees */
 public function listAssignees(Request $r, int $jobId)
 {
-    if ($resp = $this->requireRole($r, ['admin','assignee'])) return $resp;
-    if (($r->attributes->get('auth_role') ?? null) === 'assignee') {
-    if ($resp = $this->forbidIfNoAccess($r, $jobId)) return $resp;
-}
+    if ($resp = $this->requireRole($r, ['admin','assignee','client_user'])) return $resp;
+    if (($r->attributes->get('auth_role') ?? null) !== 'admin') {
+        if ($resp = $this->forbidIfNoAccess($r, $jobId)) return $resp;
+    }
 
 
     $rows = DB::table('job_assignees as ja')
@@ -1704,10 +1757,10 @@ public function assignJobsToPerson(Request $r, int $personId)
 /** GET /api/job-details/{job}/messages?page=&per_page= */
 public function listMessages(Request $r, int $jobId)
 {
-    if ($resp = $this->requireRole($r, ['admin','assignee'])) return $resp;
-    if (($r->attributes->get('auth_role') ?? null) === 'assignee') {
-    if ($resp = $this->forbidIfNoAccess($r, $jobId)) return $resp;
-}
+    if ($resp = $this->requireRole($r, ['admin','assignee','client_user'])) return $resp;
+    if (($r->attributes->get('auth_role') ?? null) !== 'admin') {
+        if ($resp = $this->forbidIfNoAccess($r, $jobId)) return $resp;
+    }
 
 
     $page = max(1,(int)$r->query('page',1));
@@ -2579,7 +2632,7 @@ private function notifyMessageEdit($message, array $actor, array $old, $new): vo
  * ========================= */
 public function canEditMessage(Request $r, int $messageId)
 {
-    if ($resp = $this->requireRole($r, ['admin','assignee'])) return $resp;
+    if ($resp = $this->requireRole($r, ['admin','assignee','client_user'])) return $resp;
 
     $message = DB::table('job_messages')->where('id', $messageId)->first();
     if (!$message) {
@@ -2600,13 +2653,13 @@ public function canEditMessage(Request $r, int $messageId)
      * Export job messages as Excel (CSV), Word (.doc via HTML), or PDF.
      * GET /api/job-details/{jobId}/export-chats?format=excel|pdf|word&rolewise=1
      */
-    public function exportChats(Request $r, int $jobId)
+public function exportChats(Request $r, int $jobId)
 {
     // Roles allowed
-    if ($resp = $this->requireRole($r, ['admin','assignee'])) return $resp;
+    if ($resp = $this->requireRole($r, ['admin','assignee','client_user'])) return $resp;
 
-    // If actor is assignee, ensure they can see this job
-    if (($r->attributes->get('auth_role') ?? null) === 'assignee') {
+    // If actor is not admin, ensure they can see this job
+    if (($r->attributes->get('auth_role') ?? null) !== 'admin') {
         if ($resp = $this->forbidIfNoAccess($r, $jobId)) return $resp;
     }
 
@@ -2887,10 +2940,10 @@ private function sanitizeSheetTitle2(string $t): string
 public function exportJobReport(Request $r, int $jobId)
 {
     // role guard
-    if ($resp = $this->requireRole($r, ['admin','assignee'])) return $resp;
+    if ($resp = $this->requireRole($r, ['admin','assignee','client_user'])) return $resp;
 
-    // assignee may only export jobs they can see
-    if (($r->attributes->get('auth_role') ?? null) === 'assignee') {
+    // non-admin roles may only export jobs they can see
+    if (($r->attributes->get('auth_role') ?? null) !== 'admin') {
         if ($resp = $this->forbidIfNoAccess($r, $jobId)) return $resp;
     }
 

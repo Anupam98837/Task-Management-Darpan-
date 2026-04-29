@@ -67,6 +67,7 @@ class JobNotifier
     public static function notify(string $ownerType, int $ownerId, array $to, array $data): void
     {
         if (empty($to)) {
+            Log::info('[notify] No valid recipients', ['data_action' => $data['action'] ?? null]);
             return;
         }
  
@@ -74,16 +75,34 @@ class JobNotifier
         $mailer = DynamicMail::resolveForOwner($ownerType, $ownerId);
         $payload = $data + ['owner' => ['type' => $ownerType, 'id' => $ownerId]];
  
-        foreach ($to as $rcp) {
-            try {
-                $addr = new Address($rcp['email'], $rcp['name'] ?? null);
+        Log::info('[notify] start', [
+            'ownerType'   => $ownerType,
+            'ownerId'     => $ownerId,
+            'mailer'      => $mailer,
+            'rcpt_count'  => count($to),
+            'action'      => $data['action'] ?? null,
+        ]);
+foreach ($to as $rcp) {
+    try {
+        $addr = new Address($rcp['email'], $rcp['name'] ?? null);
  
-                Mail::mailer($mailer)
-                    ->to($addr)                               // <- single argument
-                    ->send(new JobEventMail($payload));
-            } catch (\Throwable $e) {
-                // intentionally silent
-            }
-        }
+        Mail::mailer($mailer)
+            ->to($addr)                               // <- single argument
+            ->send(new JobEventMail($payload));
+ 
+        Log::info('[notify] sent', [
+            'to'     => $rcp['email'],
+            'action' => $data['action'] ?? null,
+            'mailer' => $mailer,
+        ]);
+    } catch (\Throwable $e) {
+        Log::warning('[notify] send failed', [
+            'to'  => $rcp,
+            'err' => $e->getMessage(),
+        ]);
+    }
+}
+ 
+ 
     }
 }

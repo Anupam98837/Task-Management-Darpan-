@@ -551,6 +551,7 @@ html.theme-dark .btn-secondary { background: rgba(255,255,255,0.02); border-colo
         </a>
         <div id="sm-assigned-people" class="submenu" role="group" aria-label="Assigned People submenu">
           <a href="/admin/assignedpeople/manage" class="nav-link">Manage Assigned People</a>
+          <a href="/admin/client-users/manage" class="nav-link">Manage Client Users</a>
         </div>
       </div>
       <!-- Expense Head -->
@@ -913,8 +914,11 @@ async function doLogout(){
       Swal.close();
       if(!ok && lastErr) console.warn(lastErr);
       await Swal.fire({ icon:'success', title:'Logged out', timer:1000, showConfirmButton:false });
-      sessionStorage.removeItem('token'); localStorage.removeItem('token');
-      window.location.href = '/admin/login';
+      sessionStorage.removeItem('token');
+      sessionStorage.removeItem('role');
+      localStorage.removeItem('token');
+      localStorage.removeItem('type');
+      window.location.href = '/';
     }catch(err){
       Swal.close();
       Swal.fire('Error', err.message || 'Unable to logout', 'error');

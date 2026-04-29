@@ -58,36 +58,7 @@ class AssignedPeopleController extends Controller
     /** Insert one notification row (no email). */
     private function persistNotification(array $payload): void
     {
-        $title     = (string)($payload['title']    ?? 'Notification');
-        $message   = (string)($payload['message']  ?? '');
-        $receivers = array_values(array_map(function($x){
-            return [
-                'id'   => isset($x['id']) ? (int)$x['id'] : null,
-                'role' => (string)($x['role'] ?? 'unknown'),
-                'read' => (int)($x['read'] ?? 0),
-            ];
-        }, $payload['receivers'] ?? []));
-
-        $metadata = $payload['metadata'] ?? [];
-        $type     = (string)($payload['type'] ?? 'general');
-        $linkUrl  = $payload['link_url'] ?? null;
-        $priority = in_array(($payload['priority'] ?? 'normal'), ['low','normal','high','urgent'], true)
-                    ? $payload['priority'] : 'normal';
-        $status   = in_array(($payload['status'] ?? 'active'), ['active','archived','deleted'], true)
-                    ? $payload['status'] : 'active';
-
-        DB::table('notifications')->insert([
-            'title'      => $title,
-            'message'    => $message,
-            'receivers'  => json_encode($receivers, JSON_UNESCAPED_UNICODE),
-            'metadata'   => $metadata ? json_encode($metadata, JSON_UNESCAPED_UNICODE) : null,
-            'type'       => $type,
-            'link_url'   => $linkUrl,
-            'priority'   => $priority,
-            'status'     => $status,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        app(\App\Services\NotificationDispatchService::class)->dispatch($payload);
     }
 
     /** Admin receivers: all admins (id, role=admin). */

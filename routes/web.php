@@ -40,6 +40,9 @@ Route::get('/admin/client/add', function () {
 Route::get('/admin/client/manage', function () {
     return view('pages/users/admin/pages/clients/manageClients');
 });
+Route::get('/admin/client-users/manage', function () {
+    return view('pages/users/admin/pages/clientUsers/manageClientUsers');
+});
 //Activity Logs
 Route::get('/admin/logs', function () {
     return view('pages/users/admin/pages/logs/activityLogs');
@@ -86,11 +89,20 @@ Route::get('/admin/jobs/edit/{id}', function ($id) {
 Route::get('/assignee/login', function () {
     return view('pages/users/assignee/pages/common/login');
 });
+Route::get('/client-user/login', function () {
+    return view('pages/users/clientUser/pages/common/login');
+});
 Route::get('/assignee/dashboard', function () {
     return view('pages/users/assignee/pages/common/dashboard');
 });
+Route::get('/client-user/dashboard', function () {
+    return view('pages/users/clientUser/pages/common/dashboard');
+});
  Route::get('/assignee/jobs/view', function () {
     return view('pages/users/assignee/pages/jobs/viewJobs');
+});
+Route::get('/client-user/jobs/view', function () {
+    return view('pages/users/clientUser/pages/jobs/viewJobs');
 });
 // Route::get('assignee/documents/upload', function () {
 //     return view('pages/users/assignee/pages/documents/uploadDocuments');
@@ -100,6 +112,9 @@ Route::get('admin/notifications', function () {
 });
 Route::get('assignee/notifications', function () {
     return view('pages/users/assignee/pages/notifications/notificationPage');
+});
+Route::get('client-user/notifications', function () {
+    return view('pages/users/clientUser/pages/notifications/notificationPage');
 });
 Route::get('admin/expenseHead/create', function () {
     return view('pages/users/admin/pages/expenseHead/createExpenseHead');
