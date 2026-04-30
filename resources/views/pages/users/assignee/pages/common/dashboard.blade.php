@@ -110,14 +110,11 @@
   }
 
   .kpi-card {
-    background: var(--surface);
-    border: 1px solid var(--border-color);
-    border-radius: 16px;
+    background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(255,255,255,.90));
+    border: 1px solid rgba(226,232,240,.9);
+    border-radius: 22px;
     padding: 20px;
-    box-shadow: var(--shadow-sm);
-    display: flex;
-    gap: 16px;
-    align-items: center;
+    box-shadow: 0 18px 36px rgba(15,23,42,.08);
     transition: var(--transition);
     position: relative;
     overflow: hidden;
@@ -126,13 +123,11 @@
   .kpi-card::before {
     content: '';
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 4px;
-    height: 100%;
-    background: var(--primary-color);
-    opacity: 0;
-    transition: opacity 0.3s ease;
+    inset: auto -18px -30px auto;
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    opacity: .18;
   }
 
   .kpi-card:hover {
@@ -141,44 +136,57 @@
     border-color: var(--primary-color);
   }
 
-  .kpi-card:hover::before {
-    opacity: 1;
+  .kpi-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    position: relative;
+    z-index: 1;
   }
 
   .kpi-icon {
-    width: 60px;
-    height: 60px;
-    border-radius: 14px;
+    width: 54px;
+    height: 54px;
+    border-radius: 16px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.5rem;
+    color: #fff;
+    font-size: 20px;
+    box-shadow: 0 12px 24px rgba(15,23,42,.12);
     flex-shrink: 0;
   }
 
-  .kpi-icon.assigned { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; }
-  .kpi-icon.due { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: #fff; }
-  .kpi-icon.overdue { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: #fff; }
-  .kpi-icon.completed { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: #fff; }
+  .kpi-card.assigned::before { background: linear-gradient(135deg, #8b5cf6, #ec4899); }
+  .kpi-card.due::before { background: linear-gradient(135deg, #f59e0b, #f97316); }
+  .kpi-card.overdue::before { background: linear-gradient(135deg, #ef4444, #f43f5e); }
+  .kpi-card.completed::before { background: linear-gradient(135deg, #10b981, #84cc16); }
+  .kpi-card.assigned .kpi-icon { background: linear-gradient(135deg, #8b5cf6, #ec4899); }
+  .kpi-card.due .kpi-icon { background: linear-gradient(135deg, #f59e0b, #f97316); }
+  .kpi-card.overdue .kpi-icon { background: linear-gradient(135deg, #ef4444, #f43f5e); }
+  .kpi-card.completed .kpi-icon { background: linear-gradient(135deg, #10b981, #84cc16); }
 
   .kpi-content {
     flex: 1;
   }
 
   .kpi-value {
-    font-size: 2rem;
+    font-size: 32px;
     font-weight: 800;
     color: var(--text-color);
+    margin-top: 14px;
     line-height: 1;
-    margin-bottom: 4px;
+    position: relative;
+    z-index: 1;
   }
 
   .kpi-label {
-    font-size: 0.875rem;
-    color: var(--muted-color);
-    font-weight: 600;
+    font-size: 12px;
+    color: #64748b;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: .6px;
   }
 
   /* Sections */
@@ -803,43 +811,51 @@
 
   <!-- KPI Cards -->
   <div class="kpi-grid">
-    <div class="kpi-card">
-      <div class="kpi-icon assigned">
-        <i class="fa-solid fa-tasks"></i>
+    <div class="kpi-card assigned">
+      <div class="kpi-top">
+        <div class="kpi-label">Assigned Jobs</div>
+        <div class="kpi-icon">
+          <i class="fa-solid fa-tasks"></i>
+        </div>
       </div>
       <div class="kpi-content">
         <div class="kpi-value" id="statAssigned">—</div>
-        <div class="kpi-label">Assigned Jobs</div>
       </div>
     </div>
 
-    <div class="kpi-card">
-      <div class="kpi-icon due">
-        <i class="fa-solid fa-calendar-day"></i>
+    <div class="kpi-card due">
+      <div class="kpi-top">
+        <div class="kpi-label">Due Today</div>
+        <div class="kpi-icon">
+          <i class="fa-solid fa-calendar-day"></i>
+        </div>
       </div>
       <div class="kpi-content">
         <div class="kpi-value" id="statDueToday">—</div>
-        <div class="kpi-label">Due Today</div>
       </div>
     </div>
 
-    <div class="kpi-card">
-      <div class="kpi-icon overdue">
-        <i class="fa-solid fa-exclamation-triangle"></i>
+    <div class="kpi-card overdue">
+      <div class="kpi-top">
+        <div class="kpi-label">Overdue</div>
+        <div class="kpi-icon">
+          <i class="fa-solid fa-exclamation-triangle"></i>
+        </div>
       </div>
       <div class="kpi-content">
         <div class="kpi-value" id="statOverdue">—</div>
-        <div class="kpi-label">Overdue</div>
       </div>
     </div>
 
-    <div class="kpi-card">
-      <div class="kpi-icon completed">
-        <i class="fa-solid fa-check-circle"></i>
+    <div class="kpi-card completed">
+      <div class="kpi-top">
+        <div class="kpi-label">Completed</div>
+        <div class="kpi-icon">
+          <i class="fa-solid fa-check-circle"></i>
+        </div>
       </div>
       <div class="kpi-content">
         <div class="kpi-value" id="statCompleted">—</div>
-        <div class="kpi-label">Completed</div>
       </div>
     </div>
   </div>
@@ -1070,6 +1086,7 @@
   // API endpoints
   const API = {
     myJobs: '/api/assignedpeople/my-jobs',
+    jobsFallback: '/api/job-details',
     enums: '/api/job-details/enums',
     completionStats: '/api/assignedpeople/my-completion-stats',
     statusStats: '/api/assignedpeople/status-stats',
@@ -1565,7 +1582,13 @@
     try {
       const queryString = buildQueryParams();
       console.log('🔍 Loading jobs with query:', queryString);
-      const data = await fetchJSON(`${API.myJobs}?${queryString}`);
+      let data = null;
+      try {
+        data = await fetchJSON(`${API.myJobs}?${queryString}`);
+      } catch (primaryError) {
+        console.warn('Primary assignee jobs endpoint failed, using fallback /api/job-details', primaryError);
+        data = await fetchJSON(`${API.jobsFallback}?${queryString}`);
+      }
 
       const jobs = Array.isArray(data.data) ? data.data : [];
       lastJobs = jobs;
@@ -1574,6 +1597,28 @@
 totalJobs = meta.total || 0;
 totalPages = meta.total_pages || 0;
 stats = meta.stats || { assigned: 0, due_today: 0, overdue: 0, completed: 0 };
+
+// Fallback endpoint does not return meta.stats: compute locally
+if (!meta.stats) {
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  stats = {
+    assigned: totalJobs,
+    due_today: 0,
+    overdue: 0,
+    completed: 0
+  };
+  jobs.forEach((job) => {
+    const status = String(job.status || '').toLowerCase();
+    const deadline = job.planned_deadline_at ? new Date(job.planned_deadline_at) : null;
+    if (status === 'completed') stats.completed += 1;
+    if (deadline && !isNaN(deadline)) {
+      const d = new Date(deadline); d.setHours(0,0,0,0);
+      if (d.getTime() === today.getTime()) stats.due_today += 1;
+      if (deadline < new Date() && status !== 'completed' && status !== 'cancelled') stats.overdue += 1;
+    }
+  });
+}
 
 updateStats();
 renderJobs(jobs);

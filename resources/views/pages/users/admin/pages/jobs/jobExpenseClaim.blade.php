@@ -3,6 +3,7 @@
  
 @section('title', 'Create Jobs')
 @section('content')
+@php($expensePortalRole = 'admin')
 @include('modules.jobs.jobExpenseClaim')
 @endsection
  

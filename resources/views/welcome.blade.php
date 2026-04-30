@@ -34,7 +34,7 @@
             display: flex;
             flex-direction: column;
             justify-content: center;
-            padding: 80px 60px;
+            padding: 40px 40px;
             position: relative;
             overflow: hidden;
         }
@@ -103,7 +103,7 @@
             display: flex;
             align-items: center;
             gap: 16px;
-            margin-bottom: 48px;
+            margin-bottom: 24px;
         }
         
         .logo-icon {
@@ -129,9 +129,12 @@
             filter: blur(8px);
         }
         
-        .logo-icon i {
-            font-size: 28px;
-            color: white;
+        .logo-icon img {
+            width: 34px;
+            height: 34px;
+            object-fit: contain;
+            display: block;
+            filter: brightness(0) invert(1);
         }
         
         .logo-text {
@@ -149,7 +152,7 @@
         
         .app-name {
             font-family: 'Outfit', sans-serif;
-            font-size: 32px;
+            font-size: 28px;
             font-weight: 800;
             background: linear-gradient(135deg, #ffffff 0%, #94a3b8 100%);
             -webkit-background-clip: text;
@@ -159,15 +162,15 @@
         }
         
         .hero-content {
-            margin-bottom: 56px;
+            margin-bottom: 24px;
         }
         
         .hero-title {
             font-family: 'Outfit', sans-serif;
-            font-size: 56px;
+            font-size: 42px;
             font-weight: 800;
             line-height: 1.1;
-            margin-bottom: 24px;
+            margin-bottom: 14px;
             background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -175,24 +178,24 @@
         }
         
         .hero-subtitle {
-            font-size: 18px;
+            font-size: 15px;
             color: #94a3b8;
-            line-height: 1.6;
+            line-height: 1.5;
             max-width: 500px;
             font-weight: 400;
         }
-        
+
         .features-list {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
         }
         
         .feature-item {
             display: flex;
             align-items: center;
-            gap: 16px;
-            padding: 16px 20px;
+            gap: 12px;
+            padding: 10px 12px;
             background: rgba(255, 255, 255, 0.03);
             border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 12px;
@@ -206,8 +209,8 @@
         }
         
         .feature-icon {
-            width: 40px;
-            height: 40px;
+            width: 36px;
+            height: 36px;
             background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(168, 85, 247, 0.2) 100%);
             border-radius: 10px;
             display: flex;
@@ -215,15 +218,15 @@
             justify-content: center;
             flex-shrink: 0;
         }
-        
+
         .feature-icon i {
             color: #a78bfa;
-            font-size: 18px;
+            font-size: 16px;
         }
-        
+
         .feature-text {
             color: #cbd5e1;
-            font-size: 15px;
+            font-size: 14px;
             font-weight: 500;
         }
         
@@ -232,7 +235,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 60px;
+            padding: 24px;
             position: relative;
         }
         
@@ -250,33 +253,33 @@
         
         .login-container {
             width: 100%;
-            max-width: 480px;
+            max-width: 520px;
             position: relative;
             z-index: 2;
         }
         
         .login-header {
             text-align: center;
-            margin-bottom: 48px;
+            margin-bottom: 22px;
         }
         
         .login-title {
             font-family: 'Outfit', sans-serif;
-            font-size: 36px;
+            font-size: 30px;
             font-weight: 800;
             color: #0f172a;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
         }
-        
+
         .login-subtitle {
             color: #64748b;
-            font-size: 16px;
+            font-size: 15px;
         }
         
         .portal-cards {
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 10px;
         }
         
         .portal-card {
@@ -285,7 +288,7 @@
             background: #ffffff;
             border: 2px solid #e2e8f0;
             border-radius: 20px;
-            padding: 32px 28px;
+            padding: 16px 18px;
             transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
             position: relative;
             overflow: hidden;
@@ -319,12 +322,12 @@
         .portal-content {
             display: flex;
             align-items: center;
-            gap: 24px;
+            gap: 16px;
         }
         
         .portal-icon-wrapper {
-            width: 72px;
-            height: 72px;
+            width: 52px;
+            height: 52px;
             background: linear-gradient(135deg, #eef2ff 0%, #f3e8ff 100%);
             border-radius: 16px;
             display: flex;
@@ -340,7 +343,7 @@
         }
         
         .portal-icon-wrapper i {
-            font-size: 32px;
+            font-size: 22px;
             color: #6366f1;
             transition: all 0.4s ease;
         }
@@ -355,10 +358,10 @@
         
         .portal-name {
             font-family: 'Outfit', sans-serif;
-            font-size: 22px;
+            font-size: 18px;
             font-weight: 700;
             color: #0f172a;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
             display: flex;
             align-items: center;
             gap: 10px;
@@ -376,16 +379,16 @@
         
         .portal-description {
             color: #64748b;
-            font-size: 14px;
-            line-height: 1.5;
+            font-size: 12px;
+            line-height: 1.4;
             margin: 0;
         }
-        
+
         .divider {
             display: flex;
             align-items: center;
             gap: 16px;
-            margin: 32px 0;
+            margin: 8px 0;
         }
         
         .divider-line {
@@ -404,8 +407,8 @@
         
         .footer-note {
             text-align: center;
-            margin-top: 40px;
-            padding-top: 32px;
+            margin-top: 12px;
+            padding-top: 12px;
             border-top: 1px solid #e2e8f0;
         }
         
@@ -556,12 +559,12 @@
             }
             
             .left-section {
-                padding: 60px 40px;
+                padding: 42px 28px;
                 min-height: 50vh;
             }
             
             .hero-title {
-                font-size: 42px;
+                font-size: 36px;
             }
             
             .features-list {
@@ -569,17 +572,17 @@
             }
             
             .right-section {
-                padding: 60px 40px;
+                padding: 28px 24px;
             }
         }
-        
+
         @media (max-width: 640px) {
             .left-section {
                 padding: 40px 24px;
             }
             
             .right-section {
-                padding: 40px 24px;
+                padding: 24px 18px;
             }
             
             .hero-title {
@@ -622,7 +625,7 @@
             <div class="content-wrapper">
                 <div class="logo-section">
                     <div class="logo-icon">
-                        <i class="fas fa-tasks"></i>
+                        <img src="{{ asset('/assets/media/images/legmedlogo_small.webp') }}" alt="Legmed Logo">
                     </div>
                     <div class="logo-text">
                         <span class="company-name">Legmed</span>
@@ -717,6 +720,12 @@
                         </div>
                     </a>
 
+                    <div class="divider">
+                        <div class="divider-line"></div>
+                        <span class="divider-text">or</span>
+                        <div class="divider-line"></div>
+                    </div>
+
                     <a href="/client-user/login" class="portal-card">
                         <div class="portal-content">
                             <div class="portal-icon-wrapper">
@@ -724,7 +733,7 @@
                             </div>
                             <div class="portal-info">
                                 <h3 class="portal-name">
-                                    Client User Portal
+                                    Client Portal
                                     <i class="fas fa-arrow-right portal-arrow"></i>
                                 </h3>
                                 <p class="portal-description">

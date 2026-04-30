@@ -38,81 +38,118 @@
     body.no-scroll{ overflow:hidden; }
     .layout{ display:grid; grid-template-columns: var(--rail-w) 1fr; min-height:100svh; }
 
-    /* ===== Rail (mini sidebar) ===== */
+    /* ===== Rail (mini sidebar) — refined ===== */
     .rail{
       position:sticky; top:0; height:100svh;
-      background:#fff; border-right:1px solid var(--border-color,#e5e7eb);
-      display:flex; flex-direction:column; align-items:center; gap:8px; padding:10px 8px;
-      z-index:1001; box-shadow: var(--elev-1);
-      backdrop-filter: saturate(1.4);
+      background: linear-gradient(180deg, #ffffff 0%, #fafbfd 100%);
+      border-right:1px solid var(--border-color,#e5e7eb);
+      display:flex; flex-direction:column; align-items:center; gap:6px; padding:12px 10px;
+      z-index:1001; box-shadow: 0 1px 2px rgba(15,23,42,.04);
     }
-    .rail .logo{
-      width:48px; height:48px; display:flex; align-items:center; justify-content:center;
-    }
-    .rail .rail-nav{ display:flex; flex-direction:column; gap:6px; margin-top:8px; width:100%; }
+    .rail .logo{ width:48px; height:48px; display:flex; align-items:center; justify-content:center; margin-bottom:4px; }
+    .rail .rail-nav{ display:flex; flex-direction:column; gap:4px; margin-top:6px; width:100%; }
     .rail .rail-btn{
-      width:100%; height:44px; border:0; background:transparent; color:var(--text-color);
+      width:100%; height:42px; border:0; background:transparent; color:var(--text-color);
       border-radius:10px; display:flex; align-items:center; justify-content:center;
       transition: background .18s var(--ease), color .18s var(--ease), transform .12s var(--ease);
       position:relative; outline:none;
     }
-    .rail .rail-btn:hover{ background: var(--light-color); color: var(--accent-color,#6366f1); transform: translateY(-1px); }
-    .rail .rail-btn:focus-visible{ outline:2px solid var(--accent-color,#6366f1); outline-offset:2px; }
-    .rail .rail-btn.active{ background: rgba(79,70,229,.12); color: var(--accent-color); }
-    .rail .rail-btn .fa{ font-size:18px; color: var(--primary-color,#4f46e5); }
+    .rail .rail-btn:hover{ background: rgba(3,105,161,.08); color: var(--primary-color); transform: translateY(-1px); }
+    .rail .rail-btn:hover .fa{ color: var(--primary-color); }
+    .rail .rail-btn:focus-visible{ outline:2px solid var(--primary-color); outline-offset:2px; }
+    .rail .rail-btn.active{
+      background: linear-gradient(135deg, rgba(3,105,161,.12), rgba(14,165,233,.10));
+      color: var(--primary-color);
+      box-shadow: inset 0 0 0 1px rgba(3,105,161,.18);
+    }
+    .rail .rail-btn.active::before{
+      content:""; position:absolute; left:-10px; top:8px; bottom:8px; width:3px;
+      border-radius:0 4px 4px 0; background: linear-gradient(180deg, var(--primary-color), var(--secondary-color));
+    }
+    .rail .rail-btn .fa{ font-size:16px; color: var(--muted-color,#64748b); transition: color .18s var(--ease); }
+    .rail .rail-btn.active .fa{ color: var(--primary-color); }
     .rail .spacer{ flex:1; }
-    .rail .rail-bottom{ display:flex; flex-direction:column; gap:6px; width:100%; }
+    .rail .rail-bottom{ display:flex; flex-direction:column; gap:4px; width:100%; padding-top:8px; border-top:1px dashed var(--border-color); }
 
-    /* ===== Drawer ===== */
+    /* ===== Drawer — refined ===== */
     .drawer{
       position:fixed; top:0; left:var(--rail-w); height:100svh; width:var(--drawer-w);
       background:#fff; border-right:1px solid var(--border-color);
-      box-shadow: var(--elev-2);
+      box-shadow: 0 8px 24px -8px rgba(15,23,42,.10);
       transform: translateX(-100%); opacity:0; visibility:hidden;
-      transition: transform .22s var(--ease), opacity .22s var(--ease), visibility .22s var(--ease);
+      transition: transform .24s var(--ease), opacity .24s var(--ease), visibility .24s var(--ease);
       z-index:1000; display:flex; flex-direction:column;
-      backdrop-filter: saturate(1.6) blur(4px);
     }
     .drawer.open{ transform:none; opacity:1; visibility:visible; }
     .drawer[aria-hidden="true"]{ pointer-events:none; }
 
     .drawer .drawer-head{
       padding:12px 14px; border-bottom:1px solid var(--border-color);
-      display:flex; align-items:center; justify-content:space-between;
+      display:flex; align-items:center; justify-content:space-between; gap:8px;
+      background: linear-gradient(180deg, #ffffff, #fafbfd);
     }
     .fa-times{margin:0 !important;}
 
-    .drawer .nav-scroll{ flex:1; overflow:auto; padding:12px; display:flex; flex-direction:column; gap:8px; }
+    .drawer .nav-scroll{ flex:1; overflow:auto; padding:10px 10px 14px; display:flex; flex-direction:column; gap:3px; }
+    .drawer .nav-section-title{
+      padding: 10px 10px 4px; font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .8px; color: var(--muted-color);
+    }
 
     /* Primary links + submenu */
     .drawer .nav-link{
       display:flex; align-items:center; gap:10px;
-      padding:10px 12px; border-radius:10px; color:var(--text-color);
-      text-decoration:none; transition: background .16s var(--ease), color .16s var(--ease), border-color .16s var(--ease);
+      padding: 8px 11px; border-radius:8px; color:var(--text-color);
+      text-decoration:none; transition: background .14s var(--ease), color .14s var(--ease);
       border:1px solid transparent !important; position:relative;
-      font-size:14px; font-weight:500;
+      font-size:13px; font-weight:500; letter-spacing: .1px;
     }
-    .drawer .nav-link i{ color: var(--primary-color,#4f46e5); min-width:18px; text-align:center; }
-    .drawer .nav-link:hover{ background: var(--light-color); border-color: var(--border-color); color: var(--accent-color); }
-    .drawer .nav-link:focus-visible{ outline:2px solid var(--accent-color,#6366f1); outline-offset:2px; }
+    .drawer .nav-link i{ color: var(--muted-color,#64748b); min-width:16px; text-align:center; font-size: 13px; transition: color .14s var(--ease); }
+    .drawer .nav-link:hover{ background: rgba(3,105,161,.06); color: var(--primary-color); }
+    .drawer .nav-link:hover i{ color: var(--primary-color); }
+    .drawer .nav-link:focus-visible{ outline:2px solid var(--primary-color); outline-offset:2px; }
     .drawer .nav-link.active{
-      background: rgba(79,70,229,.10); color: var(--accent-color);
-      border-color: var(--border-color); box-shadow: var(--elev-1);
+      background: linear-gradient(135deg, rgba(3,105,161,.10), rgba(14,165,233,.08));
+      color: var(--primary-color); font-weight:600;
     }
+    .drawer .nav-link.active i{ color: var(--primary-color); }
     .drawer .nav-link.active::before{
-      content:""; position:absolute; left:-12px; top:8px; bottom:8px; width:4px; border-radius:6px; background: var(--accent-color,#6366f1);
+      content:""; position:absolute; left:-10px; top:6px; bottom:6px; width:3px; border-radius:0 4px 4px 0;
+      background: linear-gradient(180deg, var(--primary-color), var(--secondary-color));
     }
 
-    .nav-group{ display:flex; flex-direction:column; gap:6px; }
+    .nav-group{ display:flex; flex-direction:column; gap:3px; }
     .group-toggle{ display:flex; align-items:center; gap:10px; cursor:pointer; user-select:none; }
-    .group-toggle .chev{ margin-left:auto; color:var(--text-color); transition: transform .18s var(--ease); }
-    .group-toggle.open .chev{ transform: rotate(180deg); }
+    .group-toggle .chev{ margin-left:auto; color:var(--muted-color); transition: transform .18s var(--ease); font-size: 10px; }
+    .group-toggle.open .chev{ transform: rotate(180deg); color: var(--primary-color); }
 
     .submenu{
-      display:none; flex-direction:column; gap:4px; margin-left:6px; padding-left:6px; border-left:1px dashed var(--border-color);
+      display:none; flex-direction:column; gap:2px; margin-left: 14px; padding-left: 8px;
+      border-left: 1.5px solid var(--border-color); margin-top: 2px;
     }
     .submenu.open{ display:flex; animation:fadeIn .2s var(--ease); }
-    .submenu .nav-link{ font-size:13px; padding:8px 12px 8px 36px; border-radius:8px; }
+    .submenu .nav-link{ font-size:12px; padding: 6px 10px 6px 14px; border-radius:6px; font-weight: 500; }
+    .submenu .nav-link::before{ display:none; }
+    .submenu .nav-link.active{ background: rgba(3,105,161,.06); }
+
+    /* Pin button */
+    .drawer-pin-btn{
+      width:30px; height:30px; border-radius: 8px;
+      border: 1px solid var(--border-color); background: #fff;
+      color: var(--muted-color); display:inline-flex; align-items:center; justify-content:center;
+      cursor: pointer; transition: var(--transition); font-size: 12px;
+    }
+    .drawer-pin-btn:hover{ background: var(--light-color); color: var(--primary-color); border-color: rgba(3,105,161,.25); }
+    .drawer-pin-btn.pinned{
+      background: linear-gradient(135deg, rgba(3,105,161,.14), rgba(14,165,233,.10));
+      color: var(--primary-color); border-color: rgba(3,105,161,.30);
+      box-shadow: inset 0 0 0 1px rgba(3,105,161,.12);
+    }
+    .drawer-pin-btn.pinned i{ transform: rotate(-25deg); }
+    .drawer-pin-btn i{ transition: transform .2s var(--ease); margin: 0 !important; }
+
+    .layout.is-pinned .panel{ margin-left: var(--drawer-w); }
+    .layout.is-pinned .drawer{ box-shadow: none; }
 
     @keyframes fadeIn{ from{opacity:0; transform:translateY(-4px);} to{opacity:1; transform:translateY(0);} }
 
@@ -447,7 +484,7 @@ html.theme-dark .btn-secondary { background: rgba(255,255,255,0.02); border-colo
   @stack('styles')
 </head>
 <body>
-<div class="layout">
+<div class="layout" id="layoutRoot">
   <!-- ===== Left: Icon Rail ===== -->
   <aside class="rail" id="rail" aria-label="Icon rail">
     <a href="/dashboard" class="logo mt-1" aria-label="Home">
@@ -485,12 +522,19 @@ html.theme-dark .btn-secondary { background: rgba(255,255,255,0.02); border-colo
   <aside class="drawer" id="drawer" aria-label="Navigation drawer" aria-hidden="true">
     <div class="drawer-head">
       <a href="/dashboard" class="d-inline-flex align-items-center">
-        <img id="drawerLogo" src="{{ asset('/assets/media/images/legmedlogo.png') }}" alt="Logo" style="max-height:36px;width:auto;">
+        <img id="drawerLogo" src="{{ asset('/assets/media/images/legmedlogo.png') }}" alt="Logo" style="max-height:34px;width:auto;">
       </a>
-      <button class="btn btn-sm btn-light d-lg-none" id="closeDrawer" aria-label="Close drawer"><i class="fa fa-times"></i></button>
+      <div class="d-flex align-items-center gap-2">
+        <button type="button" class="drawer-pin-btn d-none d-lg-inline-flex" id="drawerPinBtn"
+                title="Keep sidebar open" aria-label="Pin sidebar" aria-pressed="false">
+          <i class="fa-solid fa-thumbtack"></i>
+        </button>
+        <button class="btn btn-sm btn-light d-lg-none" id="closeDrawer" aria-label="Close drawer"><i class="fa fa-times"></i></button>
+      </div>
     </div>
 
     <div class="nav-scroll">
+      <div class="nav-section-title">Main</div>
       <a href="/dashboard" class="nav-link"><i class="fa-solid fa-gauge"></i><span>Dashboard</span></a>
 
       <!-- Clients -->
@@ -502,6 +546,7 @@ html.theme-dark .btn-secondary { background: rgba(255,255,255,0.02); border-colo
         <div id="sm-clients" class="submenu" role="group" aria-label="Clients submenu">
           <a href="/admin/client/add" class="nav-link">Add Client</a>
           <a href="/admin/client/manage" class="nav-link">Manage Client</a>
+          <a href="/admin/client-users/manage" class="nav-link">Manage Client Users</a>
         </div>
       </div>
 
@@ -551,7 +596,6 @@ html.theme-dark .btn-secondary { background: rgba(255,255,255,0.02); border-colo
         </a>
         <div id="sm-assigned-people" class="submenu" role="group" aria-label="Assigned People submenu">
           <a href="/admin/assignedpeople/manage" class="nav-link">Manage Assigned People</a>
-          <a href="/admin/client-users/manage" class="nav-link">Manage Client Users</a>
         </div>
       </div>
       <!-- Expense Head -->
@@ -696,15 +740,40 @@ html.theme-dark .btn-secondary { background: rgba(255,255,255,0.02); border-colo
 document.addEventListener('DOMContentLoaded', ()=>{
   console.log('[Notification Init]');
 
-  const body    = document.body;
-  const rail    = document.getElementById('rail');
-  const drawer  = document.getElementById('drawer');
-  const panel   = document.getElementById('panel');
-  const overlay = document.getElementById('overlay');
+  const body       = document.body;
+  const layoutRoot = document.getElementById('layoutRoot');
+  const rail       = document.getElementById('rail');
+  const drawer     = document.getElementById('drawer');
+  const panel      = document.getElementById('panel');
+  const overlay    = document.getElementById('overlay');
+  const pinBtn     = document.getElementById('drawerPinBtn');
 
   const openDrawerMobile     = document.getElementById('openDrawerMobile');
   const openDrawerMobileTop  = document.getElementById('openDrawerMobileTop');
   const closeDrawerBtn       = document.getElementById('closeDrawer');
+
+  /* ---- Pin / lock-open (persisted) ---- */
+  const PIN_KEY = 'sidebarPinned:admin';
+  let isPinned  = (localStorage.getItem(PIN_KEY) === '1');
+  function applyPinState(){
+    if (!layoutRoot) return;
+    layoutRoot.classList.toggle('is-pinned', isPinned);
+    if (pinBtn){
+      pinBtn.classList.toggle('pinned', isPinned);
+      pinBtn.setAttribute('aria-pressed', isPinned ? 'true' : 'false');
+      pinBtn.setAttribute('title', isPinned ? 'Unpin sidebar (close on hover-out)' : 'Pin sidebar open');
+    }
+    if (isPinned){
+      drawer?.classList.add('open');
+      drawer?.setAttribute('aria-hidden','false');
+    }
+  }
+  pinBtn?.addEventListener('click', (e)=>{
+    e.preventDefault();
+    isPinned = !isPinned;
+    localStorage.setItem(PIN_KEY, isPinned ? '1' : '0');
+    applyPinState();
+  });
 
   const THEME_KEY   = 'theme';
   const themeIcon   = document.getElementById('themeIcon');
@@ -748,9 +817,10 @@ document.addEventListener('DOMContentLoaded', ()=>{
   function openDrawerDesktop(){
     add(drawer,'open');
     drawer.setAttribute('aria-hidden','false');
-    if(isDesktop()) add(panel,'shifted');
+    if(isDesktop() && !isPinned) add(panel,'shifted');
   }
   function closeDrawerDesktop(){
+    if (isPinned) return; // never auto-close while pinned
     rem(drawer,'open');
     drawer.setAttribute('aria-hidden','true');
     rem(panel,'shifted');
@@ -849,19 +919,25 @@ document.addEventListener('DOMContentLoaded', ()=>{
     }
   });
 
-  // Hover open/close (left drawer)
+  // Apply persisted pin state
+  applyPinState();
+
+  // Hover open/close (left drawer) — disabled while pinned
   let hoverTimer;
   function clearHoverTimer(){ if(hoverTimer){ clearTimeout(hoverTimer); hoverTimer=null; } }
   rail?.addEventListener('mouseenter', ()=>{
+    if(isPinned) return;
     if(isFinePointer() && isDesktop()){ clearHoverTimer(); openDrawerDesktop(); }
   });
   rail?.addEventListener('mouseleave', ()=>{
+    if(isPinned) return;
     if(isFinePointer() && isDesktop()){
-      hoverTimer = setTimeout(()=>{ if(!overlay.classList.contains('active')) closeDrawerDesktop(); }, 140);
+      hoverTimer = setTimeout(()=>{ if(!overlay.classList.contains('active')) closeDrawerDesktop(); }, 160);
     }
   });
   drawer?.addEventListener('mouseenter', clearHoverTimer);
   drawer?.addEventListener('mouseleave', ()=>{
+    if(isPinned) return;
     if(isFinePointer() && isDesktop()){
       hoverTimer = setTimeout(()=>{ if(!overlay.classList.contains('active')) closeDrawerDesktop(); }, 140);
     }

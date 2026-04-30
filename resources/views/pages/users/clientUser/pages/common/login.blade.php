@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <title>Client User Portal Login - Darpan</title>
+  <title>Client Portal Login - Darpan</title>
   <meta name="csrf-token" content="{{ csrf_token() }}"/>
 
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
@@ -162,9 +162,12 @@
       filter: blur(8px);
     }
 
-    .logo-icon i {
-      font-size: 24px;
-      color: white;
+    .logo-icon img {
+      width: 28px;
+      height: 28px;
+      object-fit: contain;
+      display: block;
+      filter: brightness(0) invert(1);
     }
 
     .logo-text {
@@ -437,18 +440,18 @@
       <div class="content">
         <div class="logo-section">
           <div class="logo-icon">
-            <i class="fas fa-building-user"></i>
+            <img src="{{ asset('/assets/media/images/legmedlogo.png') }}" alt="Legmed Logo">
           </div>
           <div class="logo-text">
             <span class="company-name">Legmed</span>
-            <span class="app-name">Client Access</span>
+            <span class="app-name">Darpan</span>
           </div>
         </div>
 
         <div class="illustration-panel">
           <h1 class="illustration-title">View work across your assigned client scope.</h1>
           <p class="illustration-text">
-            Client users can sign in to review jobs, deadlines, documents, and related activity for the client trees assigned to them.
+            Clients can sign in to review jobs, deadlines, documents, and related activity for the client trees assigned to them.
           </p>
 
           <div class="features-list">
@@ -482,11 +485,11 @@
 
         <div class="portal-badge">
           <i class="fas fa-building-user"></i>
-          Client User Portal
+          Client Portal
         </div>
 
         <h5 class="auth-title">Welcome Back</h5>
-        <p class="auth-sub">Sign in to access your client-scoped dashboard</p>
+        <p class="auth-sub">Sign in to access your client dashboard</p>
 
         <div class="mb-3">
           <label for="identifier" class="form-label">Email or Username</label>
@@ -581,10 +584,14 @@
         btnIcon.className = 'fas fa-arrow-right ms-2';
 
         if(res.ok && data?.access_token){
+          sessionStorage.removeItem('token');
+          sessionStorage.removeItem('role');
+          localStorage.removeItem('token');
+          localStorage.removeItem('role');
+          localStorage.removeItem('type');
+
           sessionStorage.setItem('token', data.access_token);
-          localStorage.setItem('token', data.access_token);
           sessionStorage.setItem('role', data?.tokenable_type || 'client_user');
-          localStorage.setItem('type', data?.tokenable_type || 'client_user');
 
           Swal.fire({
             icon:'success',

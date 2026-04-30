@@ -1,4 +1,4 @@
-@extends('pages.users.assignee.layout.structure')
+@extends('pages.users.clientUser.layout.structure')
 
 @php
   $portalPrefix = 'client-user';

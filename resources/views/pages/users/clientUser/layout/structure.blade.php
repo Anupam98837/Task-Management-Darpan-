@@ -485,7 +485,7 @@ html.theme-dark .btn-secondary { background: rgba(255,255,255,0.02); border-colo
   @stack('styles')
 </head>
 <body>
-<div class="layout" id="layoutRoot">
+<div class="layout">
 
   <!-- ===== Left: Icon Rail ===== -->
   <aside class="rail" id="rail" aria-label="Icon rail">
@@ -501,12 +501,9 @@ html.theme-dark .btn-secondary { background: rgba(255,255,255,0.02); border-colo
       <button class="rail-btn group-kicker" data-section="jobs" type="button" title="Jobs">
         <i class="fa-solid fa-briefcase"></i>
       </button>
-      @if($isClientUser)
-      <!-- Documents (client-user only, view-only) -->
       <a class="rail-btn" href="{{ $portalDocumentsUrl }}" title="Documents" id="railDocuments">
         <i class="fa-regular fa-folder-open"></i>
       </a>
-      @endif
     </nav>
 
     <div class="spacer"></div>
@@ -528,21 +525,13 @@ html.theme-dark .btn-secondary { background: rgba(255,255,255,0.02); border-colo
   <aside class="drawer" id="drawer" aria-label="Navigation drawer" aria-hidden="true">
     <div class="drawer-head">
       <a href="{{ $portalDashboardUrl }}" class="d-inline-flex align-items-center">
-        <img id="drawerLogo" src="{{ asset('/assets/media/images/legmedlogo.png') }}" alt="Logo" style="max-height:34px;width:auto;">
+        <img id="drawerLogo" src="{{ asset('/assets/media/images/legmedlogo.png') }}" alt="Logo" style="max-height:36px;width:auto;">
       </a>
-      <div class="d-flex align-items-center gap-2">
-        <button type="button" class="drawer-pin-btn d-none d-lg-inline-flex" id="drawerPinBtn"
-                title="Keep sidebar open" aria-label="Pin sidebar" aria-pressed="false">
-          <i class="fa-solid fa-thumbtack"></i>
-        </button>
-        <button class="btn btn-sm btn-light d-lg-none" id="closeDrawer" aria-label="Close drawer"><i class="fa fa-times"></i></button>
-      </div>
+      <button class="btn btn-sm btn-light d-lg-none" id="closeDrawer" aria-label="Close drawer"><i class="fa fa-times"></i></button>
     </div>
 
     <div class="nav-scroll">
-      <div class="nav-section-title">Main</div>
       <a href="{{ $portalDashboardUrl }}" class="nav-link"><i class="fa-solid fa-gauge"></i><span>Dashboard</span></a>
-
       <!-- Jobs -->
       <div class="nav-group" data-section="jobs">
         <a href="#" class="nav-link group-toggle" data-target="sm-jobs" aria-expanded="false">
@@ -551,18 +540,12 @@ html.theme-dark .btn-secondary { background: rgba(255,255,255,0.02); border-colo
         </a>
         <div id="sm-jobs" class="submenu" role="group" aria-label="Jobs submenu">
           <a href="{{ $portalJobsUrl }}" class="nav-link">View Jobs</a>
-          @unless($isClientUser)
-            <a href="/job-expense/claim" class="nav-link">Claim Job Expenses</a>
-          @endunless
         </div>
       </div>
 
-      @if($isClientUser)
-      <div class="nav-section-title">Records</div>
       <a href="{{ $portalDocumentsUrl }}" class="nav-link" id="navDocuments">
         <i class="fa-regular fa-folder-open"></i><span>Documents</span>
       </a>
-      @endif
     </div>
 
     <div class="drawer-foot">
@@ -677,41 +660,15 @@ html.theme-dark .btn-secondary { background: rgba(255,255,255,0.02); border-colo
 
 <script>
 document.addEventListener('DOMContentLoaded', ()=>{
-  const body       = document.body;
-  const layoutRoot = document.getElementById('layoutRoot');
-  const rail       = document.getElementById('rail');
-  const drawer     = document.getElementById('drawer');
-  const panel      = document.getElementById('panel');
-  const overlay    = document.getElementById('overlay');
-  const pinBtn     = document.getElementById('drawerPinBtn');
+  const body    = document.body;
+  const rail    = document.getElementById('rail');
+  const drawer  = document.getElementById('drawer');
+  const panel   = document.getElementById('panel');
+  const overlay = document.getElementById('overlay');
 
   const openDrawerMobile     = document.getElementById('openDrawerMobile');
   const openDrawerMobileTop  = document.getElementById('openDrawerMobileTop');
   const closeDrawerBtn       = document.getElementById('closeDrawer');
-
-  /* ------- Pin / lock-open state (persisted) ------- */
-  const PIN_KEY = 'sidebarPinned:' + @json($portalPrefix);
-  let isPinned = (localStorage.getItem(PIN_KEY) === '1');
-
-  function applyPinState(){
-    if (!layoutRoot) return;
-    layoutRoot.classList.toggle('is-pinned', isPinned);
-    if (pinBtn){
-      pinBtn.classList.toggle('pinned', isPinned);
-      pinBtn.setAttribute('aria-pressed', isPinned ? 'true' : 'false');
-      pinBtn.setAttribute('title', isPinned ? 'Unpin sidebar (close on hover-out)' : 'Pin sidebar open');
-    }
-    if (isPinned){
-      drawer?.classList.add('open');
-      drawer?.setAttribute('aria-hidden','false');
-    }
-  }
-  function togglePin(){
-    isPinned = !isPinned;
-    localStorage.setItem(PIN_KEY, isPinned ? '1' : '0');
-    applyPinState();
-  }
-  pinBtn?.addEventListener('click', (e)=>{ e.preventDefault(); togglePin(); });
 
   const THEME_KEY   = @json($portalThemeKey);
   const themeIcon   = document.getElementById('themeIcon');
@@ -738,10 +695,9 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
   function openDrawerDesktop(){
     add(drawer,'open'); drawer.setAttribute('aria-hidden','false');
-    if(isDesktop() && !isPinned) add(panel,'shifted');
+    if(isDesktop()) add(panel,'shifted');
   }
   function closeDrawerDesktop(){
-    if (isPinned) return; // pinned drawer never auto-closes
     rem(drawer,'open'); drawer.setAttribute('aria-hidden','true'); rem(panel,'shifted');
   }
   function openNavMobile(){ add(drawer,'open'); drawer.setAttribute('aria-hidden','false'); setOverlay(true); }
@@ -780,7 +736,9 @@ document.addEventListener('DOMContentLoaded', ()=>{
     }
   });
   const DASHBOARD_PATH = @json(parse_url($portalDashboardUrl, PHP_URL_PATH) ?: $portalDashboardUrl);
+  const DOCUMENTS_PATH = @json(parse_url($portalDocumentsUrl, PHP_URL_PATH) ?: $portalDocumentsUrl);
   if(path === DASHBOARD_PATH){ document.getElementById('railDashboard')?.classList.add('active'); }
+  if(path === DOCUMENTS_PATH){ document.getElementById('railDocuments')?.classList.add('active'); }
 
   // Theme
   function setLogos(mode){
@@ -813,10 +771,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
   toggleTheme?.addEventListener('click', toggleThemeNow);
   toggleThemeDrawer?.addEventListener('click', toggleThemeNow);
 
-  // Apply persisted pin state once everything is ready
-  applyPinState();
-
-  // Esc to close left drawer (does nothing if pinned)
+  // Esc to close left drawer
   document.addEventListener('keydown', (e)=>{
     if(e.key === 'Escape'){
       if(document.getElementById('notifDrawer')?.classList.contains('open')) return; // notif drawer handles its own
@@ -825,24 +780,19 @@ document.addEventListener('DOMContentLoaded', ()=>{
     }
   });
 
-  // Hover open/close left drawer (skipped while pinned)
+  // Hover open/close left drawer
   let hoverTimer;
   function clearHoverTimer(){ if(hoverTimer){ clearTimeout(hoverTimer); hoverTimer=null; } }
-  rail?.addEventListener('mouseenter', ()=>{
-    if(isPinned) return;
-    if(window.matchMedia('(pointer:fine)').matches && window.matchMedia('(min-width: 992px)').matches){ clearHoverTimer(); openDrawerDesktop(); }
-  });
+  rail?.addEventListener('mouseenter', ()=>{ if(window.matchMedia('(pointer:fine)').matches && window.matchMedia('(min-width: 992px)').matches){ clearHoverTimer(); openDrawerDesktop(); }});
   rail?.addEventListener('mouseleave', ()=>{
-    if(isPinned) return;
     if(window.matchMedia('(pointer:fine)').matches && window.matchMedia('(min-width: 992px)').matches){
-      hoverTimer = setTimeout(()=>{ if(!overlay.classList.contains('active')) closeDrawerDesktop(); }, 160);
+      hoverTimer = setTimeout(()=>{ if(!overlay.classList.contains('active')) closeDrawerDesktop(); }, 140);
     }
   });
   drawer?.addEventListener('mouseenter', clearHoverTimer);
   drawer?.addEventListener('mouseleave', ()=>{
-    if(isPinned) return;
     if(window.matchMedia('(pointer:fine)').matches && window.matchMedia('(min-width: 992px)').matches){
-      hoverTimer = setTimeout(()=>{ if(!overlay.classList.contains('active')) closeDrawerDesktop(); }, 160);
+      hoverTimer = setTimeout(()=>{ if(!overlay.classList.contains('active')) closeDrawerDesktop(); }, 140);
     }
   });
 
@@ -896,23 +846,14 @@ document.addEventListener('DOMContentLoaded', ()=>{
   // Resize behavior
   window.addEventListener('resize', ()=>{
     if(!window.matchMedia('(min-width: 992px)').matches){
-      // Mobile: pin has no effect, drawer should be hidden by default
       rem(panel,'shifted');
-      layoutRoot?.classList.remove('is-pinned');
-      if(!overlay.classList.contains('active') && !isPinned){
-        rem(drawer,'open'); drawer.setAttribute('aria-hidden','true');
-      }
+      if(!overlay.classList.contains('active')) closeDrawerDesktop();
     } else {
-      // Re-apply pin state on desktop
-      if(isPinned){
-        layoutRoot?.classList.add('is-pinned');
-        add(drawer,'open'); drawer.setAttribute('aria-hidden','false');
-        rem(panel,'shifted'); // pinned uses layout grid, not the shifted margin
-      } else if(drawer.classList.contains('open')){
-        add(panel,'shifted');
-      } else {
-        rem(panel,'shifted');
+      if(overlay.classList.contains('active')) {
+        // left nav overlay only
+        // (notification drawer uses its own overlay)
       }
+      if(drawer.classList.contains('open')) add(panel,'shifted'); else rem(panel,'shifted');
     }
   });
 });
@@ -1178,6 +1119,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
     }
   });
   if (path === DASHBOARD_PATH) { document.getElementById('railDashboard')?.classList.add('active'); }
+  if (path === DOCUMENTS_PATH) { document.getElementById('railDocuments')?.classList.add('active'); }
 })();
 </script>
 </body>

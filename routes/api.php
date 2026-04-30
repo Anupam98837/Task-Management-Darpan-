@@ -20,6 +20,7 @@ use App\Http\Controllers\API\ExpenseHeadController;
 use App\Http\Controllers\API\ExpenseController;
 use App\Http\Controllers\API\JobExpenseClaimController;
 use App\Http\Controllers\API\FcmTokenController;
+use App\Http\Controllers\API\AuthContextController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -46,6 +47,9 @@ Route::prefix('client-users')->group(function () {
     Route::post('/logout', [ClientUserController::class, 'logout'])->middleware('check.role:client_user');
     Route::get('/me', [ClientUserController::class, 'me'])->middleware('check.role:client_user');
 });
+
+Route::get('/auth/context', AuthContextController::class)
+    ->middleware('check.role:admin,assignee,client_user');
 
 
 // READ (admin or user)
@@ -174,7 +178,7 @@ Route::prefix('job-details')->middleware('check.role:admin,assignee')->group(fun
 /* =========================================
 |  READ / MIXED OPS (admin,user)
 |========================================= */
-Route::prefix('job-details')->middleware('check.role:admin,assignee')->group(function () {
+Route::prefix('job-details')->middleware('check.role:admin,assignee,client_user')->group(function () {
     // Lists / reads
     Route::get('/',                 [JobDetailsController::class, 'index']);
     Route::get('/enums',            [JobDetailsController::class, 'enums']);
@@ -206,18 +210,6 @@ Route::get('/{job}/export-chats', [\App\Http\Controllers\API\JobDetailsControlle
 // export report
 Route::get('/{job}/export-report', [JobDetailsController::class, 'exportJobReport']);
 
-});
-
-Route::prefix('job-details')->middleware('check.role:client_user')->group(function () {
-    Route::get('/', [JobDetailsController::class, 'index']);
-    Route::get('/enums', [JobDetailsController::class, 'enums']);
-    Route::get('/{id}', [JobDetailsController::class, 'show'])->whereNumber('id');
-    Route::get('/{job}/assignees', [JobDetailsController::class, 'listAssignees'])->whereNumber('job');
-    Route::get('/{job}/messages', [JobDetailsController::class, 'listMessages'])->whereNumber('job');
-    Route::get('messages/{messageId}/can-edit', [JobDetailsController::class, 'canEditMessage'])
-        ->name('client-job-messages.can-edit');
-    Route::get('/{job}/export-chats', [JobDetailsController::class, 'exportChats']);
-    Route::get('/{job}/export-report', [JobDetailsController::class, 'exportJobReport']);
 });
 
 /* =========================================
@@ -261,6 +253,10 @@ Route::get('/assignee-dashboard', [AdminDashboardController::class, 'assigneeDas
 Route::middleware('check.role:client_user')->group(function () {
     Route::get('/client-users/dashboard', ClientUserDashboardController::class)
         ->name('api.client-users.dashboard');
+
+    // View-only documents listing for the logged in client user (scoped)
+    Route::get('/client-users/documents', [ClientUserDashboardController::class, 'documents'])
+        ->name('api.client-users.documents');
 });
 // Route::middleware(['auth:sanctum'])->prefix('assignee')->group(function () {
 //     Route::get('/dashboard', function () {

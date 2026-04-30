@@ -4,6 +4,7 @@
 
   // APIs
   $apiJobs     = url('/api/job-details'); // JobDetailsController@index (your job list)
+  $apiMyJobs   = url('/api/assignedpeople/my-jobs'); // Assignee-specific jobs endpoint
   $apiClaim    = url('/api/job-expense-claims/claim'); // POST { job_id, expense_id, message }
 
   // Expenses API pattern (ExpenseController@listExpenses)
@@ -15,7 +16,7 @@
   $apiAdminUpdateClaim = url('/api/job-expense-claims/admin/{id}'); // PATCH admin claim update
 
   // Try to pass a role hint from server (optional). JS also infers from APIs if empty.
-  $roleHint = (string) (request()->attributes->get('auth_role') ?? (auth()->user()->role ?? auth()->user()->user_role ?? ''));
+  $roleHint = strtolower(trim((string)($expensePortalRole ?? request()->attributes->get('auth_role') ?? (auth()->user()->role ?? auth()->user()->user_role ?? ''))));
 @endphp
 
 
@@ -190,6 +191,7 @@ html.theme-dark #{{ $jeUid }}_jobModal .je-row:hover{box-shadow:0 10px 26px rgba
   <div id="{{ $jeUid }}"
        class="cm-wrap"
        data-api-jobs="{{ $apiJobs }}"
+       data-api-my-jobs="{{ $apiMyJobs }}"
        data-api-claim="{{ $apiClaim }}"
        data-api-expenses-pattern="{{ $apiExpensesPattern }}"
        data-api-my-claims="{{ $apiMyClaims }}"
@@ -568,15 +570,11 @@ html.theme-dark #{{ $jeUid }}_jobModal .je-row:hover{box-shadow:0 10px 26px rgba
       if (ROOT.dataset.jeInit === '1') return;
       ROOT.dataset.jeInit = '1';
 
-      const TOKEN =
-        localStorage.getItem('token') ||
-        sessionStorage.getItem('token') ||
-        '';
-
-      // ✅ No alert. If no token, redirect to /
-      if (!TOKEN) { location.href = '/'; return; }
+      const forcedRole = (ROOT.dataset.authRole || '').toLowerCase().trim();
+      let TOKEN = '';
 
       const API_JOBS = ROOT.dataset.apiJobs;
+      const API_MY_JOBS = ROOT.dataset.apiMyJobs;
       const API_CLAIM = ROOT.dataset.apiClaim;
       const API_EXP_PATTERN = ROOT.dataset.apiExpensesPattern;
 
@@ -601,9 +599,51 @@ html.theme-dark #{{ $jeUid }}_jobModal .je-row:hover{box-shadow:0 10px 26px rgba
       function redirectToLogin() {
         try {
           localStorage.removeItem('token');
+          localStorage.removeItem('role');
+          localStorage.removeItem('type');
           sessionStorage.removeItem('token');
+          sessionStorage.removeItem('role');
         } catch(e){}
-        location.href = '/';
+        location.href = forcedRole === 'assignee' ? '/assignee/login' : (forcedRole === 'client_user' ? '/client-user/login' : '/admin/login');
+      }
+
+      async function fetchAuthContextForToken(candidate) {
+        if (!candidate) return null;
+        const res = await fetch('/api/auth/context', {
+          method: 'GET',
+          headers: {
+            'Authorization': 'Bearer ' + candidate,
+            'Accept': 'application/json',
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache',
+          },
+          cache: 'no-store',
+        });
+        if (!res.ok) return null;
+        const j = await res.json().catch(() => ({}));
+        return j?.data?.role ? { token: candidate, data: j.data } : null;
+      }
+
+      async function ensurePortalAuth() {
+        const sessionToken = sessionStorage.getItem('token') || '';
+        const localToken = localStorage.getItem('token') || '';
+        const candidates = [];
+        if (sessionToken) candidates.push(sessionToken);
+        if (localToken && localToken !== sessionToken) candidates.push(localToken);
+
+        for (const candidate of candidates) {
+          try {
+            const ctx = await fetchAuthContextForToken(candidate);
+            if (!ctx) continue;
+            if (!forcedRole || String(ctx.data.role).toLowerCase() === forcedRole) {
+              TOKEN = candidate;
+              return ctx.data;
+            }
+          } catch (e) {}
+        }
+
+        redirectToLogin();
+        throw new Error('Unauthenticated');
       }
 
       const okToastEl  = document.querySelector('.js-ok-toast');
@@ -653,21 +693,12 @@ html.theme-dark #{{ $jeUid }}_jobModal .je-row:hover{box-shadow:0 10px 26px rgba
       // =========================
       // Role detection
       // =========================
-      let ROLE =
-        (ROOT.dataset.authRole || '').toLowerCase().trim()
-        || (localStorage.getItem('role') || sessionStorage.getItem('role') || '').toLowerCase().trim()
-        || '';
+      let ROLE = forcedRole || (window.location.pathname.startsWith('/assignee/') ? 'assignee' : '') || '';
 
       async function inferRoleIfNeeded() {
-        if (ROLE === 'admin' || ROLE === 'assignee') return ROLE;
-
-        // Try admin endpoint; if ok => admin else assignee
-        try {
-          await fetchJSON(API_ADMIN_CLAIMS + '?per_page=1&page=1&_ts=' + Date.now());
-          ROLE = 'admin';
-        } catch (e) {
-          ROLE = 'assignee';
-        }
+        if (ROLE === 'admin' || ROLE === 'assignee' || ROLE === 'client_user') return ROLE;
+        const ctx = await ensurePortalAuth();
+        ROLE = String(ctx?.role || forcedRole || '').toLowerCase();
         return ROLE;
       }
 
@@ -941,8 +972,19 @@ function proofCell(r){
             usp.set('per_page', per);
             usp.set('page', 1);
             usp.set('_ts', Date.now());
-
-            const j = await fetchJSON(API_JOBS + '?' + usp.toString());
+            const role = await inferRoleIfNeeded();
+            const primaryEndpoint = role === 'assignee' ? API_MY_JOBS : API_JOBS;
+            let j;
+            try {
+              j = await fetchJSON(primaryEndpoint + '?' + usp.toString());
+            } catch (e) {
+              if (role === 'assignee') {
+                console.warn('Assignee my-jobs endpoint failed, fallback to /api/job-details', e);
+                j = await fetchJSON(API_JOBS + '?' + usp.toString());
+              } else {
+                throw e;
+              }
+            }
 
             const items =
               Array.isArray(j?.data) ? j.data :
@@ -1872,7 +1914,7 @@ ${renderStatusBadge(st.label, st.icon)}
           </div>
         `;
       }
-function rowHtml(r){
+      function rowHtml(r){
   const head = r.expense_head || ('Head #' + (r.expense_head_id ?? '-'));
 
   const amount = Number(r.amount ?? 0);
@@ -1903,6 +1945,8 @@ function rowHtml(r){
       <td class="je-note-cell" data-exp="${esc(expId)}" title="Click to view full note">
         <div class="small text-muted je-note-preview">${esc(noteShort)}</div>
       </td>
+
+      <td style="display:none">${esc(fmtDate(r.expense_date || r.created_at || ''))}</td>
 
       <td>
         <div class="fw-semibold">${esc(isNaN(amount) ? '0.00' : amount.toFixed(2))}</div>
@@ -2124,10 +2168,14 @@ function rowHtml(r){
       // Initial UI state
       if (jobLabel) jobLabel.textContent = 'None';
 
-      inferRoleIfNeeded().finally(() => {
-        loadExpenses();
-      });
+      ensurePortalAuth()
+        .then((ctx) => {
+          ROLE = String(ctx?.role || forcedRole || ROLE || '').toLowerCase();
+          return inferRoleIfNeeded();
+        })
+        .then(() => loadExpenses())
+        .catch(() => {});
 
     })();
   </script>
-@endpush 
+@endpush

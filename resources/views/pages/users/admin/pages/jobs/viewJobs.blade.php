@@ -3,6 +3,7 @@
  
 @section('title', 'Create Jobs')
 @section('content')
+@php($jobPortalRole = 'admin')
 @include('modules.jobs.viewJobs')
 @endsection
  

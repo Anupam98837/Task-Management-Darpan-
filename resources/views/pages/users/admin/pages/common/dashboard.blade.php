@@ -53,24 +53,48 @@
   /* KPI Cards */
   .kpi-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:20px; margin-bottom:24px; }
   .kpi-card{
-    background:var(--surface); border:1px solid var(--border-color); border-radius:16px;
-    padding:20px; box-shadow:var(--shadow-sm); display:flex; gap:16px; align-items:center;
-    transition:var(--transition); position:relative; overflow:hidden;
+    background:linear-gradient(180deg, rgba(255,255,255,.96), rgba(255,255,255,.90));
+    border:1px solid rgba(226,232,240,.9);
+    border-radius:22px;
+    padding:20px;
+    box-shadow:0 18px 36px rgba(15,23,42,.08);
+    transition:var(--transition);
+    position:relative;
+    overflow:hidden;
   }
-  .kpi-card::before{ content:''; position:absolute; inset:0 auto 0 0; width:4px; background:var(--primary-color); opacity:0; transition:opacity .3s; }
+  .kpi-card::before{
+    content:'';
+    position:absolute;
+    inset:auto -18px -30px auto;
+    width:110px;
+    height:110px;
+    border-radius:50%;
+    opacity:.18;
+  }
   .kpi-card:hover{ transform:translateY(-3px); box-shadow:var(--shadow-md); border-color:var(--primary-color); }
-  .kpi-card:hover::before{ opacity:1; }
-  .kpi-icon{ width:60px; height:60px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:1.5rem; flex-shrink:0; }
-  .kpi-icon.primary{ background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); color:#fff; }
-  .kpi-icon.info{ background:linear-gradient(135deg,#4facfe 0%,#00f2fe 100%); color:#fff; }
-  .kpi-icon.indigo{ background:linear-gradient(135deg,#6366f1 0%,#818cf8 100%); color:#fff; }
-  .kpi-icon.success{ background:linear-gradient(135deg,#43e97b 0%,#38f9d7 100%); color:#fff; }
-  .kpi-icon.warning{ background:linear-gradient(135deg,#fa709a 0%,#fee140 100%); color:#fff; }
-  .kpi-icon.teal{ background:linear-gradient(135deg,#0ea5e9 0%,#38bdf8 100%); color:#fff; }
-  .kpi-icon.danger{ background:linear-gradient(135deg,#ff6b6b 0%,#ffa8a8 100%); color:#fff; }
-  .kpi-content{ flex:1; }
-  .kpi-value{ font-size:2rem; font-weight:800; color:var(--text-color); line-height:1; margin-bottom:4px; }
-  .kpi-label{ font-size:.875rem; color:var(--muted-color); font-weight:600; text-transform:uppercase; letter-spacing:.5px; }
+  .kpi-top{display:flex;align-items:center;justify-content:space-between;gap:14px;position:relative;z-index:1;}
+  .kpi-icon{
+    width:54px;height:54px;border-radius:16px;display:flex;align-items:center;justify-content:center;
+    color:#fff;font-size:20px;box-shadow:0 12px 24px rgba(15,23,42,.12);flex-shrink:0;
+  }
+  .kpi-label{font-size:12px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.6px;}
+  .kpi-value{font-size:32px;font-weight:800;color:var(--text-color);margin-top:14px;line-height:1;position:relative;z-index:1;}
+  .kpi-card.jobs-total::before { background:linear-gradient(135deg,#8b5cf6,#ec4899); }
+  .kpi-card.clients-total::before { background:linear-gradient(135deg,#06b6d4,#3b82f6); }
+  .kpi-card.assigned-people::before { background:linear-gradient(135deg,#6366f1,#818cf8); }
+  .kpi-card.jobs-completed::before { background:linear-gradient(135deg,#10b981,#84cc16); }
+  .kpi-card.jobs-progress::before { background:linear-gradient(135deg,#a855f7,#ec4899); }
+  .kpi-card.jobs-pending::before { background:linear-gradient(135deg,#f59e0b,#f97316); }
+  .kpi-card.jobs-assigned::before { background:linear-gradient(135deg,#0ea5e9,#38bdf8); }
+  .kpi-card.jobs-unassigned::before { background:linear-gradient(135deg,#ef4444,#f43f5e); }
+  .kpi-card.jobs-total .kpi-icon { background:linear-gradient(135deg,#8b5cf6,#ec4899); }
+  .kpi-card.clients-total .kpi-icon { background:linear-gradient(135deg,#06b6d4,#3b82f6); }
+  .kpi-card.assigned-people .kpi-icon { background:linear-gradient(135deg,#6366f1,#818cf8); }
+  .kpi-card.jobs-completed .kpi-icon { background:linear-gradient(135deg,#10b981,#84cc16); }
+  .kpi-card.jobs-progress .kpi-icon { background:linear-gradient(135deg,#a855f7,#ec4899); }
+  .kpi-card.jobs-pending .kpi-icon { background:linear-gradient(135deg,#f59e0b,#f97316); }
+  .kpi-card.jobs-assigned .kpi-icon { background:linear-gradient(135deg,#0ea5e9,#38bdf8); }
+  .kpi-card.jobs-unassigned .kpi-icon { background:linear-gradient(135deg,#ef4444,#f43f5e); }
 
   /* sections */
   .section{
@@ -297,66 +321,82 @@ body.dark #jobsPeriodLoader .spinner {
 
   <!-- KPI Cards -->
 <div class="kpi-grid">
-  <div class="kpi-card" data-url="/admin/jobs/view" role="link" tabindex="0" aria-label="View all jobs">
-    <div class="kpi-icon primary"><i class="fa-solid fa-briefcase"></i></div>
+  <div class="kpi-card jobs-total" data-url="/admin/jobs/view" role="link" tabindex="0" aria-label="View all jobs">
+    <div class="kpi-top">
+      <div class="kpi-label">Total Jobs</div>
+      <div class="kpi-icon"><i class="fa-solid fa-briefcase"></i></div>
+    </div>
     <div class="kpi-content">
       <div class="kpi-value" id="kpiJobsTotal">0</div>
-      <div class="kpi-label">Total Jobs</div>
     </div>
   </div>
 
-  <div class="kpi-card" data-url="/admin/client/manage" role="link" tabindex="0" aria-label="Manage clients">
-    <div class="kpi-icon info"><i class="fa-solid fa-users"></i></div>
+  <div class="kpi-card clients-total" data-url="/admin/client/manage" role="link" tabindex="0" aria-label="Manage clients">
+    <div class="kpi-top">
+      <div class="kpi-label">Total Clients</div>
+      <div class="kpi-icon"><i class="fa-solid fa-users"></i></div>
+    </div>
     <div class="kpi-content">
       <div class="kpi-value" id="kpiClients">0</div>
-      <div class="kpi-label">Total Clients</div>
     </div>
   </div>
 
-  <div class="kpi-card" data-url="/admin/assignedpeople/manage" role="link" tabindex="0" aria-label="Manage assigned people">
-    <div class="kpi-icon indigo"><i class="fa-solid fa-user-check"></i></div>
+  <div class="kpi-card assigned-people" data-url="/admin/assignedpeople/manage" role="link" tabindex="0" aria-label="Manage assigned people">
+    <div class="kpi-top">
+      <div class="kpi-label">Assigned People</div>
+      <div class="kpi-icon"><i class="fa-solid fa-user-check"></i></div>
+    </div>
     <div class="kpi-content">
       <div class="kpi-value" id="kpiAssignedPeople">0</div>
-      <div class="kpi-label">Assigned People</div>
     </div>
   </div>
 
-  <div class="kpi-card" data-url="/admin/jobs/view?filter=completed" role="link" tabindex="0" aria-label="View completed jobs">
-    <div class="kpi-icon success"><i class="fa-solid fa-circle-check"></i></div>
+  <div class="kpi-card jobs-completed" data-url="/admin/jobs/view?filter=completed" role="link" tabindex="0" aria-label="View completed jobs">
+    <div class="kpi-top">
+      <div class="kpi-label">Jobs Completed</div>
+      <div class="kpi-icon"><i class="fa-solid fa-circle-check"></i></div>
+    </div>
     <div class="kpi-content">
       <div class="kpi-value" id="kpiJobsCompleted">0</div>
-      <div class="kpi-label">Jobs Completed</div>
     </div>
   </div>
-    <div class="kpi-card" data-url="/admin/jobs/view?filter=in_progress" role="link" tabindex="0" aria-label="View in-progress jobs">
-    <div class="kpi-icon indigo"><i class="fa-solid fa-spinner"></i></div>
+    <div class="kpi-card jobs-progress" data-url="/admin/jobs/view?filter=in_progress" role="link" tabindex="0" aria-label="View in-progress jobs">
+    <div class="kpi-top">
+      <div class="kpi-label">Jobs In Progress</div>
+      <div class="kpi-icon"><i class="fa-solid fa-spinner"></i></div>
+    </div>
     <div class="kpi-content">
       <div class="kpi-value" id="kpiJobsInProgress">0</div>
-      <div class="kpi-label">Jobs In Progress</div>
     </div>
   </div>
 
-  <div class="kpi-card" data-url="/admin/jobs/view?filter=pending" role="link" tabindex="0" aria-label="View pending jobs">
-    <div class="kpi-icon warning"><i class="fa-solid fa-hourglass-half"></i></div>
+  <div class="kpi-card jobs-pending" data-url="/admin/jobs/view?filter=pending" role="link" tabindex="0" aria-label="View pending jobs">
+    <div class="kpi-top">
+      <div class="kpi-label">Jobs Pending</div>
+      <div class="kpi-icon"><i class="fa-solid fa-hourglass-half"></i></div>
+    </div>
     <div class="kpi-content">
       <div class="kpi-value" id="kpiJobsPending">0</div>
-      <div class="kpi-label">Jobs Pending</div>
     </div>
   </div>
 
-  <div class="kpi-card" data-url="/admin/jobs/view?filter=assigned" role="link" tabindex="0" aria-label="View assigned jobs">
-    <div class="kpi-icon teal"><i class="fa-solid fa-link"></i></div>
+  <div class="kpi-card jobs-assigned" data-url="/admin/jobs/view?filter=assigned" role="link" tabindex="0" aria-label="View assigned jobs">
+    <div class="kpi-top">
+      <div class="kpi-label">Assigned Jobs</div>
+      <div class="kpi-icon"><i class="fa-solid fa-link"></i></div>
+    </div>
     <div class="kpi-content">
       <div class="kpi-value" id="kpiJobsAssigned">0</div>
-      <div class="kpi-label">Assigned Jobs</div>
     </div>
   </div>
 
-  <div class="kpi-card" data-url="/admin/jobs/view?filter=unassigned" role="link" tabindex="0" aria-label="View unassigned jobs">
-    <div class="kpi-icon danger"><i class="fa-solid fa-unlink"></i></div>
+  <div class="kpi-card jobs-unassigned" data-url="/admin/jobs/view?filter=unassigned" role="link" tabindex="0" aria-label="View unassigned jobs">
+    <div class="kpi-top">
+      <div class="kpi-label">Unassigned Jobs</div>
+      <div class="kpi-icon"><i class="fa-solid fa-unlink"></i></div>
+    </div>
     <div class="kpi-content">
       <div class="kpi-value" id="kpiJobsUnassigned">0</div>
-      <div class="kpi-label">Unassigned Jobs</div>
     </div>
   </div>
 </div>

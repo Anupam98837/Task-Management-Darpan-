@@ -1,4 +1,4 @@
-@extends('pages.users.assignee.layout.structure')
+@extends('pages.users.clientUser.layout.structure')
 
 @php
   $portalPrefix = 'client-user';
@@ -13,5 +13,5 @@
 @section('title', 'Client Jobs')
 
 @section('content')
-@include('modules.jobs.viewJobs')
+@include('modules.clientUser.viewJobs')
 @endsection

@@ -3,6 +3,7 @@
  
 @section('title', 'Create Jobs')
 @section('content')
+@php($expensePortalRole = 'assignee')
 @include('modules.jobs.jobExpenseClaim')
 @endsection
  

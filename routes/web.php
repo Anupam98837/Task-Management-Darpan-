@@ -104,6 +104,9 @@ Route::get('/client-user/dashboard', function () {
 Route::get('/client-user/jobs/view', function () {
     return view('pages/users/clientUser/pages/jobs/viewJobs');
 });
+Route::get('/client-user/documents', function () {
+    return view('pages/users/clientUser/pages/documents/viewDocuments');
+});
 // Route::get('assignee/documents/upload', function () {
 //     return view('pages/users/assignee/pages/documents/uploadDocuments');
 // });

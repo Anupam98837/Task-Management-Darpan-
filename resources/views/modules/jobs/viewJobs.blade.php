@@ -1,4 +1,5 @@
 {{-- resources/views/modules/jobs/viewJobs.blade.php --}}
+@php($jobPortalRole = strtolower(trim((string)($jobPortalRole ?? ''))))
 @section('title','Jobs')
 @push('styles')
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
@@ -634,19 +635,23 @@ th.sortable{cursor:pointer;user-select:none}th.sortable:hover{color:#3b82f6}.tin
 <script>
 (()=>{
 /* ================== HELPERS ================== */
-const TOKEN=sessionStorage.getItem('token')||localStorage.getItem('token')||'';
-const role =(sessionStorage.getItem('role')||localStorage.getItem('type')||'').toLowerCase();
-const IS_ASSIGNEE = role==='assignee';
-const IS_CLIENT_USER = role==='client_user';
-const IS_READ_ONLY = IS_ASSIGNEE || IS_CLIENT_USER;
-const LOGIN_REDIRECT = window.location.pathname.startsWith('/client-user/')
+const forcedRole = @json($jobPortalRole);
+const roleFromPath = window.location.pathname.startsWith('/client-user/')
+  ? 'client_user'
+  : (window.location.pathname.startsWith('/assignee/') ? 'assignee' : '');
+const EXPECTED_ROLE = (forcedRole || roleFromPath).toLowerCase();
+let TOKEN = '';
+let role = EXPECTED_ROLE;
+let IS_ASSIGNEE = false;
+let IS_CLIENT_USER = false;
+let IS_READ_ONLY = false;
+const LOGIN_REDIRECT = EXPECTED_ROLE === 'client_user'
   ? '/client-user/login'
-  : (window.location.pathname.startsWith('/assignee/') ? '/assignee/login' : '/');
-if(!TOKEN){
-  Swal.fire('Auth Required','Session expired. Please login again.','warning').then(()=>location.href=LOGIN_REDIRECT);
-  return;
-}
-const H={'Authorization':'Bearer '+TOKEN,'Accept':'application/json'};
+  : (EXPECTED_ROLE === 'assignee' ? '/assignee/login' : '/');
+const H={
+  get Authorization(){ return TOKEN ? 'Bearer ' + TOKEN : ''; },
+  Accept:'application/json'
+};
 const byId=(id)=>document.getElementById(id);
 const esc=(s='')=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const ok =(m)=>{byId('toastSuccessText').textContent=m||'Done';new bootstrap.Toast('#toastSuccess').show()};
@@ -678,6 +683,71 @@ function contactLine(name,email,phone){
   if(safeTrim(email)) parts.push(safeTrim(email));
   if(safeTrim(phone)) parts.push(safeTrim(phone));
   return parts.join(' · ');
+}
+
+function clearStoredAuth(){
+  try{
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('role');
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
+    localStorage.removeItem('type');
+  }catch(e){}
+}
+
+async function fetchAuthContextForToken(candidate){
+  if(!candidate) return null;
+  const res = await fetch('/api/auth/context', {
+    headers: {
+      'Authorization': 'Bearer ' + candidate,
+      'Accept': 'application/json',
+      'Cache-Control': 'no-cache',
+      'Pragma': 'no-cache',
+    },
+    cache: 'no-store',
+  });
+  if(!res.ok) return null;
+  const j = await res.json().catch(()=>({}));
+  return j?.data?.role ? { token: candidate, data: j.data } : null;
+}
+
+async function ensurePortalAuth(){
+  const sessionToken = sessionStorage.getItem('token') || '';
+  const localToken = localStorage.getItem('token') || '';
+  const candidates = [];
+  if(sessionToken) candidates.push(sessionToken);
+  if(localToken && localToken !== sessionToken) candidates.push(localToken);
+
+  let fallback = null;
+  for (const candidate of candidates) {
+    try{
+      const ctx = await fetchAuthContextForToken(candidate);
+      if(!ctx) continue;
+      if(!fallback) fallback = ctx;
+      if(!EXPECTED_ROLE || String(ctx.data.role).toLowerCase() === EXPECTED_ROLE){
+        TOKEN = candidate;
+        role = String(ctx.data.role || EXPECTED_ROLE || '').toLowerCase();
+        IS_ASSIGNEE = role === 'assignee';
+        IS_CLIENT_USER = role === 'client_user';
+        IS_READ_ONLY = IS_ASSIGNEE || IS_CLIENT_USER;
+        return ctx.data;
+      }
+    }catch(e){}
+  }
+
+  if (fallback && !EXPECTED_ROLE) {
+    TOKEN = fallback.token;
+    role = String(fallback.data.role || '').toLowerCase();
+    IS_ASSIGNEE = role === 'assignee';
+    IS_CLIENT_USER = role === 'client_user';
+    IS_READ_ONLY = IS_ASSIGNEE || IS_CLIENT_USER;
+    return fallback.data;
+  }
+
+  clearStoredAuth();
+  await Swal.fire('Auth Required','Please login with the correct portal account.','warning');
+  location.href = LOGIN_REDIRECT;
+  throw new Error('Unauthenticated');
 }
 
 async function GET(u){
@@ -844,6 +914,7 @@ let selectedFilterClient = null;
 
 const API={
   jobs:'/api/job-details',
+  myJobs:'/api/assignedpeople/my-jobs',
   enums:'/api/job-details/enums',
   clients:'/api/clients/all?status=active&sort=asc',
   show:(id)=>`/api/job-details/${id}`,
@@ -1008,11 +1079,32 @@ async function loadJobs(){
   qp.set('sort', sortDir === 'asc' ? 'asc' : 'desc');
 
   try{
-    let rows=(await GET(`${API.jobs}?${qp.toString()}`)).data||[];
-    const totalPages=(await GET(`${API.jobs}?${qp.toString()}`)).meta?.total_pages||1;
+    const endpoint = IS_ASSIGNEE ? API.myJobs : API.jobs;
+    let activeEndpoint = endpoint;
+    let first = null;
+    try {
+      first = await GET(`${endpoint}?${qp.toString()}`);
+    } catch (primaryErr) {
+      // For assignee flows, fallback to generic endpoint if my-jobs fails.
+      if (IS_ASSIGNEE && endpoint !== API.jobs) {
+        console.warn('Primary assignee jobs endpoint failed, using /api/job-details', primaryErr);
+        activeEndpoint = API.jobs;
+        first = await GET(`${API.jobs}?${qp.toString()}`);
+      } else {
+        throw primaryErr;
+      }
+    }
+
+    let rows = Array.isArray(first?.data) ? first.data : [];
+    // Assignee APIs may omit assignees_count; keep hierarchy logic stable.
+    if (IS_ASSIGNEE) {
+      rows = rows.map(r => ({ ...r, assignees_count: Number(r.assignees_count ?? 1) }));
+    }
+    const totalPages = Number(first?.meta?.total_pages || 1);
     for(let p=2;p<=totalPages;p++){
-      const nx=await GET(`${API.jobs}?${new URLSearchParams({...Object.fromEntries(qp),page:String(p)})}`);
-      rows=rows.concat(nx.data||[])
+      const nx = await GET(`${activeEndpoint}?${new URLSearchParams({...Object.fromEntries(qp),page:String(p)})}`);
+      const nxRows = Array.isArray(nx?.data) ? nx.data : [];
+      rows = rows.concat(IS_ASSIGNEE ? nxRows.map(r => ({ ...r, assignees_count: Number(r.assignees_count ?? 1) })) : nxRows);
     }
 
     // Special client-side handling for assigned / unassigned / pending dashboard quick filters:
@@ -3599,6 +3691,7 @@ function downloadExpensesWord(expenses, jobId) {
 })();
 
 (async function init(){
+  await ensurePortalAuth();
   applyRoleVisibility();
   await loadEnumsAndClients();
 

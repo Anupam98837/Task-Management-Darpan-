@@ -197,9 +197,12 @@
       filter: blur(8px);
     }
 
-    .logo-icon i {
-      font-size: 24px;
-      color: white;
+    .logo-icon img {
+      width: 28px;
+      height: 28px;
+      object-fit: contain;
+      display: block;
+      filter: brightness(0) invert(1);
     }
 
     .logo-text {
@@ -563,7 +566,7 @@
       <div class="content">
         <div class="logo-section">
           <div class="logo-icon">
-            <i class="fas fa-tasks"></i>
+            <img src="{{ asset('/assets/media/images/legmedlogo.png') }}" alt="Legmed Logo">
           </div>
           <div class="logo-text">
             <span class="company-name">Legmed</span>
@@ -731,6 +734,12 @@
         btnIcon.className = 'fas fa-arrow-right ms-2';
 
         if(res.ok && data?.access_token){
+          sessionStorage.removeItem('token');
+          sessionStorage.removeItem('role');
+          localStorage.removeItem('token');
+          localStorage.removeItem('role');
+          localStorage.removeItem('type');
+
           // Store the token
           sessionStorage.setItem('token', data.access_token);
           if(data?.tokenable_type){ sessionStorage.setItem('role', data.tokenable_type); }

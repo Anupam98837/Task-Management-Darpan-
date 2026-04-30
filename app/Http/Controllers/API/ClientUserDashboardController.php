@@ -50,16 +50,19 @@ class ClientUserDashboardController extends Controller
                         'quick_links' => [
                             'scoped_clients' => 0,
                             'visible_jobs'   => 0,
+                            'visible_documents' => 0,
                             'due_today'      => 0,
                             'overdue'        => 0,
                             'completed'      => 0,
                         ],
                         'recent_jobs' => [],
+                        'recent_documents' => [],
                     ],
                 ]);
             }
 
             $jobsBase = DB::table('job_details as j')->whereIn('j.client_id', $clientIds);
+            $documentsBase = DB::table('documents as d')->whereIn('d.client_id', $clientIds);
 
             $recentJobs = DB::table('job_details as j')
                 ->leftJoin('clients as c', 'c.id', '=', 'j.client_id')
@@ -89,6 +92,27 @@ class ClientUserDashboardController extends Controller
                     DB::raw('COALESCE(jacc.assignees_count, 0) as assignees_count'),
                 ]);
 
+            $recentDocuments = DB::table('documents as d')
+                ->leftJoin('clients as c', 'c.id', '=', 'd.client_id')
+                ->leftJoin('document_types as dt', 'dt.id', '=', 'd.document_type_id')
+                ->whereIn('d.client_id', $clientIds)
+                ->orderBy('d.created_at', 'desc')
+                ->orderBy('d.id', 'desc')
+                ->limit(10)
+                ->get([
+                    'd.id',
+                    'd.doc_name',
+                    'd.file_url',
+                    'd.status',
+                    'd.issue_date',
+                    'd.expiry_date',
+                    'd.issuing_authority',
+                    'd.client_id',
+                    'd.created_at',
+                    'c.name as client_name',
+                    'dt.name as document_type_name',
+                ]);
+
             return response()->json([
                 'status'  => 'success',
                 'message' => 'Dashboard data',
@@ -96,6 +120,7 @@ class ClientUserDashboardController extends Controller
                     'quick_links' => [
                         'scoped_clients' => count($clientIds),
                         'visible_jobs'   => (clone $jobsBase)->count(),
+                        'visible_documents' => (clone $documentsBase)->count(),
                         'due_today'      => (clone $jobsBase)->whereDate('planned_deadline_at', now()->toDateString())->count(),
                         'overdue'        => (clone $jobsBase)
                             ->where('planned_deadline_at', '<', now())
@@ -104,11 +129,98 @@ class ClientUserDashboardController extends Controller
                         'completed'      => (clone $jobsBase)->where('status', 'completed')->count(),
                     ],
                     'recent_jobs' => $recentJobs,
+                    'recent_documents' => $recentDocuments,
                 ],
             ]);
         } catch (\Throwable $e) {
             Log::error('[ClientUserDashboard] failed', ['error' => $e->getMessage()]);
             return response()->json(['status' => 'error', 'message' => 'Failed to fetch dashboard'], 500);
+        }
+    }
+
+    /**
+     * View-only listing of every document visible to the authenticated
+     * client user (scoped to the clients assigned to them).
+     *
+     * Supports optional ?search= and ?client_id= filters and a simple
+     * limit/offset for client-side pagination.
+     */
+    public function documents(Request $request)
+    {
+        if ($resp = $this->requireRole($request, ['client_user'])) {
+            return $resp;
+        }
+
+        $actor     = $this->actor($request);
+        $clientIds = $this->scopeService->visibleClientIdsForUser($actor['id']);
+
+        if (empty($clientIds)) {
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Documents list',
+                'data'    => [],
+                'meta'    => ['total' => 0, 'limit' => 0, 'offset' => 0],
+            ]);
+        }
+
+        $limit  = (int) min(200, max(10, (int) $request->query('limit', 100)));
+        $offset = (int) max(0, (int) $request->query('offset', 0));
+        $search = trim((string) $request->query('search', ''));
+        $clientFilter = (int) $request->query('client_id', 0);
+
+        try {
+            $base = DB::table('documents as d')
+                ->leftJoin('clients as c', 'c.id', '=', 'd.client_id')
+                ->leftJoin('document_types as dt', 'dt.id', '=', 'd.document_type_id')
+                ->whereIn('d.client_id', $clientIds);
+
+            if ($clientFilter > 0 && in_array($clientFilter, $clientIds, true)) {
+                $base->where('d.client_id', $clientFilter);
+            }
+
+            if ($search !== '') {
+                $base->where(function ($q) use ($search) {
+                    $q->where('d.doc_name', 'like', "%{$search}%")
+                      ->orWhere('d.issuing_authority', 'like', "%{$search}%")
+                      ->orWhere('c.name', 'like', "%{$search}%")
+                      ->orWhere('dt.name', 'like', "%{$search}%");
+                });
+            }
+
+            $total = (clone $base)->count();
+
+            $rows = $base
+                ->orderBy('d.created_at', 'desc')
+                ->orderBy('d.id', 'desc')
+                ->offset($offset)
+                ->limit($limit)
+                ->get([
+                    'd.id',
+                    'd.doc_name',
+                    'd.file_url',
+                    'd.status',
+                    'd.issue_date',
+                    'd.expiry_date',
+                    'd.issuing_authority',
+                    'd.client_id',
+                    'd.created_at',
+                    'c.name as client_name',
+                    'dt.name as document_type_name',
+                ]);
+
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Documents list',
+                'data'    => $rows,
+                'meta'    => [
+                    'total'  => $total,
+                    'limit'  => $limit,
+                    'offset' => $offset,
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('[ClientUserDashboard.documents] failed', ['error' => $e->getMessage()]);
+            return response()->json(['status' => 'error', 'message' => 'Failed to fetch documents'], 500);
         }
     }
 }

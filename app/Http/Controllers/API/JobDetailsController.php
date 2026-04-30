@@ -314,6 +314,86 @@ class JobDetailsController extends Controller
     $payload['planned_duration_days'] = $days !== null ? (int)$days : null;
 }
 
+    private function assigneeCanSeeJobTree(int $assigneeId, int $jobId): bool
+    {
+        if ($assigneeId <= 0 || $jobId <= 0) {
+            return false;
+        }
+
+        if (DB::table('job_assignees')
+            ->where('job_id', $jobId)
+            ->where('assigned_person_id', $assigneeId)
+            ->where('status', 'active')
+            ->exists()) {
+            return true;
+        }
+
+        $seen = [];
+        $cursor = $jobId;
+        while ($cursor > 0 && !isset($seen[$cursor])) {
+            $seen[$cursor] = true;
+            $parentId = (int) (DB::table('job_details')->where('id', $cursor)->value('parent_id') ?? 0);
+            if ($parentId <= 0) {
+                break;
+            }
+
+            if (DB::table('job_assignees')
+                ->where('job_id', $parentId)
+                ->where('assigned_person_id', $assigneeId)
+                ->where('status', 'active')
+                ->exists()) {
+                return true;
+            }
+
+            $cursor = $parentId;
+        }
+
+        $queue = [$jobId];
+        $visited = [];
+        while (!empty($queue)) {
+            $batch = [];
+            while (!empty($queue) && count($batch) < 100) {
+                $next = (int) array_shift($queue);
+                if ($next > 0 && !isset($visited[$next])) {
+                    $visited[$next] = true;
+                    $batch[] = $next;
+                }
+            }
+
+            if (empty($batch)) {
+                continue;
+            }
+
+            $childIds = DB::table('job_details')
+                ->whereIn('parent_id', $batch)
+                ->pluck('id')
+                ->map(fn ($id) => (int) $id)
+                ->filter(fn ($id) => $id > 0)
+                ->values()
+                ->all();
+
+            if (empty($childIds)) {
+                continue;
+            }
+
+            if (DB::table('job_assignees')
+                ->whereIn('job_id', $childIds)
+                ->where('assigned_person_id', $assigneeId)
+                ->where('status', 'active')
+                ->exists()) {
+                return true;
+            }
+
+            foreach ($childIds as $childId) {
+                if (!isset($visited[$childId])) {
+                    $queue[] = $childId;
+                }
+            }
+        }
+
+        return false;
+    }
+
     /** If role is 'user', restrict to jobs where this person is assigned (active). */
 private function userCanSeeJob(Request $r, int $jobId): bool
 {
@@ -321,11 +401,7 @@ private function userCanSeeJob(Request $r, int $jobId): bool
     if (($a['role'] ?? null) === 'admin') return true;
 
     if (($a['role'] ?? null) === 'assignee' && ($a['id'] ?? 0)) {
-        return DB::table('job_assignees')
-            ->where('job_id', $jobId)
-            ->where('assigned_person_id', (int)$a['id'])
-            ->where('status', 'active')
-            ->exists();
+        return $this->assigneeCanSeeJobTree((int) $a['id'], $jobId);
     }
     if (($a['role'] ?? null) === 'client_user' && ($a['id'] ?? 0)) {
         return $this->scopeService->userCanSeeJob((int) $a['id'], $jobId);
