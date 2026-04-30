@@ -44,7 +44,9 @@ thead {background: var(--light-color);}
 thead th {padding: 14px 18px;text-align: left;font-size: 12px;font-weight: 600;color: #64748b;text-transform: uppercase;letter-spacing: 0.5px;border-bottom: 1px solid #e2e8f0;white-space: nowrap;}
 tbody tr {border-bottom: 1px solid #f1f5f9;transition: background 0.15s;background: var(--surface);}
 tbody tr:hover {opacity: 0.95;}
+tbody tr.child-row {background: var(--light-color);}
 tbody td {padding: 16px 18px;font-size: 14px;color: var(--text-color);vertical-align: middle;}
+tbody tr.child-row td:nth-child(2) {padding-left: calc(18px + var(--indent, 0px)) !important;}
 .cell-id {color: #94a3b8;font-weight: 500;}
 .cell-client {display: flex;align-items: center;gap: 12px;}
 .avatar {width: 38px;height: 38px;border-radius: 10px;background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);display: flex;align-items: center;justify-content: center;font-weight: 700;font-size: 14px;color: #fff;flex-shrink: 0;}
@@ -72,6 +74,11 @@ tbody td {padding: 16px 18px;font-size: 14px;color: var(--text-color);vertical-a
 
 .btn-edit {height: 34px;padding: 0 14px;background: var(--surface);color: var(--text-color);border: 1px solid #e2e8f0;border-radius: 8px;font-size: 13px;font-weight: 600;cursor: pointer;transition: all 0.2s;}
 .btn-edit:hover {background: var(--primary-color);border-color: var(--primary-color);color: var(--text-color);}
+.expander-wrap {position: relative;display: inline-flex;align-items: center;gap: 8px;flex-shrink: 0;}
+.expander {width: 34px;height: 34px;border: 1px solid #e2e8f0;border-radius: 8px;background: var(--surface);display: inline-flex;align-items: center;justify-content: center;cursor: pointer;transition: all 0.2s;}
+.expander:hover {background: var(--primary-color);border-color: var(--primary-color);color: #fff;}
+.expander-child-badge {background: #ef4444;color: #fff;border-radius: 999px;padding: 2px 6px;font-size: 11px;line-height: 1;min-width: 18px;text-align: center;font-weight: 700;margin-left: -10px;transform: translateX(-6px) translateY(-10px);pointer-events: none;}
+.expander-placeholder {width: 34px;height: 34px;flex-shrink: 0;}
 
 /* Pagination */
 .pagination {display: flex;align-items: center;justify-content: space-between;padding: 18px 20px;background: var(--light-color);border-top: 1px solid #f1f5f9;}
@@ -390,6 +397,7 @@ table tbody td:first-child {
     sort: 'desc',
     items: []
   };
+  const expanded = new Set();
 
   const els = {
     tbody: document.getElementById('tableBody'),
@@ -627,17 +635,64 @@ table tbody td:first-child {
     return 'inactive';
   }
 
+  function filteredItems() {
+    return state.orgType
+      ? state.items.filter(it => (it.org_type || '').toLowerCase() === state.orgType.toLowerCase())
+      : state.items.slice();
+  }
+
+  function buildHierarchy(rows) {
+    const map = new Map();
+    const childrenByParent = new Map();
+    rows.forEach(row => {
+      const clone = { ...row };
+      map.set(String(clone.id), clone);
+      const pid = clone.parent_id ? String(clone.parent_id) : '';
+      if (!childrenByParent.has(pid)) childrenByParent.set(pid, []);
+      childrenByParent.get(pid).push(clone);
+    });
+
+    for (const kids of childrenByParent.values()) {
+      kids.sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
+    }
+
+    const roots = rows
+      .filter(row => !row.parent_id || !map.has(String(row.parent_id)))
+      .sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
+
+    return { childrenByParent, roots };
+  }
+
+  function descendantCount(id, childrenByParent) {
+    let count = 0;
+    const queue = [String(id)];
+    while (queue.length) {
+      const current = queue.shift();
+      const kids = childrenByParent.get(current) || [];
+      count += kids.length;
+      kids.forEach(child => queue.push(String(child.id)));
+    }
+    return count;
+  }
+
+  function collectVisibleRows(root, childrenByParent, level = 0) {
+    const rows = [{ row: root, level }];
+    if (!expanded.has(String(root.id))) return rows;
+    const kids = childrenByParent.get(String(root.id)) || [];
+    kids.forEach(child => rows.push(...collectVisibleRows(child, childrenByParent, level + 1)));
+    return rows;
+  }
+
   async function fetchClients() {
     const params = new URLSearchParams({
-      page: state.page,
-      per_page: PER_PAGE,
       sort: state.sort || 'desc'
     });
     if (state.q) params.set('q', state.q);
     if (state.status) params.set('status', state.status);
+    if (state.orgType) params.set('org_type', state.orgType);
 
     try {
-      const res = await fetch(`${API_BASE}/clients?${params}`, {headers});
+      const res = await fetch(`${API_BASE}/clients/all?${params}`, {headers});
 
       if (res.status === 401 || res.status === 403) {
         const data = await res.json().catch(() => ({}));
@@ -654,8 +709,6 @@ table tbody td:first-child {
       if (!res.ok) throw new Error(data?.message || 'Request failed');
 
       state.items = Array.isArray(data?.data) ? data.data : [];
-      state.total_pages = data?.meta?.total_pages || 1;
-      state.total = data?.meta?.total || 0;
       render();
     } catch (err) {
       console.error(err);
@@ -664,11 +717,16 @@ table tbody td:first-child {
   }
 
   function render() {
-    const filtered = state.orgType
-      ? state.items.filter(it => (it.org_type || '').toLowerCase() === state.orgType.toLowerCase())
-      : state.items;
+    const filtered = filteredItems();
+    const { childrenByParent, roots } = buildHierarchy(filtered);
+    state.total = roots.length;
+    state.total_pages = Math.max(1, Math.ceil(Math.max(roots.length, 1) / PER_PAGE));
+    if (state.page > state.total_pages) state.page = state.total_pages;
+    const start = (state.page - 1) * PER_PAGE;
+    const pagedRoots = roots.slice(start, start + PER_PAGE);
+    const visibleRows = pagedRoots.flatMap(root => collectVisibleRows(root, childrenByParent, 0));
 
-    if (!filtered.length) {
+    if (!roots.length) {
       els.tbody.innerHTML = `
         <tr>
           <td colspan="6">
@@ -683,13 +741,13 @@ table tbody td:first-child {
         </tr>
       `;
     } else {
-      els.tbody.innerHTML = filtered.map(rowHtml).join('');
+      els.tbody.innerHTML = visibleRows.map(({ row, level }) => rowHtml(row, level, childrenByParent)).join('');
     }
 
     renderPagination();
   }
 
-  function rowHtml(c) {
+  function rowHtml(c, level = 0, childrenByParent = new Map()) {
     const slug = c.slug ?? '';
     const id = c.id ?? '';
     const name = c.name ?? '';
@@ -706,12 +764,23 @@ table tbody td:first-child {
       : `<div class="avatar">${(name || '?')[0].toUpperCase()}</div>`;
 
     const location = [city, state, country].filter(Boolean).join(', ') || '—';
+    const childCount = descendantCount(id, childrenByParent);
+    const hasChildren = childCount > 0;
+    const expander = hasChildren
+      ? `<div class="expander-wrap">
+          <button class="expander js-expand" data-id="${esc(id)}" aria-expanded="${expanded.has(String(id)) ? 'true' : 'false'}" title="Expand/collapse linked clients">
+            <i class="fa ${expanded.has(String(id)) ? 'fa-caret-down' : 'fa-caret-right'}"></i>
+          </button>
+          <span class="expander-child-badge" title="${childCount} linked client${childCount > 1 ? 's' : ''}">${childCount > 9 ? '9+' : childCount}</span>
+        </div>`
+      : `<span class="expander-placeholder"></span>`;
 
     return `
-      <tr data-slug="${esc(slug)}">
+      <tr data-slug="${esc(slug)}" data-id="${esc(id)}" class="${level > 0 ? 'child-row' : ''}" style="--indent:${level * 18}px">
         <td class="cell-id">#${esc(id)}</td>
         <td>
           <div class="cell-client">
+            ${expander}
             ${avatar}
             <div class="client-info">
               <div class="client-name">${esc(name)}</div>
@@ -745,9 +814,9 @@ table tbody td:first-child {
   }
 
   function renderPagination() {
-    const start = (state.page - 1) * PER_PAGE + 1;
+    const start = state.total ? ((state.page - 1) * PER_PAGE + 1) : 0;
     const end = Math.min(state.page * PER_PAGE, state.total);
-    els.paginationInfo.textContent = `Showing ${start}-${end} of ${state.total} clients`;
+    els.paginationInfo.textContent = `Showing ${start}-${end} of ${state.total} root clients`;
 
     const pages = state.total_pages || 1;
     const cur = state.page;
@@ -769,6 +838,16 @@ table tbody td:first-child {
    
     els.paginationControls.innerHTML = buttons.join('');
   }
+
+  els.tbody.addEventListener('click', (e) => {
+    const btn = e.target.closest('.js-expand');
+    if (!btn) return;
+    e.preventDefault();
+    const id = String(btn.getAttribute('data-id') || '');
+    if (!id) return;
+    if (expanded.has(id)) expanded.delete(id); else expanded.add(id);
+    render();
+  });
 
   // --------- Optimistic Status Toggle (instant color change) ---------
   els.tbody.addEventListener('change', async (e) => {
@@ -1005,7 +1084,7 @@ table tbody td:first-child {
     const headers = ['ID', 'Client Name', 'Org Type', 'Email', 'Phone', 'City', 'State', 'Country', 'Status'];
     const data = [headers];
 
-    state.items.forEach(c => {
+    filteredItems().forEach(c => {
       data.push([
         c.id ?? '',
         c.name ?? '',
@@ -1056,7 +1135,8 @@ table tbody td:first-child {
 
   els.orgTypeSelect.addEventListener('change', () => {
     state.orgType = els.orgTypeSelect.value;
-    render();
+    state.page = 1;
+    fetchClients();
   });
 
   els.sortSelect.addEventListener('change', () => {

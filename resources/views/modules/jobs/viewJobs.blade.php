@@ -1391,14 +1391,14 @@ function rowHTML(r, level=0){
 const canonical = jobsById.get(Number(r.id)) || r || {};
 const childCount = Number(canonical.child_count || 0);
   const displayCount = childCount > 9 ? '9+' : childCount; // cap if you want
-  const expanderWithBadge = `
+  const expanderWithBadge = childCount > 0 ? `
     <div class="expander-wrap" style="display:inline-flex;align-items:center;gap:8px;position:relative;">
       <button class="expander js-expand" data-id="${r.id}" data-level="${level}" aria-expanded="${expanded.has(r.id)?'true':'false'}" title="Expand/collapse children">
         <i class="fa ${expanded.has(r.id)?'fa-caret-down':'fa-caret-right'}"></i>
       </button>
-      ${childCount > 0 ? `<span class="expander-child-badge" title="${childCount} child${childCount>1?'ren':''}">${displayCount}</span>` : ''}
+      <span class="expander-child-badge" title="${childCount} child${childCount>1?'ren':''}">${displayCount}</span>
     </div>
-  `;
+  ` : '';
 
   return `
   <tr data-id="${r.id}" data-level="${level}" data-title="${esc(r.title||'')}" style="--indent:${16*level}px" class="${level>0?'child-row':''}">
