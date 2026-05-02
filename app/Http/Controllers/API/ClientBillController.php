@@ -143,12 +143,46 @@ class ClientBillController extends Controller
             );
     }
 
+    private function collectClientTreeIds(int $clientId): array
+    {
+        if ($clientId <= 0) {
+            return [];
+        }
+
+        $seen = [];
+        $queue = [$clientId];
+
+        while (!empty($queue)) {
+            $current = (int) array_shift($queue);
+            if ($current <= 0 || isset($seen[$current])) {
+                continue;
+            }
+
+            $seen[$current] = true;
+
+            $children = DB::table('clients')
+                ->where('parent_id', $current)
+                ->pluck('id')
+                ->map(fn ($id) => (int) $id)
+                ->all();
+
+            foreach ($children as $childId) {
+                if (!isset($seen[$childId])) {
+                    $queue[] = $childId;
+                }
+            }
+        }
+
+        return array_map('intval', array_keys($seen));
+    }
+
     public function index(Request $request)
     {
-        if ($resp = $this->requireRole($request, ['admin', 'accountant_user'])) {
+        if ($resp = $this->requireRole($request, ['admin', 'accountant_user', 'client_user'])) {
             return $resp;
         }
 
+        $actor = $this->actor($request);
         $page = max(1, (int) $request->query('page', 1));
         $perPage = min(100, max(1, (int) $request->query('per_page', 10)));
         $q = trim((string) $request->query('q', ''));
@@ -186,7 +220,9 @@ class ClientBillController extends Controller
             $query->where('cb.client_id', $clientId);
         }
 
-        if ($publish === 'published') {
+        if (($actor['role'] ?? null) === 'client_user') {
+            $query->where('cb.is_published', true);
+        } elseif ($publish === 'published') {
             $query->where('cb.is_published', true);
         } elseif ($publish === 'draft') {
             $query->where('cb.is_published', false);
@@ -223,7 +259,7 @@ class ClientBillController extends Controller
 
     public function show(Request $request, int $id)
     {
-        if ($resp = $this->requireRole($request, ['admin', 'accountant_user'])) {
+        if ($resp = $this->requireRole($request, ['admin', 'accountant_user', 'client_user'])) {
             return $resp;
         }
 
@@ -233,8 +269,97 @@ class ClientBillController extends Controller
         }
 
         $this->ensureClientVisible($request, (int) $row->client_id);
+        if (($this->actor($request)['role'] ?? null) === 'client_user' && !(bool) $row->is_published) {
+            return response()->json(['status' => 'error', 'message' => 'Client bill not found'], 404);
+        }
 
         return response()->json(['status' => 'success', 'data' => $this->mapBill($row)]);
+    }
+
+    public function analysis(Request $request)
+    {
+        if ($resp = $this->requireRole($request, ['admin', 'accountant_user'])) {
+            return $resp;
+        }
+
+        $clientId = (int) $request->query('client_id', 0);
+        if ($clientId <= 0) {
+            return response()->json(['status' => 'error', 'message' => 'client_id is required'], 422);
+        }
+
+        $this->ensureClientVisible($request, $clientId);
+
+        $client = DB::table('clients')->where('id', $clientId)->first();
+        if (!$client) {
+            return response()->json(['status' => 'error', 'message' => 'Client not found'], 404);
+        }
+
+        $treeIds = $this->collectClientTreeIds($clientId);
+        $jobsBase = DB::table('job_details as j')->whereIn('j.client_id', $treeIds);
+        $expensesBase = DB::table('job_expenses as e')
+            ->join('job_details as j', 'j.id', '=', 'e.job_id')
+            ->leftJoin('expense_heads as eh', 'eh.id', '=', 'e.expense_head_id')
+            ->whereIn('j.client_id', $treeIds);
+
+        $expenses = (clone $expensesBase)
+            ->select(
+                'e.id',
+                'e.job_id',
+                'j.title as job_title',
+                'j.client_id',
+                'eh.title as expense_head_title',
+                'e.expense_date',
+                'e.amount',
+                'e.currency',
+                'e.note',
+                'e.created_by',
+                'e.created_at'
+            )
+            ->orderBy('e.expense_date', 'desc')
+            ->orderBy('e.id', 'desc')
+            ->limit(200)
+            ->get();
+
+        $previousBills = $this->baseQuery()
+            ->whereIn('cb.client_id', $treeIds)
+            ->orderBy('cb.bill_date', 'desc')
+            ->orderBy('cb.id', 'desc')
+            ->limit(20)
+            ->get()
+            ->map(function ($row) {
+                $row->items_count = DB::table('client_bill_items')->where('client_bill_id', $row->id)->count();
+                return $row;
+            });
+
+        $stats = [
+            'tree_client_count' => count($treeIds),
+            'jobs_count' => (clone $jobsBase)->count(),
+            'jobs_with_budget_count' => (clone $jobsBase)->whereNotNull('j.budget')->count(),
+            'total_budget' => round((float) ((clone $jobsBase)->sum('j.budget') ?? 0), 2),
+            'total_expense_amount' => round((float) ((clone $expensesBase)->sum('e.amount') ?? 0), 2),
+            'expense_count' => (clone $expensesBase)->count(),
+            'total_billed_amount' => round((float) (DB::table('client_bills')->whereIn('client_id', $treeIds)->sum('total_amount') ?? 0), 2),
+            'published_billed_amount' => round((float) (DB::table('client_bills')->whereIn('client_id', $treeIds)->where('is_published', true)->sum('total_amount') ?? 0), 2),
+            'draft_bill_count' => DB::table('client_bills')->whereIn('client_id', $treeIds)->where('is_published', false)->count(),
+            'published_bill_count' => DB::table('client_bills')->whereIn('client_id', $treeIds)->where('is_published', true)->count(),
+            'remaining_budget' => round(
+                round((float) ((clone $jobsBase)->sum('j.budget') ?? 0), 2)
+                - round((float) ((clone $expensesBase)->sum('e.amount') ?? 0), 2),
+                2
+            ),
+        ];
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Client bill analysis fetched',
+            'data' => [
+                'client' => $client,
+                'tree_client_ids' => $treeIds,
+                'stats' => $stats,
+                'expenses' => $expenses,
+                'previous_bills' => $previousBills,
+            ],
+        ]);
     }
 
     public function store(Request $request)

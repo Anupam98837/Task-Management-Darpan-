@@ -50,13 +50,15 @@ class ClientUserDashboardController extends Controller
                         'quick_links' => [
                             'scoped_clients' => 0,
                             'visible_jobs'   => 0,
-                            'visible_documents' => 0,
-                            'due_today'      => 0,
-                            'overdue'        => 0,
-                            'completed'      => 0,
+                        'visible_documents' => 0,
+                        'due_today'      => 0,
+                        'overdue'        => 0,
+                        'completed'      => 0,
+                        'published_bills' => 0,
                         ],
                         'recent_jobs' => [],
                         'recent_documents' => [],
+                        'recent_bills' => [],
                     ],
                 ]);
             }
@@ -113,6 +115,23 @@ class ClientUserDashboardController extends Controller
                     'dt.name as document_type_name',
                 ]);
 
+            $recentBills = DB::table('client_bills as cb')
+                ->leftJoin('clients as c', 'c.id', '=', 'cb.client_id')
+                ->whereIn('cb.client_id', $clientIds)
+                ->where('cb.is_published', true)
+                ->orderBy('cb.published_at', 'desc')
+                ->orderBy('cb.id', 'desc')
+                ->limit(10)
+                ->get([
+                    'cb.id',
+                    'cb.client_id',
+                    'cb.bill_date',
+                    'cb.due_date',
+                    'cb.total_amount',
+                    'cb.published_at',
+                    'c.name as client_name',
+                ]);
+
             return response()->json([
                 'status'  => 'success',
                 'message' => 'Dashboard data',
@@ -127,9 +146,11 @@ class ClientUserDashboardController extends Controller
                             ->whereNotIn('status', ['completed', 'cancelled'])
                             ->count(),
                         'completed'      => (clone $jobsBase)->where('status', 'completed')->count(),
+                        'published_bills' => DB::table('client_bills')->whereIn('client_id', $clientIds)->where('is_published', true)->count(),
                     ],
                     'recent_jobs' => $recentJobs,
                     'recent_documents' => $recentDocuments,
+                    'recent_bills' => $recentBills,
                 ],
             ]);
         } catch (\Throwable $e) {

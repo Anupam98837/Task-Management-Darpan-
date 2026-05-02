@@ -50,6 +50,7 @@ tbody td {padding:16px 18px;font-size:14px;color:var(--text-color);vertical-alig
 .form-label {display:block;font-size:13px;font-weight:600;color:#475569;margin-bottom:8px;}
 .form-control, .form-select {width:100%;height:44px;padding:0 14px;border:1px solid #e2e8f0;border-radius:10px;font-size:14px;color:#0f172a;background:#fff;}
 textarea.form-control {height:auto;padding:10px 14px;resize:vertical;}
+.role-other-wrap { margin-top: 10px; }
 .password-input-wrapper {position:relative;display:flex;gap:8px;}
 .password-input-wrapper .form-control {flex:1;}
 .btn-generate {height:44px;padding:0 16px;background:var(--surface);color:var(--text-color);border:1px solid #e2e8f0;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;}
@@ -163,7 +164,19 @@ textarea.form-control {height:auto;padding:10px 14px;resize:vertical;}
             </div>
             <div class="col-md-6 form-group">
               <label class="form-label">Role</label>
-              <input type="text" class="form-control" id="client_user_role" name="role" placeholder="Example: Finance Viewer">
+              <select class="form-select" id="client_user_role" name="role">
+                <option value="">Select role</option>
+                <option value="Viewer">Viewer</option>
+                <option value="Manager">Manager</option>
+                <option value="Finance">Finance</option>
+                <option value="Accounts">Accounts</option>
+                <option value="Legal">Legal</option>
+                <option value="Operations">Operations</option>
+                <option value="Other">Other</option>
+              </select>
+              <div class="role-other-wrap" id="clientUserRoleOtherWrap" style="display:none;">
+                <input type="text" class="form-control" id="client_user_role_other" placeholder="Enter custom role">
+              </div>
             </div>
             <div class="col-md-6 form-group">
               <label class="form-label">Contact Number</label>
@@ -274,6 +287,8 @@ textarea.form-control {height:auto;padding:10px 14px;resize:vertical;}
     name: document.getElementById('client_user_name'),
     email: document.getElementById('client_user_email'),
     role: document.getElementById('client_user_role'),
+    roleOther: document.getElementById('client_user_role_other'),
+    roleOtherWrap: document.getElementById('clientUserRoleOtherWrap'),
     contact: document.getElementById('client_user_contact'),
     password: document.getElementById('client_user_password'),
     address: document.getElementById('client_user_address'),
@@ -322,6 +337,33 @@ textarea.form-control {height:auto;padding:10px 14px;resize:vertical;}
     const chars='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%';
     let out=''; for(let i=0;i<12;i++) out += chars.charAt(Math.floor(Math.random()*chars.length));
     return out;
+  }
+
+  const KNOWN_ROLES = ['Viewer', 'Manager', 'Finance', 'Accounts', 'Legal', 'Operations'];
+  function syncRoleUI(roleValue = null) {
+    const value = roleValue !== null ? String(roleValue || '').trim() : String(els.role.value || '').trim();
+    if (KNOWN_ROLES.includes(value)) {
+      els.role.value = value;
+      els.roleOtherWrap.style.display = 'none';
+      els.roleOther.value = '';
+      return;
+    }
+    if (value && value !== 'Other') {
+      els.role.value = 'Other';
+      els.roleOtherWrap.style.display = 'block';
+      els.roleOther.value = value;
+      return;
+    }
+    els.roleOtherWrap.style.display = els.role.value === 'Other' ? 'block' : 'none';
+    if (els.role.value !== 'Other') {
+      els.roleOther.value = '';
+    }
+  }
+  function currentRoleValue() {
+    if (els.role.value === 'Other') {
+      return els.roleOther.value.trim() || null;
+    }
+    return els.role.value.trim() || null;
   }
 
   function renderSelectedClients(){
@@ -529,6 +571,9 @@ textarea.form-control {height:auto;padding:10px 14px;resize:vertical;}
     els.status.checked = true;
     els.password.value = '';
     els.passwordHint.textContent = 'Leave blank to auto-generate on create. On edit, leave blank to keep the existing password.';
+    els.role.value = '';
+    els.roleOther.value = '';
+    syncRoleUI('');
     state.selectedClientIds = new Set();
     renderSelectedClients();
   }
@@ -543,7 +588,7 @@ textarea.form-control {height:auto;padding:10px 14px;resize:vertical;}
     els.id.value = data.id || '';
     els.name.value = data.name || '';
     els.email.value = data.email || '';
-    els.role.value = data.role || '';
+    syncRoleUI(data.role || '');
     els.contact.value = data.contact_number || '';
     els.password.value = '';
     els.address.value = data.address || '';
@@ -568,6 +613,7 @@ textarea.form-control {height:auto;padding:10px 14px;resize:vertical;}
 
   els.addBtn.addEventListener('click', openCreateModal);
   els.generatePasswordBtn.addEventListener('click', () => { els.password.value = generatePassword(); });
+  els.role.addEventListener('change', () => syncRoleUI());
   els.chooseClientsBtn.addEventListener('click', async () => {
     await ensureClientsLoaded();
     renderClientTree();
@@ -689,7 +735,7 @@ textarea.form-control {height:auto;padding:10px 14px;resize:vertical;}
     const payload = {
       name: els.name.value.trim(),
       email: els.email.value.trim(),
-      role: els.role.value.trim() || null,
+      role: currentRoleValue(),
       contact_number: els.contact.value.trim() || null,
       address: els.address.value.trim() || null,
       status: els.status.checked ? 'active' : 'inactive',

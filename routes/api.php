@@ -376,7 +376,9 @@ Route::prefix('client-bill-heads')->middleware('check.role:admin,accountant_user
             ->name('api.client-bill-heads.toggle');
     });
 
-Route::prefix('client-bills')->middleware('check.role:admin,accountant_user')->group(function () {
+Route::prefix('client-bills')->middleware('check.role:admin,accountant_user,client_user')->group(function () {
+        Route::get('/analysis', [ClientBillController::class, 'analysis'])
+            ->name('api.client-bills.analysis');
         Route::get('/', [ClientBillController::class, 'index'])
             ->name('api.client-bills.index');
         Route::post('/', [ClientBillController::class, 'store'])

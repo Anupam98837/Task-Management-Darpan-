@@ -110,6 +110,9 @@ Route::get('/client-user/jobs/view', function () {
 Route::get('/client-user/documents', function () {
     return view('pages/users/clientUser/pages/documents/viewDocuments');
 });
+Route::get('/client-user/bills', function () {
+    return view('pages/users/clientUser/pages/bills/viewBills');
+});
 // Route::get('assignee/documents/upload', function () {
 //     return view('pages/users/assignee/pages/documents/uploadDocuments');
 // });
@@ -136,6 +139,9 @@ Route::get('admin/accounting/bill-heads/manage', function () {
 });
 Route::get('admin/accounting/client-bills', function () {
     return view('pages/users/admin/pages/accounting/manageClientBills');
+});
+Route::get('admin/accounting/client-bills/create', function () {
+    return view('pages/users/admin/pages/accounting/createClientBill');
 });
 Route::get('job-expense/claim/manage', function () {
     return view('pages/users/admin/pages/jobs/jobExpenseClaim');

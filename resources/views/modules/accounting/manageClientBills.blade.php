@@ -159,7 +159,7 @@ tbody td { padding:16px 18px; font-size:14px; color:var(--text-color); vertical-
 
     <button id="addBillBtn" class="btn btn-primary" type="button">
       <i class="fa-solid fa-plus"></i>
-      Create Client Bill
+      Open Bill Builder
     </button>
   </div>
 
@@ -730,8 +730,8 @@ tbody td { padding:16px 18px; font-size:14px; color:var(--text-color); vertical-
   }
 
   els.addBillBtn.addEventListener('click', () => {
-    resetForm();
-    billModal.show();
+    const clientId = els.clientFilter.value ? `?client_id=${encodeURIComponent(els.clientFilter.value)}` : '';
+    window.location.href = `/admin/accounting/client-bills/create${clientId}`;
   });
 
   els.addItemBtn.addEventListener('click', () => addItemRow());

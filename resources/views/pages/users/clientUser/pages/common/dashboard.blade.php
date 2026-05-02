@@ -4,6 +4,7 @@
   $portalPrefix = 'client-user';
   $portalDashboardUrl = '/client-user/dashboard';
   $portalJobsUrl = '/client-user/jobs/view';
+  $portalBillsUrl = '/client-user/bills';
   $portalNotificationsUrl = '/client-user/notifications';
   $portalLoginUrl = '/client-user/login';
   $portalLogoutApi = '/api/client-users/logout';
@@ -105,6 +106,10 @@
         <i class="fa-solid fa-briefcase"></i>
         View Jobs
       </a>
+      <a href="/client-user/bills" class="btn-linkish docs">
+        <i class="fa-solid fa-file-invoice-dollar"></i>
+        View Bills
+      </a>
       <a href="/client-user/notifications" class="btn-linkish docs">
         <i class="fa-solid fa-bell"></i>
         Notifications
@@ -182,6 +187,29 @@
 
   <div class="section">
     <div class="section-head">
+      <h2>Recent Published Bills</h2>
+      <span class="status-pill" id="billScopeNote">Loading…</span>
+    </div>
+    <div class="table-responsive">
+      <table class="jobs-table">
+        <thead>
+          <tr>
+            <th>Bill</th>
+            <th>Client</th>
+            <th>Bill Date</th>
+            <th>Due Date</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody id="recentBillsRows">
+          <tr><td colspan="5" class="text-center py-4">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-head">
       <h2>Recent Documents In Your Scope</h2>
       <span class="status-pill" id="docScopeNote">Loading…</span>
     </div>
@@ -232,7 +260,9 @@
     statOverdue: document.getElementById('statOverdue'),
     statCompleted: document.getElementById('statCompleted'),
     recentRows: document.getElementById('recentJobsRows'),
+    recentBillsRows: document.getElementById('recentBillsRows'),
     recentDocumentsRows: document.getElementById('recentDocumentsRows'),
+    billScopeNote: document.getElementById('billScopeNote'),
     docScopeNote: document.getElementById('docScopeNote'),
   };
 
@@ -285,6 +315,23 @@
     `).join('');
   }
 
+  function renderRecentBills(rows) {
+    if (!Array.isArray(rows) || !rows.length) {
+      els.recentBillsRows.innerHTML = '<tr><td colspan="5"><div class="empty-state">No published bills are visible for your assigned client scope.</div></td></tr>';
+      return;
+    }
+
+    els.recentBillsRows.innerHTML = rows.map(bill => `
+      <tr>
+        <td><a href="/client-user/bills" style="color:#2563eb;text-decoration:none;font-weight:600;">Bill #${esc(bill.id || '—')}</a></td>
+        <td>${esc(bill.client_name || '—')}</td>
+        <td>${fmtDate(bill.bill_date)}</td>
+        <td>${fmtDate(bill.due_date)}</td>
+        <td>${esc(Number(bill.total_amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}</td>
+      </tr>
+    `).join('');
+  }
+
   async function loadDashboard() {
     try {
       const [me, dashboard] = await Promise.all([
@@ -295,10 +342,12 @@
       const user = me?.data || {};
       const quick = dashboard?.data?.quick_links || {};
       const recent = dashboard?.data?.recent_jobs || [];
+      const recentBills = dashboard?.data?.recent_bills || [];
       const recentDocuments = dashboard?.data?.recent_documents || [];
 
       els.welcomeText.textContent = `${user.name || 'Client'} can currently view jobs for ${quick.scoped_clients || 0} scoped client records.`;
       els.scopeNote.textContent = `${quick.scoped_clients || 0} clients in scope`;
+      els.billScopeNote.textContent = `${quick.published_bills || 0} published bills in scope`;
       els.docScopeNote.textContent = `${quick.visible_documents || 0} documents in scope`;
       els.statClients.textContent = quick.scoped_clients ?? 0;
       els.statJobs.textContent = quick.visible_jobs ?? 0;
@@ -308,12 +357,15 @@
       els.statCompleted.textContent = quick.completed ?? 0;
 
       renderRecentJobs(recent);
+      renderRecentBills(recentBills);
       renderRecentDocuments(recentDocuments);
     } catch (error) {
       els.welcomeText.textContent = error.message || 'Failed to load dashboard.';
       els.scopeNote.textContent = 'Unable to load';
+      els.billScopeNote.textContent = 'Unable to load';
       els.docScopeNote.textContent = 'Unable to load';
       renderRecentJobs([]);
+      renderRecentBills([]);
       renderRecentDocuments([]);
     }
   }

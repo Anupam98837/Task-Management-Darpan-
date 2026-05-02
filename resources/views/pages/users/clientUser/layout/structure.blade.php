@@ -4,6 +4,7 @@
   $portalLabel = $portalLabel ?? 'Portal';
   $portalDashboardUrl = $portalDashboardUrl ?? '/' . $portalPrefix . '/dashboard';
   $portalJobsUrl = $portalJobsUrl ?? '/' . $portalPrefix . '/jobs/view';
+  $portalBillsUrl = $portalBillsUrl ?? '/' . $portalPrefix . '/bills';
   $portalDocumentsUrl = $portalDocumentsUrl ?? '/' . $portalPrefix . '/documents';
   $portalNotificationsUrl = $portalNotificationsUrl ?? '/' . $portalPrefix . '/notifications';
   $portalLoginUrl = $portalLoginUrl ?? '/' . $portalPrefix . '/login';
@@ -501,6 +502,9 @@ html.theme-dark .btn-secondary { background: rgba(255,255,255,0.02); border-colo
       <button class="rail-btn group-kicker" data-section="jobs" type="button" title="Jobs">
         <i class="fa-solid fa-briefcase"></i>
       </button>
+      <a class="rail-btn" href="{{ $portalBillsUrl }}" title="Bills" id="railBills">
+        <i class="fa-solid fa-file-invoice-dollar"></i>
+      </a>
       <a class="rail-btn" href="{{ $portalDocumentsUrl }}" title="Documents" id="railDocuments">
         <i class="fa-regular fa-folder-open"></i>
       </a>
@@ -542,6 +546,10 @@ html.theme-dark .btn-secondary { background: rgba(255,255,255,0.02); border-colo
           <a href="{{ $portalJobsUrl }}" class="nav-link">View Jobs</a>
         </div>
       </div>
+
+      <a href="{{ $portalBillsUrl }}" class="nav-link" id="navBills">
+        <i class="fa-solid fa-file-invoice-dollar"></i><span>Bills</span>
+      </a>
 
       <a href="{{ $portalDocumentsUrl }}" class="nav-link" id="navDocuments">
         <i class="fa-regular fa-folder-open"></i><span>Documents</span>
@@ -736,8 +744,10 @@ document.addEventListener('DOMContentLoaded', ()=>{
     }
   });
   const DASHBOARD_PATH = @json(parse_url($portalDashboardUrl, PHP_URL_PATH) ?: $portalDashboardUrl);
+  const BILLS_PATH = @json(parse_url($portalBillsUrl, PHP_URL_PATH) ?: $portalBillsUrl);
   const DOCUMENTS_PATH = @json(parse_url($portalDocumentsUrl, PHP_URL_PATH) ?: $portalDocumentsUrl);
   if(path === DASHBOARD_PATH){ document.getElementById('railDashboard')?.classList.add('active'); }
+  if(path === BILLS_PATH){ document.getElementById('railBills')?.classList.add('active'); }
   if(path === DOCUMENTS_PATH){ document.getElementById('railDocuments')?.classList.add('active'); }
 
   // Theme
@@ -1119,6 +1129,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
     }
   });
   if (path === DASHBOARD_PATH) { document.getElementById('railDashboard')?.classList.add('active'); }
+  if (path === BILLS_PATH) { document.getElementById('railBills')?.classList.add('active'); }
   if (path === DOCUMENTS_PATH) { document.getElementById('railDocuments')?.classList.add('active'); }
 })();
 </script>

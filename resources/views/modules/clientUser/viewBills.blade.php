@@ -1,0 +1,268 @@
+@push('styles')
+<style>
+.client-bills-page {
+  background:
+    radial-gradient(circle at top left, rgba(14,165,233,.10), transparent 24%),
+    radial-gradient(circle at bottom right, rgba(37,99,235,.08), transparent 22%),
+    var(--bg-body);
+  min-height: 100vh;
+  padding: 24px;
+  font-family: var(--font-sans);
+}
+.cb-header { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; margin-bottom:24px; }
+.cb-header h1 { margin:0; font-size:28px; font-weight:800; color:var(--text-color); }
+.cb-header p { margin:6px 0 0; color:#64748b; font-size:14px; }
+.cb-toolbar { display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:20px; }
+.cb-search { position:relative; flex:1; min-width:240px; max-width:420px; }
+.cb-search input, .cb-filter {
+  width:100%; height:44px; border:1px solid #dbe5f0; border-radius:12px; background:#fff; color:#0f172a; font-size:14px;
+}
+.cb-search input { padding:0 14px 0 40px; }
+.cb-search i { position:absolute; left:14px; top:50%; transform:translateY(-50%); color:#94a3b8; }
+.cb-filter { min-width:220px; padding:0 14px; }
+.cb-card {
+  background:rgba(255,255,255,.95);
+  border:1px solid rgba(226,232,240,.92);
+  border-radius:22px;
+  box-shadow:0 18px 36px rgba(15,23,42,.08);
+  overflow:hidden;
+}
+.cb-table-wrap { overflow:auto; }
+.cb-table { width:100%; border-collapse:collapse; }
+.cb-table th, .cb-table td { padding:15px 18px; border-bottom:1px solid #eef2f7; text-align:left; font-size:14px; color:var(--text-color); vertical-align:top; }
+.cb-table th { background:#f8fafc; text-transform:uppercase; font-size:11px; letter-spacing:.5px; color:#64748b; }
+.bill-badge { display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; background:#dcfce7; color:#15803d; font-size:12px; font-weight:700; }
+.bill-link { background:none; border:none; padding:0; color:#2563eb; font-weight:700; cursor:pointer; text-align:left; }
+.cb-pagination { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; padding:18px; background:#f8fafc; }
+.cb-pages { display:flex; gap:6px; flex-wrap:wrap; }
+.cb-page-btn {
+  min-width:38px; height:38px; border:1px solid #dbe5f0; border-radius:10px; background:#fff; color:#0f172a; font-weight:700; cursor:pointer;
+}
+.cb-page-btn.active { background:#2563eb; border-color:#2563eb; color:#fff; }
+.cb-page-btn:disabled { opacity:.4; cursor:not-allowed; }
+.empty-state { text-align:center; padding:56px 20px; color:#94a3b8; }
+.empty-state h3 { margin:0 0 8px; font-size:18px; color:#475569; }
+.detail-grid { display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:12px; }
+.detail-box { border:1px solid #e2e8f0; border-radius:14px; padding:14px; background:#f8fafc; }
+.detail-box small { display:block; color:#64748b; margin-bottom:4px; }
+.detail-items { display:flex; flex-direction:column; gap:10px; margin-top:16px; }
+.detail-item { display:flex; justify-content:space-between; gap:12px; border:1px solid #e2e8f0; border-radius:14px; padding:12px 14px; background:#fff; }
+.detail-total { display:flex; justify-content:flex-end; margin-top:16px; font-weight:800; font-size:18px; color:#0f172a; }
+@media (max-width: 768px) {
+  .client-bills-page { padding:16px; }
+  .detail-grid { grid-template-columns: 1fr; }
+}
+</style>
+@endpush
+
+@section('content')
+<div class="client-bills-page">
+  <div class="cb-header">
+    <div>
+      <h1>Published Bills</h1>
+      <p>View published client bills that fall inside your assigned client scope.</p>
+    </div>
+  </div>
+
+  <div class="cb-toolbar">
+    <div class="cb-search">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="text" id="billSearch" placeholder="Search bills by client or bill head...">
+    </div>
+    <select id="clientFilter" class="cb-filter">
+      <option value="">All Clients</option>
+    </select>
+  </div>
+
+  <div class="cb-card">
+    <div class="cb-table-wrap">
+      <table class="cb-table">
+        <thead>
+          <tr>
+            <th>Bill</th>
+            <th>Client</th>
+            <th>Bill Date</th>
+            <th>Due Date</th>
+            <th>Total</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="billRows">
+          <tr><td colspan="6" class="text-center py-4">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="cb-pagination">
+      <div id="paginationInfo">Showing 0-0 of 0 bills</div>
+      <div class="cb-pages" id="pager"></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="billDetailModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Bill Details</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="billDetailBody">
+        <div class="text-center text-muted py-4">Loading…</div>
+      </div>
+    </div>
+  </div>
+</div>
+@endsection
+
+@push('scripts')
+<script>
+(function(){
+  const TOKEN = localStorage.getItem('token') || sessionStorage.getItem('token') || '';
+  if (!TOKEN) {
+    setTimeout(() => { window.location.href = '/client-user/login'; }, 400);
+    return;
+  }
+  const headers = { 'Authorization': 'Bearer ' + TOKEN, 'Accept': 'application/json' };
+  const detailModal = new bootstrap.Modal(document.getElementById('billDetailModal'));
+  const state = { page: 1, total: 0, totalPages: 1, q: '', clientId: '', items: [] };
+  const els = {
+    billSearch: document.getElementById('billSearch'),
+    clientFilter: document.getElementById('clientFilter'),
+    billRows: document.getElementById('billRows'),
+    paginationInfo: document.getElementById('paginationInfo'),
+    pager: document.getElementById('pager'),
+    billDetailBody: document.getElementById('billDetailBody'),
+  };
+  const esc = (value = '') => String(value).replace(/[&<>"']/g, (m) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[m]));
+  const fmtDate = (value) => {
+    if (!value) return '—';
+    const dt = new Date(value);
+    return Number.isNaN(dt.getTime()) ? esc(value) : dt.toLocaleDateString('en-IN', { year:'numeric', month:'short', day:'numeric' });
+  };
+  const money = (value) => `Rs ${Number(value || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+  async function fetchJSON(url) {
+    const res = await fetch(url, { headers });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data?.message || `HTTP ${res.status}`);
+    return data;
+  }
+
+  async function loadClients() {
+    const data = await fetchJSON('/api/clients/all');
+    const rows = Array.isArray(data.data) ? data.data : [];
+    els.clientFilter.innerHTML = '<option value="">All Clients</option>' + rows.map((client) => (
+      `<option value="${esc(client.id)}">${esc(client.name || `Client #${client.id}`)}</option>`
+    )).join('');
+  }
+
+  function renderRows() {
+    if (!state.items.length) {
+      els.billRows.innerHTML = '<tr><td colspan="6"><div class="empty-state"><h3>No published bills found</h3><p>No bills are currently visible inside your scope.</p></div></td></tr>';
+      return;
+    }
+    els.billRows.innerHTML = state.items.map((bill) => `
+      <tr>
+        <td>
+          <button class="bill-link" type="button" data-bill-id="${esc(bill.id)}">Bill #${esc(bill.id)}</button>
+          <div style="font-size:12px;color:#94a3b8;margin-top:4px;">Published ${fmtDate(bill.published_at)}</div>
+        </td>
+        <td>${esc(bill.client_name || '—')}</td>
+        <td>${fmtDate(bill.bill_date)}</td>
+        <td>${fmtDate(bill.due_date)}</td>
+        <td style="font-weight:800;">${esc(money(bill.total_amount))}</td>
+        <td><span class="bill-badge">Published</span></td>
+      </tr>
+    `).join('');
+  }
+
+  function renderPager() {
+    const start = state.total ? ((state.page - 1) * 10) + 1 : 0;
+    const end = Math.min(state.total, state.page * 10);
+    els.paginationInfo.textContent = `Showing ${start}-${end} of ${state.total} bills`;
+    const buttons = [];
+    buttons.push(`<button class="cb-page-btn" data-page="${state.page - 1}" ${state.page <= 1 ? 'disabled' : ''}>Previous</button>`);
+    for (let page = Math.max(1, state.page - 2); page <= Math.min(state.totalPages, state.page + 2); page += 1) {
+      buttons.push(`<button class="cb-page-btn ${page === state.page ? 'active' : ''}" data-page="${page}">${page}</button>`);
+    }
+    buttons.push(`<button class="cb-page-btn" data-page="${state.page + 1}" ${state.page >= state.totalPages ? 'disabled' : ''}>Next</button>`);
+    els.pager.innerHTML = buttons.join('');
+  }
+
+  async function loadBills() {
+    const params = new URLSearchParams({ page: state.page, per_page: 10, publish: 'published' });
+    if (state.q) params.set('q', state.q);
+    if (state.clientId) params.set('client_id', state.clientId);
+    const data = await fetchJSON(`/api/client-bills?${params.toString()}`);
+    state.items = Array.isArray(data.data) ? data.data : [];
+    state.total = Number(data.meta?.total || 0);
+    state.totalPages = Number(data.meta?.total_pages || 1);
+    renderRows();
+    renderPager();
+  }
+
+  async function openDetails(id) {
+    detailModal.show();
+    els.billDetailBody.innerHTML = '<div class="text-center text-muted py-4">Loading…</div>';
+    const data = await fetchJSON(`/api/client-bills/${encodeURIComponent(id)}`);
+    const bill = data.data || {};
+    const items = Array.isArray(bill.items) ? bill.items : [];
+    els.billDetailBody.innerHTML = `
+      <div class="detail-grid">
+        <div class="detail-box"><small>Bill</small><strong>#${esc(bill.id || '—')}</strong></div>
+        <div class="detail-box"><small>Client</small><strong>${esc(bill.client_name || '—')}</strong></div>
+        <div class="detail-box"><small>Bill Date</small><strong>${fmtDate(bill.bill_date)}</strong></div>
+        <div class="detail-box"><small>Due Date</small><strong>${fmtDate(bill.due_date)}</strong></div>
+      </div>
+      <div class="detail-items">
+        ${items.length ? items.map((item) => `
+          <div class="detail-item">
+            <div>
+              <strong>${esc(item.bill_head_title || 'Untitled')}</strong>
+            </div>
+            <div style="font-weight:800;">${esc(money(item.amount))}</div>
+          </div>
+        `).join('') : '<div class="empty-state" style="padding:16px;">No bill items found.</div>'}
+      </div>
+      <div class="detail-total">Total: <span class="ms-2">${esc(money(bill.total_amount))}</span></div>`;
+  }
+
+  let searchTimer;
+  els.billSearch.addEventListener('input', () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => {
+      state.q = els.billSearch.value.trim();
+      state.page = 1;
+      loadBills().catch((error) => {
+        els.billRows.innerHTML = `<tr><td colspan="6" class="text-danger text-center py-4">${esc(error.message || error)}</td></tr>`;
+      });
+    }, 300);
+  });
+  els.clientFilter.addEventListener('change', () => {
+    state.clientId = els.clientFilter.value;
+    state.page = 1;
+    loadBills().catch(() => {});
+  });
+  els.pager.addEventListener('click', (event) => {
+    const btn = event.target.closest('button[data-page]');
+    if (!btn || btn.disabled) return;
+    const page = Number(btn.dataset.page || 1);
+    if (!Number.isNaN(page) && page >= 1 && page <= state.totalPages && page !== state.page) {
+      state.page = page;
+      loadBills().catch(() => {});
+    }
+  });
+  els.billRows.addEventListener('click', (event) => {
+    const btn = event.target.closest('[data-bill-id]');
+    if (!btn) return;
+    openDetails(btn.dataset.billId).catch((error) => {
+      els.billDetailBody.innerHTML = `<div class="text-danger">${esc(error.message || error)}</div>`;
+    });
+  });
+
+  Promise.all([loadClients(), loadBills()]).catch((error) => {
+    els.billRows.innerHTML = `<tr><td colspan="6" class="text-danger text-center py-4">${esc(error.message || error)}</td></tr>`;
+  });
+})();
+</script>
+@endpush
