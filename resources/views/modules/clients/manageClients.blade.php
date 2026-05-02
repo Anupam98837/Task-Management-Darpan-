@@ -2,7 +2,7 @@
 
 @extends('pages.users.admin.layout.structure')
  
-@section('title', 'Client Management')
+@section('title', 'Client Directory')
  
 @push('styles')
 <style>
@@ -138,8 +138,8 @@ table tbody td:first-child {
 @section('content')
 <div class="clients-page">
   <div class="page-header">
-    <h1>Client Management</h1>
-    <p>Manage your client list, view details, and perform actions</p>
+    <h1>Client Directory</h1>
+    <p>Review your client list, open details, and keep account records organized.</p>
   </div>
  
   <!-- Toolbar -->

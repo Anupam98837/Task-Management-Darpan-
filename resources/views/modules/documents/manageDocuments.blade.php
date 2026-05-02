@@ -5,7 +5,7 @@
 {{-- ===== Header ===== --}}
 <div class="documents-page">
   <div class="page-header">
-    <h1>Document Management</h1>
+    <h1>Document Library</h1>
     <p>Overview of all uploaded documents</p>
   </div>
 

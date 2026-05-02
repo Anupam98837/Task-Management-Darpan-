@@ -3,8 +3,8 @@
 @section('content')
 <div class="doctypes-page">
   <div class="page-header">
-    <h1>Document Type Management</h1>
-    <p>Manage document types, view details, and perform actions</p>
+    <h1>Document Type Library</h1>
+    <p>Review document types, view details, and keep records structured.</p>
   </div>
 
   <!-- Toolbar -->

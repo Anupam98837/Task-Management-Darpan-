@@ -201,8 +201,8 @@ th.sortable{cursor:pointer;user-select:none}th.sortable:hover{color:#3b82f6}.tin
 @section('content')
 <div class="jobs-page">
   <div class="page-header">
-    <h1>Jobs Management</h1>
-    <p>Manage jobs, assign people, and track progress</p>
+    <h1>Job Directory</h1>
+    <p>Review jobs, coordinate teams, and track progress in one place.</p>
   </div>
 
   <!-- Toolbar -->

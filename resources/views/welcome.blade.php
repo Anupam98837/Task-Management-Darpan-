@@ -16,7 +16,7 @@
         
         body {
             font-family: 'Inter', sans-serif;
-            background: #0a0e27;
+            background: #0f2d66;
             color: #ffffff;
             overflow-x: hidden;
             min-height: 100vh;
@@ -30,7 +30,7 @@
         }
         
         .left-section {
-            background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 50%, #2a2f4a 100%);
+            background: linear-gradient(135deg, #0f2d66 0%, #14479d 52%, #1d67dd 100%);
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -55,7 +55,7 @@
         .shape-1 {
             width: 400px;
             height: 400px;
-            background: radial-gradient(circle, rgba(99, 102, 241, 0.4) 0%, transparent 70%);
+            background: radial-gradient(circle, rgba(35, 119, 252, 0.4) 0%, transparent 70%);
             top: -100px;
             left: -100px;
             animation-delay: 0s;
@@ -64,7 +64,7 @@
         .shape-2 {
             width: 300px;
             height: 300px;
-            background: radial-gradient(circle, rgba(168, 85, 247, 0.3) 0%, transparent 70%);
+            background: radial-gradient(circle, rgba(80, 155, 255, 0.32) 0%, transparent 70%);
             bottom: -80px;
             right: -80px;
             animation-delay: 5s;
@@ -109,7 +109,7 @@
         .logo-icon {
             width: 56px;
             height: 56px;
-            background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            background: linear-gradient(135deg, #2377fc 0%, #155eef 100%);
             border-radius: 14px;
             display: flex;
             align-items: center;
@@ -122,7 +122,7 @@
             content: '';
             position: absolute;
             inset: -2px;
-            background: linear-gradient(135deg, #6366f1, #a855f7);
+            background: linear-gradient(135deg, #2377fc, #155eef);
             border-radius: 16px;
             z-index: -1;
             opacity: 0.5;
@@ -301,17 +301,17 @@
             left: 0;
             right: 0;
             height: 4px;
-            background: linear-gradient(90deg, #6366f1 0%, #a855f7 100%);
+            background: linear-gradient(90deg, #2377fc 0%, #155eef 100%);
             transform: scaleX(0);
             transform-origin: left;
             transition: transform 0.4s ease;
         }
         
         .portal-card:hover {
-            border-color: #6366f1;
+            border-color: #2377fc;
             box-shadow: 
-                0 20px 40px rgba(99, 102, 241, 0.15),
-                0 0 0 1px rgba(99, 102, 241, 0.1) inset;
+                0 20px 40px rgba(35, 119, 252, 0.15),
+                0 0 0 1px rgba(35, 119, 252, 0.1) inset;
             transform: translateY(-4px) scale(1.01) !important;
         }
         
@@ -328,7 +328,7 @@
         .portal-icon-wrapper {
             width: 52px;
             height: 52px;
-            background: linear-gradient(135deg, #eef2ff 0%, #f3e8ff 100%);
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
             border-radius: 16px;
             display: flex;
             align-items: center;
@@ -338,13 +338,13 @@
         }
         
         .portal-card:hover .portal-icon-wrapper {
-            background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            background: linear-gradient(135deg, #2377fc 0%, #155eef 100%);
             transform: scale(1.05) rotate(5deg);
         }
         
         .portal-icon-wrapper i {
             font-size: 22px;
-            color: #6366f1;
+            color: #2377fc;
             transition: all 0.4s ease;
         }
         
@@ -368,7 +368,7 @@
         }
         
         .portal-arrow {
-            color: #6366f1;
+            color: #2377fc;
             font-size: 18px;
             transition: transform 0.3s ease;
         }

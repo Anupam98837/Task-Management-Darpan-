@@ -1,7 +1,7 @@
 {{-- resources/views/pages/users/admin/pages/mailer/manageMailers.blade.php --}}
 @extends('pages.users.admin.layout.structure')
 
-@section('title', 'Manage Mailer Settings')
+@section('title', 'Mail Delivery Settings')
 @section('content')
 @include('modules.mailer.manageMailers')
 @endsection

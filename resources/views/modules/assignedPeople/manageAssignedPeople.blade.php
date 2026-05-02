@@ -141,8 +141,8 @@ table tbody td:first-child {
 @section('content')
 <div class="assignedpeople-page">
   <div class="page-header">
-    <h1>Assigned People Management</h1>
-    <p>Manage assigned people, view details, and perform actions</p>
+    <h1>Team Directory</h1>
+    <p>Review team members, view details, and keep assignments organized.</p>
   </div>
 
   <!-- Toolbar -->

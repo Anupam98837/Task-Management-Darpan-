@@ -483,7 +483,7 @@ tbody td {
 @section('content')
 <div class="mailers-page">
   <div class="page-header">
-    <h1>Mailer Management</h1>
+    <h1>Mail Delivery</h1>
     <p>Configure and manage email delivery settings</p>
   </div>
 

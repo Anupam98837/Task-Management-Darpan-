@@ -8,8 +8,8 @@
 
 .bill-builder-page {
   background:
-    radial-gradient(circle at top left, rgba(59,130,246,.1), transparent 24%),
-    radial-gradient(circle at bottom right, rgba(14,165,233,.08), transparent 20%),
+    radial-gradient(circle at top right, rgba(35,119,252,.1), transparent 22%),
+    radial-gradient(circle at bottom left, rgba(106,169,255,.08), transparent 20%),
     var(--bg-body);
   min-height: 100vh;
   padding: 24px;
@@ -22,24 +22,24 @@
 .builder-actions { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
 .builder-grid { display:grid; grid-template-columns: minmax(0, 1.55fr) minmax(320px, .95fr); gap:20px; align-items:stretch; }
 .panel-card {
-  background: rgba(255,255,255,.94);
-  border:1px solid rgba(226,232,240,.9);
-  border-radius:22px;
-  box-shadow:0 18px 36px rgba(15,23,42,.08);
+  background: linear-gradient(180deg, rgba(255,255,255,.98), #fbfdff);
+  border:1px solid var(--border-color);
+  border-radius:24px;
+  box-shadow:0 22px 42px rgba(15,23,42,.08);
   overflow:hidden;
   display:flex;
   flex-direction:column;
   height:100%;
 }
-.left-scroll, .right-scroll { padding:20px; height:100%; }
+.left-scroll, .right-scroll { padding:22px; height:100%; }
 .right-scroll { overflow:auto; }
 .stack { display:flex; flex-direction:column; gap:18px; }
 .section-title { font-size:16px; font-weight:800; color:#0f172a; margin:0 0 12px; }
 .section-sub { font-size:13px; color:#64748b; margin:0 0 16px; }
-.btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:44px; padding:0 18px; border-radius:12px; font-size:14px; font-weight:700; cursor:pointer; transition:all .2s; text-decoration:none; border:none; }
+.btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:40px; padding:0 16px; border-radius:12px; font-size:13px; font-weight:800; cursor:pointer; transition:all .2s; text-decoration:none; border:none; }
 .btn-primary { background:linear-gradient(135deg,#2563eb,#1d4ed8); color:#fff; box-shadow:0 10px 20px rgba(37,99,235,.2); }
-.btn-secondary { background:#fff; border:1px solid #dbe5f0; color:#0f172a; }
-.btn-soft { background:#eff6ff; border:1px solid #bfdbfe; color:#1d4ed8; }
+.btn-secondary { background:linear-gradient(180deg,#fff,#f8fbff); border:1px solid #dbe5f0; color:#0f172a; }
+.btn-soft { background:linear-gradient(180deg,#f5f9ff,#eff6ff); border:1px solid #bfdbfe; color:#1d4ed8; }
 .btn-danger-soft { background:#fff1f2; border:1px solid #fecdd3; color:#be123c; }
 .btn.is-loading, .btn[aria-busy="true"] { pointer-events:none; opacity:.85; position:relative; }
 .btn.is-loading .btn-label { visibility:hidden; }
@@ -72,15 +72,15 @@ textarea.form-control { min-height: 96px; resize: vertical; }
   background:#fff; border:1px solid #bfdbfe; color:#1d4ed8; font-size:12px; font-weight:800;
 }
 .pill { display:inline-flex; align-items:center; gap:6px; padding:5px 10px; border-radius:999px; font-size:12px; font-weight:700; background:#f8fafc; border:1px solid #e2e8f0; color:#475569; }
-.subsection-card { border:1px solid #dbeafe; border-radius:18px; padding:16px; background:#fff; }
-.expense-table-wrap { border:1px solid #dbeafe; border-radius:18px; overflow:hidden; background:linear-gradient(180deg,#ffffff,#f8fbff); }
+.subsection-card { border:1px solid #dbeafe; border-radius:20px; padding:18px; background:linear-gradient(180deg,#ffffff,#fbfdff); }
+.expense-table-wrap { border:1px solid #dbeafe; border-radius:20px; overflow:hidden; background:linear-gradient(180deg,#ffffff,#f8fbff); }
 .expense-table-scroll { max-height:320px; overflow:auto; }
 .expense-table { width:100%; border-collapse:collapse; }
 .expense-table th, .expense-table td { padding:12px 14px; border-bottom:1px solid #eef2f7; font-size:13px; vertical-align:top; text-align:left; }
 .expense-table th { position:sticky; top:0; background:#f8fafc; text-transform:uppercase; letter-spacing:.4px; font-size:11px; color:#64748b; z-index:1; }
 .expense-check { width:18px; height:18px; }
 .item-list { display:flex; flex-direction:column; gap:12px; }
-.item-row { border:1px solid #e2e8f0; border-radius:16px; background:#fff; padding:14px; }
+.item-row { border:1px solid #e2e8f0; border-radius:18px; background:linear-gradient(180deg,#ffffff,#fbfdff); padding:14px; }
 .item-row.source-expense { background:linear-gradient(180deg,#eff6ff,#ffffff); border-color:#bfdbfe; }
 .item-top { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:12px; flex-wrap:wrap; }
 .item-top strong { color:#0f172a; }

@@ -3,8 +3,8 @@
 @section('content')
 <div class="doctypes-page">
   <div class="page-header">
-    <h1>Expense Head Management</h1>
-    <p>Manage expense heads, view details, and perform actions</p>
+    <h1>Expense Head Library</h1>
+    <p>Review expense heads, view details, and keep billing structures organized.</p>
   </div>
 
   <!-- Toolbar -->

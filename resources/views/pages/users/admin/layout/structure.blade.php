@@ -20,8 +20,8 @@
   <style>
      :root{
       --radius: var(--radius-md,12px);
-      --rail-w: 72px;
-      --drawer-w: 260px;
+      --rail-w: 78px;
+      --drawer-w: 292px;
       --elev-1: var(--shadow-sm, 0 1px 2px rgba(0,0,0,.06));
       --elev-2: 0 6px 20px rgba(0,0,0,.12);
       --ease: cubic-bezier(.2,.7,.2,1);
@@ -40,112 +40,125 @@
     body.no-scroll{ overflow:hidden; }
     .layout{ display:grid; grid-template-columns: var(--rail-w) 1fr; min-height:100svh; }
 
-    /* ===== Rail (mini sidebar) — refined ===== */
+    /* ===== REMOS-STYLE: Dark Navy Rail ===== */
     .rail{
       position:sticky; top:0; height:100svh;
-      background: linear-gradient(180deg, #ffffff 0%, #fafbfd 100%);
-      border-right:1px solid var(--border-color,#e5e7eb);
+      background: #1b2240;
+      border-right: none;
       display:flex; flex-direction:column; align-items:center; gap:6px; padding:12px 10px;
-      z-index:1001; box-shadow: 0 1px 2px rgba(15,23,42,.04);
+      z-index:1001;
     }
     .rail .logo{ width:48px; height:48px; display:flex; align-items:center; justify-content:center; margin-bottom:4px; }
     .rail .rail-nav{ display:flex; flex-direction:column; gap:4px; margin-top:6px; width:100%; }
     .rail .rail-btn{
-      width:100%; height:42px; border:0; background:transparent; color:var(--text-color);
+      width:100%; height:42px; border:0; background:transparent; color:rgba(255,255,255,.55);
       border-radius:10px; display:flex; align-items:center; justify-content:center;
       transition: background .18s var(--ease), color .18s var(--ease), transform .12s var(--ease);
       position:relative; outline:none;
     }
-    .rail .rail-btn:hover{ background: rgba(3,105,161,.08); color: var(--primary-color); transform: translateY(-1px); }
-    .rail .rail-btn:hover .fa{ color: var(--primary-color); }
-    .rail .rail-btn:focus-visible{ outline:2px solid var(--primary-color); outline-offset:2px; }
+    .rail .rail-btn:hover{ background: rgba(255,255,255,.1); color:#fff; }
+    .rail .rail-btn:hover .fa{ color: #fff; }
+    .rail .rail-btn:focus-visible{ outline:2px solid rgba(255,255,255,.4); outline-offset:2px; }
     .rail .rail-btn.active{
-      background: linear-gradient(135deg, rgba(3,105,161,.12), rgba(14,165,233,.10));
-      color: var(--primary-color);
-      box-shadow: inset 0 0 0 1px rgba(3,105,161,.18);
+      background: rgba(35,119,252,.28);
+      color: #fff;
     }
     .rail .rail-btn.active::before{
-      content:""; position:absolute; left:-10px; top:8px; bottom:8px; width:3px;
-      border-radius:0 4px 4px 0; background: linear-gradient(180deg, var(--primary-color), var(--secondary-color));
+      content:""; position:absolute; left:0; top:8px; bottom:8px; width:3px;
+      border-radius:0 4px 4px 0; background: var(--primary-color,#2377fc);
     }
-    .rail .rail-btn .fa{ font-size:16px; color: var(--muted-color,#64748b); transition: color .18s var(--ease); }
-    .rail .rail-btn.active .fa{ color: var(--primary-color); }
+    .rail .rail-btn .fa{ font-size:15px; color: rgba(255,255,255,.55); transition: color .18s var(--ease); }
+    .rail .rail-btn.active .fa{ color: #fff; }
     .rail .spacer{ flex:1; }
-    .rail .rail-bottom{ display:flex; flex-direction:column; gap:4px; width:100%; padding-top:8px; border-top:1px dashed var(--border-color); }
+    .rail .rail-bottom{ display:flex; flex-direction:column; gap:4px; width:100%; padding-top:8px; border-top:1px solid rgba(255,255,255,.08); }
 
-    /* ===== Drawer — refined ===== */
+    /* ===== REMOS-STYLE: Dark Navy Drawer ===== */
     .drawer{
       position:fixed; top:0; left:var(--rail-w); height:100svh; width:var(--drawer-w);
-      background:#fff; border-right:1px solid var(--border-color);
-      box-shadow: 0 8px 24px -8px rgba(15,23,42,.10);
+      background:#222849; border-right: none;
+      box-shadow: 4px 0 24px rgba(0,0,0,.22);
       transform: translateX(-100%); opacity:0; visibility:hidden;
-      transition: transform .24s var(--ease), opacity .24s var(--ease), visibility .24s var(--ease);
+      transition: transform .16s var(--ease), opacity .16s var(--ease), visibility .16s var(--ease);
       z-index:1000; display:flex; flex-direction:column;
     }
     .drawer.open{ transform:none; opacity:1; visibility:visible; }
     .drawer[aria-hidden="true"]{ pointer-events:none; }
+    /* CSS hover — ensures drawer opens reliably on hover */
+    .rail:hover ~ .drawer,
+    .drawer:hover {
+      transform: none !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+      pointer-events: auto !important;
+    }
+    /* Shift panel content when sidebar is hover-open */
+    .rail:hover ~ .panel,
+    .drawer:hover ~ .panel {
+      margin-left: var(--drawer-w);
+    }
 
     .drawer .drawer-head{
-      padding:12px 14px; border-bottom:1px solid var(--border-color);
+      padding:14px 16px; border-bottom:1px solid rgba(255,255,255,.06);
       display:flex; align-items:center; justify-content:space-between; gap:8px;
-      background: linear-gradient(180deg, #ffffff, #fafbfd);
     }
     .fa-times{margin:0 !important;}
 
-    .drawer .nav-scroll{ flex:1; overflow:auto; padding:10px 10px 14px; display:flex; flex-direction:column; gap:3px; }
+    .drawer .nav-scroll{ flex:1; overflow:auto; padding:10px 10px 14px; display:flex; flex-direction:column; gap:2px; }
+    .drawer .nav-scroll::-webkit-scrollbar{ width:4px; }
+    .drawer .nav-scroll::-webkit-scrollbar-thumb{ background: rgba(255,255,255,.12); border-radius:4px; }
     .drawer .nav-section-title{
-      padding: 10px 10px 4px; font-size: 10px; font-weight: 700; text-transform: uppercase;
-      letter-spacing: .8px; color: var(--muted-color);
+      padding: 16px 12px 5px; font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 1.2px; color: rgba(255,255,255,.35);
     }
 
     /* Primary links + submenu */
     .drawer .nav-link{
       display:flex; align-items:center; gap:10px;
-      padding: 8px 11px; border-radius:8px; color:var(--text-color);
+      padding: 9px 12px; border-radius:10px; color:rgba(255,255,255,.72);
       text-decoration:none; transition: background .14s var(--ease), color .14s var(--ease);
-      border:1px solid transparent !important; position:relative;
-      font-size:13px; font-weight:500; letter-spacing: .1px;
+      border:none !important; position:relative;
+      font-size:13px; font-weight:500;
     }
-    .drawer .nav-link i{ color: var(--muted-color,#64748b); min-width:16px; text-align:center; font-size: 13px; transition: color .14s var(--ease); }
-    .drawer .nav-link:hover{ background: rgba(3,105,161,.06); color: var(--primary-color); }
-    .drawer .nav-link:hover i{ color: var(--primary-color); }
-    .drawer .nav-link:focus-visible{ outline:2px solid var(--primary-color); outline-offset:2px; }
+    .drawer .nav-link i{ color: rgba(255,255,255,.45); min-width:16px; text-align:center; font-size: 13px; transition: color .14s var(--ease); }
+    .drawer .nav-link:hover{ background: rgba(255,255,255,.07); color: #fff; }
+    .drawer .nav-link:hover i{ color: rgba(255,255,255,.85); }
+    .drawer .nav-link:focus-visible{ outline:2px solid rgba(255,255,255,.3); outline-offset:2px; }
     .drawer .nav-link.active{
-      background: linear-gradient(135deg, rgba(3,105,161,.10), rgba(14,165,233,.08));
-      color: var(--primary-color); font-weight:600;
+      background: rgba(35,119,252,.25);
+      color: #fff; font-weight:600;
     }
-    .drawer .nav-link.active i{ color: var(--primary-color); }
+    .drawer .nav-link.active i{ color: #fff; }
     .drawer .nav-link.active::before{
-      content:""; position:absolute; left:-10px; top:6px; bottom:6px; width:3px; border-radius:0 4px 4px 0;
-      background: linear-gradient(180deg, var(--primary-color), var(--secondary-color));
+      content:""; position:absolute; left:0; top:6px; bottom:6px; width:3px; border-radius:0 4px 4px 0;
+      background: var(--primary-color,#2377fc);
     }
 
-    .nav-group{ display:flex; flex-direction:column; gap:3px; }
+    .nav-group{ display:flex; flex-direction:column; gap:2px; }
     .group-toggle{ display:flex; align-items:center; gap:10px; cursor:pointer; user-select:none; }
-    .group-toggle .chev{ margin-left:auto; color:var(--muted-color); transition: transform .18s var(--ease); font-size: 10px; }
-    .group-toggle.open .chev{ transform: rotate(180deg); color: var(--primary-color); }
+    .group-toggle .chev{ margin-left:auto; color:rgba(255,255,255,.35); transition: transform .18s var(--ease); font-size: 10px; }
+    .group-toggle.open .chev{ transform: rotate(180deg); color: rgba(255,255,255,.75); }
 
     .submenu{
-      display:none; flex-direction:column; gap:2px; margin-left: 14px; padding-left: 8px;
-      border-left: 1.5px solid var(--border-color); margin-top: 2px;
+      display:none; flex-direction:column; gap:1px; margin-left: 12px; padding-left: 10px;
+      border-left: 1.5px solid rgba(255,255,255,.08); margin-top: 2px;
     }
     .submenu.open{ display:flex; animation:fadeIn .2s var(--ease); }
-    .submenu .nav-link{ font-size:12px; padding: 6px 10px 6px 14px; border-radius:6px; font-weight: 500; }
+    .submenu .nav-link{ font-size:12px; padding: 7px 10px 7px 12px; border-radius:8px; font-weight: 400; color:rgba(255,255,255,.6); }
     .submenu .nav-link::before{ display:none; }
-    .submenu .nav-link.active{ background: rgba(3,105,161,.06); }
+    .submenu .nav-link:hover{ color:#fff; background: rgba(255,255,255,.07); }
+    .submenu .nav-link.active{ background: rgba(35,119,252,.2); color:#fff; font-weight:600; }
 
     /* Pin button */
     .drawer-pin-btn{
       width:30px; height:30px; border-radius: 8px;
-      border: 1px solid var(--border-color); background: #fff;
-      color: var(--muted-color); display:inline-flex; align-items:center; justify-content:center;
+      border: 1px solid rgba(255,255,255,.12); background: transparent;
+      color: rgba(255,255,255,.45); display:inline-flex; align-items:center; justify-content:center;
       cursor: pointer; transition: var(--transition); font-size: 12px;
     }
-    .drawer-pin-btn:hover{ background: var(--light-color); color: var(--primary-color); border-color: rgba(3,105,161,.25); }
+    .drawer-pin-btn:hover{ background: rgba(255,255,255,.1); color: #fff; }
     .drawer-pin-btn.pinned{
-      background: linear-gradient(135deg, rgba(3,105,161,.14), rgba(14,165,233,.10));
-      color: var(--primary-color); border-color: rgba(3,105,161,.30);
-      box-shadow: inset 0 0 0 1px rgba(3,105,161,.12);
+      background: rgba(35,119,252,.25);
+      color: #fff; border-color: rgba(35,119,252,.4);
     }
     .drawer-pin-btn.pinned i{ transform: rotate(-25deg); }
     .drawer-pin-btn i{ transition: transform .2s var(--ease); margin: 0 !important; }
@@ -160,23 +173,33 @@
     .panel.shifted{ margin-left: var(--drawer-w); }
 
     .admin-header{
-      height:60px; background:#fff; border-bottom:1px solid var(--border-color);
-      position:sticky; top:0; z-index:900; display:flex; align-items:center; gap:10px; padding:0 12px;
+      min-height:62px; background:#fff; border-bottom:1px solid var(--border-color,#e5e7eb);
+      position:sticky; top:0; z-index:900; display:flex; align-items:center; gap:10px; padding:0 20px;
+      box-shadow: 0 1px 0 var(--border-color,#e5e7eb);
     }
     .admin-header .btn.btn-link{ color: var(--text-color); text-decoration:none; }
     .admin-header .btn.btn-link:hover{ color: var(--accent-color); }
-    .admin-header h6{ margin:0; font-family: var(--font-head, Poppins, var(--font-sans)); font-weight:600; }
+    .admin-header h6{ margin:0; font-family: var(--font-head); font-weight:600; }
+
+    /* Theme toggle in header */
+    .header-theme-toggle{
+      width:36px; height:36px; border-radius:10px; border:1px solid var(--border-color,#e5e7eb);
+      background:transparent; color:var(--text-color); display:inline-flex; align-items:center;
+      justify-content:center; cursor:pointer; transition: var(--transition); font-size:15px;
+    }
+    .header-theme-toggle:hover{ background: var(--light-color,#f4f7fb); color:var(--primary-color); border-color: rgba(35,119,252,.3); }
+    .header-theme-toggle i{ pointer-events:none; transition: transform .3s var(--ease); }
+    .header-theme-toggle:hover i{ transform: rotate(20deg); }
 
     .page-head{
       display:flex; align-items:center; justify-content:space-between; gap:8px;
-      background:#fff; border:1px solid var(--border-color); border-radius: var(--radius);
-      padding:12px 14px; margin:12px;
+      background:linear-gradient(180deg, #ffffff, #f8fbff); border:1px solid var(--border-color); border-radius: 18px;
+      padding:14px 16px; margin:14px;
+      box-shadow: var(--shadow-sm);
     }
-    .page-head .actions{ display:flex; gap:8px; }
+    .page-head .actions{ display:flex; gap:8px; flex-wrap:wrap; }
 
-    .main-content{ flex:1; 
-      /* padding: 6px 12px 16px 12px; */
-     }
+    .main-content{ flex:1; padding: 0 12px 24px; }
 
     /* ===== Overlay under drawer (mobile) ===== */
     .overlay{
@@ -196,73 +219,52 @@
 
     /* ===== Dark mode ===== */
     html.theme-dark{
-      --bg-body:#0b1220; --text-color:#e5e7eb; --light-color:#0f172a; --border-color:#273244;
+      --bg-body:#0d1117; --text-color:#e5e7eb; --light-color:#161b27; --border-color:#1e2a3a; --surface:#1a2235;
     }
     html.theme-dark body{ background: var(--bg-body); color: var(--text-color); }
-    html.theme-dark .rail,
-    html.theme-dark .drawer,
-    html.theme-dark .admin-header,
+    html.theme-dark .admin-header{ background: #161b27 !important; border-bottom-color: #1e2a3a !important; }
     html.theme-dark .page-head,
     html.theme-dark .dropdown-menu,
     html.theme-dark .modal-content,
     html.theme-dark .card,
     html.theme-dark .offcanvas,
     html.theme-dark .toast{ background: var(--light-color) !important; color: var(--text-color) !important; border-color: var(--border-color) !important; }
-    html.theme-dark .drawer .nav-link:hover{ background: rgba(99,102,241,.10); color: var(--accent-color,#6366f1); }
-    html.theme-dark .drawer .nav-link.active{ background: rgba(99,102,241,.14); }
-
-    /* Scrollbar polish */
-    .drawer .nav-scroll::-webkit-scrollbar{ width:8px; }
-    .drawer .nav-scroll::-webkit-scrollbar-thumb{ background: var(--border-color); border-radius:8px; }
+    /* Rail + Drawer keep dark navy regardless of theme */
+    .rail{ background: #1b2240 !important; }
+    .drawer{ background: #222849 !important; }
+    html.theme-dark .header-theme-toggle{ border-color: #1e2a3a; color:#e5e7eb; }
+    html.theme-dark .header-theme-toggle:hover{ background:#1e2a3a; color:#60a5fa; }
 
     /* Reduce motion pref */
     @media (prefers-reduced-motion: reduce){
       *{ transition:none !important; animation:none !important; }
     }
 
-    /* --- Logout & "Logged in" area (works for drawer + mobile sidebar) --- */
-    .drawer{ display:flex; flex-direction:column; }
+    /* --- Logout & "Logged in" area --- */
     .drawer .drawer-foot,
     .sidebar-auth{
-      margin-top:auto; border-top:1px solid var(--border-color, #e5e7eb);
-      padding:12px; background:#fff; position:sticky; bottom:0; z-index:1;
+      margin-top:auto; border-top:1px solid rgba(255,255,255,.07);
+      padding:12px; background:transparent; position:sticky; bottom:0; z-index:1;
     }
 
-    .login-state{ display:flex; align-items:center; gap:8px; font-size:12px; color: var(--muted-color, #6b7280); margin-bottom:8px; }
-    .login-state .fa{ font-size:12px; color: var(--success-color, #16a34a); }
+    .login-state{ display:flex; align-items:center; gap:8px; font-size:12px; color: rgba(255,255,255,.45); margin-bottom:8px; }
+    .login-state .fa{ font-size:12px; color: #34d399; }
 
     .auth-link{
       display:flex; align-items:center; justify-content:center; gap:.5rem;
-      height:36px; border:1px solid var(--border-color, #e5e7eb);
-      border-radius: var(--radius, 12px);
-      color: var(--danger-color, #dc2626);
-      font-weight:600; font-size:14px; text-decoration:none;
+      height:36px; border:1px solid rgba(255,255,255,.12);
+      border-radius:10px;
+      color: rgba(255,255,255,.7);
+      font-weight:600; font-size:13px; text-decoration:none;
       background: transparent;
       transition: background .15s ease, border-color .15s ease, color .15s ease, transform .08s ease;
     }
-    .auth-link:hover{ background: rgba(220,38,38,.06); border-color: rgba(220,38,38,.35); color:#b91c1c; }
+    .auth-link:hover{ background: rgba(220,38,38,.18); border-color: rgba(220,38,38,.45); color:#fca5a5; }
     .auth-link:active{ transform: translateY(1px); }
-
-    html.theme-dark .drawer .drawer-foot,
-    html.theme-dark .sidebar-auth{ background: var(--light-color, #0f172a); border-top-color: var(--border-color, #273244); }
-    html.theme-dark .auth-link{ border-color: var(--border-color, #273244); }
-    html.theme-dark .auth-link:hover{ background: rgba(220,38,38,.12); border-color: rgba(220,38,38,.45); }
 
     .drawer .drawer-foot,
     .sidebar-auth{ padding-bottom: calc(12px + env(safe-area-inset-bottom, 0)); }
     .ah_usericon:hover { background: var(--primary-color); color: var(--surface) !important;}
-
-    .theme-toggle-drawer {
-      display: flex; align-items: center; justify-content: center; gap: 0.5rem;
-      height: 36px; border: 1px solid var(--border-color, #e5e7eb); border-radius: var(--radius, 12px);
-      color: var(--text-color); font-weight: 600; font-size: 14px; text-decoration: none;
-      background: transparent; transition: background .15s ease, border-color .15s ease, color .15s ease, transform .08s ease;
-      width: 100%; margin-bottom: 8px; cursor: pointer;
-    }
-    .theme-toggle-drawer:hover { background: var(--light-color); border-color: var(--border-color); color: var(--accent-color); }
-    .theme-toggle-drawer:active { transform: translateY(1px); }
-    html.theme-dark .theme-toggle-drawer { border-color: var(--border-color, #273244); }
-    html.theme-dark .theme-toggle-drawer:hover { background: rgba(99,102,241,.10); border-color: rgba(99,102,241,.35); }
 
     .fa-bars { margin: 0 !important; }
 
@@ -297,8 +299,8 @@
 
     html.theme-dark .notif-drawer,
     html.theme-dark .notif-drawer-head,
-    html.theme-dark .notif-drawer-foot { background: var(--light-color, #0f172a); border-color: var(--border-color, #273244); }
-    html.theme-dark .notif-drawer-list { background: var(--bg-body, #0b1220); }
+    html.theme-dark .notif-drawer-foot { background: var(--light-color, #161b27); border-color: var(--border-color, #1e2a3a); }
+    html.theme-dark .notif-drawer-list { background: var(--bg-body, #0d1117); }
     /* Expense bubble (cards) */
 .expense-bubble {
   border-radius: 12px;
@@ -515,7 +517,6 @@ html.theme-dark .btn-secondary { background: rgba(255,255,255,0.02); border-colo
     <div class="spacer"></div>
 
     <div class="rail-bottom">
-      <button class="rail-btn" id="toggleTheme" title="Toggle theme" aria-pressed="false"><i class="fa-regular fa-moon" id="themeIcon"></i></button>
       <a class="rail-btn" href="#" id="logoutRail" title="Logout"><i class="fa fa-sign-out-alt"></i></a>
       <button class="rail-btn d-lg-none" id="openDrawerMobile" title="Open menu"><i class="fa fa-bars"></i></button>
     </div>
@@ -532,7 +533,7 @@ html.theme-dark .btn-secondary { background: rgba(255,255,255,0.02); border-colo
                 title="Keep sidebar open" aria-label="Pin sidebar" aria-pressed="false">
           <i class="fa-solid fa-thumbtack"></i>
         </button>
-        <button class="btn btn-sm btn-light d-lg-none" id="closeDrawer" aria-label="Close drawer"><i class="fa fa-times"></i></button>
+        <button class="drawer-pin-btn d-lg-none" id="closeDrawer" aria-label="Close drawer"><i class="fa fa-times"></i></button>
       </div>
     </div>
 
@@ -540,44 +541,42 @@ html.theme-dark .btn-secondary { background: rgba(255,255,255,0.02); border-colo
       <div class="nav-section-title">Main</div>
       <a href="/dashboard" class="nav-link"><i class="fa-solid fa-gauge"></i><span>Dashboard</span></a>
 
-      <!-- Clients -->
+      <div class="nav-section-title">Clients</div>
       <div class="nav-group" data-section="clients">
         <a href="#" class="nav-link group-toggle" data-target="sm-clients" aria-expanded="false">
-          <i class="fa-solid fa-users"></i><span>Client</span>
+          <i class="fa-solid fa-users"></i><span>Clients</span>
           <i class="fa fa-chevron-down ms-auto chev"></i>
         </a>
         <div id="sm-clients" class="submenu" role="group" aria-label="Clients submenu">
-          <a href="/admin/client/add" class="nav-link">New Client</a>
-          <a href="/admin/client/manage" class="nav-link">Clients</a>
+          <a href="/admin/client/add" class="nav-link">Create Client</a>
+          <a href="/admin/client/manage" class="nav-link">Client Directory</a>
           <a href="/admin/client-users/manage" class="nav-link">Client Contacts</a>
         </div>
       </div>
 
-      <!-- Document Types -->
       <div class="nav-group" data-section="doc-types">
         <a href="#" class="nav-link group-toggle" data-target="sm-doc-types" aria-expanded="false">
           <i class="fa-regular fa-file-lines"></i><span>Document Types</span>
           <i class="fa fa-chevron-down ms-auto chev"></i>
         </a>
         <div id="sm-doc-types" class="submenu" role="group" aria-label="Document Types submenu">
-          <a href="/admin/document-types/create" class="nav-link">New Document Type</a>
-          <a href="/admin/document-types" class="nav-link">Document Types</a>
+          <a href="/admin/document-types/create" class="nav-link">Create Type</a>
+          <a href="/admin/document-types" class="nav-link">Type Library</a>
         </div>
       </div>
 
-      <!-- Documents -->
       <div class="nav-group" data-section="documents">
         <a href="#" class="nav-link group-toggle" data-target="sm-documents" aria-expanded="false">
           <i class="fa-regular fa-folder-open"></i><span>Documents</span>
           <i class="fa fa-chevron-down ms-auto chev"></i>
         </a>
         <div id="sm-documents" class="submenu" role="group" aria-label="Documents submenu">
-          <a href="/documents/upload" class="nav-link">Upload Documents</a>
-          <a href="/admin/documents" class="nav-link">Documents</a>
+          <a href="/documents/upload" class="nav-link">Upload Document</a>
+          <a href="/admin/documents" class="nav-link">Document Library</a>
         </div>
       </div>
 
-      <!-- Jobs -->
+      <div class="nav-section-title">Jobs</div>
       <div class="nav-group" data-section="jobs">
         <a href="#" class="nav-link group-toggle" data-target="sm-jobs" aria-expanded="false">
           <i class="fa-solid fa-briefcase"></i><span>Jobs</span>
@@ -585,49 +584,49 @@ html.theme-dark .btn-secondary { background: rgba(255,255,255,0.02); border-colo
         </a>
         <div id="sm-jobs" class="submenu" role="group" aria-label="Jobs submenu">
           <a href="/admin/jobs/add" class="nav-link">Create Job</a>
-          <a href="/admin/jobs/view" class="nav-link">View Jobs</a>
-           <a href="/job-expense/claim/manage" class="nav-link">Job Expenses</a>
+          <a href="/admin/jobs/view" class="nav-link">Job Directory</a>
+          <a href="/job-expense/claim/manage" class="nav-link">Expense Claims</a>
 
         </div>
       </div>
 
-      <!-- Team -->
       <div class="nav-group" data-section="assigned-people">
         <a href="#" class="nav-link group-toggle" data-target="sm-assigned-people" aria-expanded="false">
           <i class="fa-solid fa-user-tag"></i><span>Team</span>
           <i class="fa fa-chevron-down ms-auto chev"></i>
         </a>
         <div id="sm-assigned-people" class="submenu" role="group" aria-label="Team submenu">
-          <a href="/admin/assignedpeople/manage" class="nav-link">Team Members</a>
+          <a href="/admin/assignedpeople/manage" class="nav-link">Team Directory</a>
         </div>
       </div>
+
+      <div class="nav-section-title">Accounting</div>
       <div class="nav-group" data-section="accounting">
         <a href="#" class="nav-link group-toggle" data-target="sm-accounting" aria-expanded="false">
           <i class="fa-solid fa-file-invoice-dollar"></i><span>Accounting</span>
           <i class="fa fa-chevron-down ms-auto chev"></i>
         </a>
         <div id="sm-accounting" class="submenu" role="group" aria-label="Accounting submenu">
-          <a href="/admin/accounting/client-bills" class="nav-link">Bills</a>
+          <a href="/admin/accounting/client-bills" class="nav-link">Client Bills</a>
           <a href="/admin/accounting/repayments" class="nav-link">Repayments</a>
-          <a href="/admin/accounting/bill-heads/create" class="nav-link">New Bill Head</a>
-          <a href="/admin/accounting/bill-heads/manage" class="nav-link">Bill Heads</a>
+          <a href="/admin/accounting/bill-heads/create" class="nav-link">Create Bill Head</a>
+          <a href="/admin/accounting/bill-heads/manage" class="nav-link">Bill Head Library</a>
           <a href="/admin/accountant-users/manage" class="nav-link">Accountants</a>
         </div>
       </div>
-      <!-- Expense Head -->
-<div class="nav-group" data-section="expense-heads">
-  <a href="#" class="nav-link group-toggle" data-target="sm-expense-heads" aria-expanded="false">
-    <i class="fa-solid fa-receipt"></i><span>Expense Heads</span>
-    <i class="fa fa-chevron-down ms-auto chev"></i>
-  </a>
-  <div id="sm-expense-heads" class="submenu" role="group" aria-label="Expense Heads submenu">
-    <a href="/admin/expenseHead/create" class="nav-link">New Expense Head</a>
-    <a href="/admin/expenseHead/manage" class="nav-link">Expense Heads</a>
-  </div>
-</div>
 
+      <div class="nav-group" data-section="expense-heads">
+        <a href="#" class="nav-link group-toggle" data-target="sm-expense-heads" aria-expanded="false">
+          <i class="fa-solid fa-receipt"></i><span>Expense Heads</span>
+          <i class="fa fa-chevron-down ms-auto chev"></i>
+        </a>
+        <div id="sm-expense-heads" class="submenu" role="group" aria-label="Expense Heads submenu">
+          <a href="/admin/expenseHead/create" class="nav-link">Create Expense Head</a>
+          <a href="/admin/expenseHead/manage" class="nav-link">Expense Head Library</a>
+        </div>
+      </div>
 
-      <!-- Settings -->
+      <div class="nav-section-title">System</div>
       <div class="nav-group" data-section="settings">
         <a href="#" class="nav-link group-toggle" data-target="sm-settings" aria-expanded="false">
           <i class="fa-solid fa-gear"></i><span>Settings</span>
@@ -641,12 +640,6 @@ html.theme-dark .btn-secondary { background: rgba(255,255,255,0.02); border-colo
     </div>
 
     <div class="drawer-foot">
-      <!-- Theme Toggle Button for Mobile Sidebar -->
-      <button class="theme-toggle-drawer" id="toggleThemeDrawer" type="button">
-        <i class="fa-regular fa-moon" id="themeIconDrawer"></i>
-        <span>Toggle Theme</span>
-      </button>
-
       <div class="login-state">
         <i class="fa fa-circle-check" aria-hidden="true"></i>
         <span>Logged in</span>
@@ -665,7 +658,12 @@ html.theme-dark .btn-secondary { background: rgba(255,255,255,0.02); border-colo
     <header class="admin-header">
       <button class="btn btn-link d-lg-none" id="openDrawerMobileTop" aria-label="Open navigation"><i class="fa fa-bars fs-4"></i></button>
 
-      <div class="ms-auto d-flex align-items-center gap-3 me-2" style="position:relative;">
+      <div class="ms-auto d-flex align-items-center gap-2 me-2" style="position:relative;">
+
+        <!-- Theme Toggle (header) -->
+        <button class="header-theme-toggle" id="toggleTheme" title="Toggle theme" aria-pressed="false">
+          <i class="fa-regular fa-sun" id="themeIcon"></i>
+        </button>
 
         <!-- Notification Bell (drawer trigger + badge) -->
         <div class="notif-bell">
@@ -894,12 +892,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
     railLogoMask?.style.setProperty('--logo', `url("${use}")`);
     drawerLogoMask?.style.setProperty('--logo', `url("${use}")`);
     if(themeIcon){
-      if(mode==='dark'){ themeIcon.classList.replace('fa-moon','fa-sun'); }
-      else{ themeIcon.classList.replace('fa-sun','fa-moon'); }
-    }
-    if(themeIconDrawer){
-      if(mode==='dark'){ themeIconDrawer.classList.replace('fa-moon','fa-sun'); }
-      else{ themeIconDrawer.classList.replace('fa-sun','fa-moon'); }
+      if(mode==='dark'){ themeIcon.classList.replace('fa-moon','fa-sun'); themeIcon.classList.replace('fa-regular','fa-solid'); }
+      else{ themeIcon.classList.replace('fa-sun','fa-moon'); themeIcon.classList.replace('fa-solid','fa-regular'); }
     }
     toggleTheme?.setAttribute('aria-pressed', mode==='dark' ? 'true' : 'false');
   }
@@ -917,10 +911,6 @@ document.addEventListener('DOMContentLoaded', ()=>{
     applyTheme(prefersDark ? 'dark' : 'light');
   }
   toggleTheme?.addEventListener('click', ()=>{
-    const next = document.documentElement.classList.contains('theme-dark') ? 'light':'dark';
-    applyTheme(next);
-  });
-  toggleThemeDrawer?.addEventListener('click', ()=>{
     const next = document.documentElement.classList.contains('theme-dark') ? 'light':'dark';
     applyTheme(next);
   });
@@ -948,14 +938,14 @@ document.addEventListener('DOMContentLoaded', ()=>{
   rail?.addEventListener('mouseleave', ()=>{
     if(isPinned) return;
     if(isFinePointer() && isDesktop()){
-      hoverTimer = setTimeout(()=>{ if(!overlay.classList.contains('active')) closeDrawerDesktop(); }, 160);
+      hoverTimer = setTimeout(()=>{ if(!overlay.classList.contains('active')) closeDrawerDesktop(); }, 400);
     }
   });
   drawer?.addEventListener('mouseenter', clearHoverTimer);
   drawer?.addEventListener('mouseleave', ()=>{
     if(isPinned) return;
     if(isFinePointer() && isDesktop()){
-      hoverTimer = setTimeout(()=>{ if(!overlay.classList.contains('active')) closeDrawerDesktop(); }, 140);
+      hoverTimer = setTimeout(()=>{ if(!overlay.classList.contains('active')) closeDrawerDesktop(); }, 350);
     }
   });
 
