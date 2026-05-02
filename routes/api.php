@@ -15,6 +15,7 @@ use App\Http\Controllers\API\ClientUserController;
 use App\Http\Controllers\API\AccountantUserController;
 use App\Http\Controllers\API\ClientBillController;
 use App\Http\Controllers\API\ClientBillHeadController;
+use App\Http\Controllers\API\ClientBillRepaymentController;
 use App\Http\Controllers\API\ClientUserDashboardController;
 use App\Http\Controllers\API\AdminDashboardController;
 use App\Http\Controllers\API\AssigneeDashboardController;
@@ -275,6 +276,13 @@ Route::middleware('check.role:client_user')->group(function () {
     Route::get('/client-users/documents', [ClientUserDashboardController::class, 'documents'])
         ->name('api.client-users.documents');
 });
+Route::middleware('check.role:accountant_user')->group(function () {
+    Route::get('/accountant-users/dashboard', ClientUserDashboardController::class)
+        ->name('api.accountant-users.dashboard');
+
+    Route::get('/accountant-users/documents', [ClientUserDashboardController::class, 'documents'])
+        ->name('api.accountant-users.documents');
+});
 // Route::middleware(['auth:sanctum'])->prefix('assignee')->group(function () {
 //     Route::get('/dashboard', function () {
 //         return view('assignee.dashboard');
@@ -386,6 +394,9 @@ Route::prefix('client-bills')->middleware('check.role:admin,accountant_user,clie
         Route::get('/{id}', [ClientBillController::class, 'show'])
             ->whereNumber('id')
             ->name('api.client-bills.show');
+        Route::get('/{id}/pdf', [ClientBillController::class, 'pdf'])
+            ->whereNumber('id')
+            ->name('api.client-bills.pdf');
         Route::put('/{id}', [ClientBillController::class, 'update'])
             ->whereNumber('id')
             ->name('api.client-bills.update');
@@ -395,6 +406,22 @@ Route::prefix('client-bills')->middleware('check.role:admin,accountant_user,clie
         Route::delete('/{id}', [ClientBillController::class, 'destroy'])
             ->whereNumber('id')
             ->name('api.client-bills.destroy');
+    });
+
+Route::prefix('client-bill-repayments')->middleware('check.role:admin,accountant_user,client_user')->group(function () {
+        Route::get('/', [ClientBillRepaymentController::class, 'index'])
+            ->name('api.client-bill-repayments.index');
+        Route::post('/', [ClientBillRepaymentController::class, 'store'])
+            ->name('api.client-bill-repayments.store');
+        Route::get('/{id}', [ClientBillRepaymentController::class, 'show'])
+            ->whereNumber('id')
+            ->name('api.client-bill-repayments.show');
+        Route::patch('/{id}/approve', [ClientBillRepaymentController::class, 'approve'])
+            ->whereNumber('id')
+            ->name('api.client-bill-repayments.approve');
+        Route::patch('/{id}/reject', [ClientBillRepaymentController::class, 'reject'])
+            ->whereNumber('id')
+            ->name('api.client-bill-repayments.reject');
     });
 Route::prefix('job-details')->middleware('check.role:admin,assignee,client_user')->group(function () {
     Route::get('{job}/expenses', [ExpenseController::class, 'listExpenses'])

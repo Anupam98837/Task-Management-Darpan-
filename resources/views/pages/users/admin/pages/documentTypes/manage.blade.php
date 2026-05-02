@@ -1,7 +1,7 @@
 {{-- resources/views/pages/users/admin/pages/document-types/manage.blade.php --}}
 @extends('pages.users.admin.layout.structure')
  
-@section('title', 'Manage Document Types')
+@section('title', 'Document Types')
 @section('content')
 @include('modules.documentTypes.manage')
 @endsection

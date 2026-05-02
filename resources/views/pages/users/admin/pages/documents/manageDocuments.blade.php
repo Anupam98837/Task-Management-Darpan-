@@ -1,7 +1,7 @@
 {{-- resources/views/pages/users/admin/pages/documents/manageDocuments.blade.php --}}
 @extends('pages.users.admin.layout.structure')
 
-@section('title', 'Manage Documents')
+@section('title', 'Documents')
 @section('content')
 @include('modules.documents.manageDocuments')
 @endsection

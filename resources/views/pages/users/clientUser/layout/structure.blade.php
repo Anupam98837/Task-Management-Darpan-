@@ -5,11 +5,21 @@
   $portalDashboardUrl = $portalDashboardUrl ?? '/' . $portalPrefix . '/dashboard';
   $portalJobsUrl = $portalJobsUrl ?? '/' . $portalPrefix . '/jobs/view';
   $portalBillsUrl = $portalBillsUrl ?? '/' . $portalPrefix . '/bills';
+  $portalRepaymentsUrl = $portalRepaymentsUrl ?? '/' . $portalPrefix . '/repayments';
   $portalDocumentsUrl = $portalDocumentsUrl ?? '/' . $portalPrefix . '/documents';
   $portalNotificationsUrl = $portalNotificationsUrl ?? '/' . $portalPrefix . '/notifications';
   $portalLoginUrl = $portalLoginUrl ?? '/' . $portalPrefix . '/login';
   $portalLogoutApi = $portalLogoutApi ?? ($portalPrefix === 'client-user' ? '/api/client-users/logout' : '/api/assignedpeople/logout');
   $portalThemeKey = $portalThemeKey ?? 'theme:' . $portalPrefix;
+  $portalJobsLabel = $portalJobsLabel ?? 'Jobs';
+  $portalJobsItemLabel = $portalJobsItemLabel ?? 'View Jobs';
+  $portalJobsIcon = $portalJobsIcon ?? 'fa-solid fa-briefcase';
+  $portalBillsLabel = $portalBillsLabel ?? 'Bills';
+  $portalBillsIcon = $portalBillsIcon ?? 'fa-solid fa-file-invoice-dollar';
+  $portalRepaymentsLabel = $portalRepaymentsLabel ?? 'Repayments';
+  $portalRepaymentsIcon = $portalRepaymentsIcon ?? 'fa-solid fa-money-bill-transfer';
+  $portalDocumentsLabel = $portalDocumentsLabel ?? 'Documents';
+  $portalDocumentsIcon = $portalDocumentsIcon ?? 'fa-regular fa-folder-open';
   $isClientUser = ($portalPrefix === 'client-user');
 @endphp
 <html lang="en" class="">
@@ -26,6 +36,8 @@
 
   <!-- Main theme -->
   <link rel="stylesheet" href="{{ asset('/assets/css/common/main.css') }}">
+  <!-- Shared UI components -->
+  <link rel="stylesheet" href="{{ asset('/assets/css/common/components.css') }}">
 
   <style>
     :root{
@@ -499,14 +511,17 @@ html.theme-dark .btn-secondary { background: rgba(255,255,255,0.02); border-colo
         <i class="fa-solid fa-gauge"></i>
       </a>
       <!-- Jobs group kicker -->
-      <button class="rail-btn group-kicker" data-section="jobs" type="button" title="Jobs">
-        <i class="fa-solid fa-briefcase"></i>
+      <button class="rail-btn group-kicker" data-section="jobs" type="button" title="{{ $portalJobsLabel }}">
+        <i class="{{ $portalJobsIcon }}"></i>
       </button>
-      <a class="rail-btn" href="{{ $portalBillsUrl }}" title="Bills" id="railBills">
-        <i class="fa-solid fa-file-invoice-dollar"></i>
+      <a class="rail-btn" href="{{ $portalBillsUrl }}" title="{{ $portalBillsLabel }}" id="railBills">
+        <i class="{{ $portalBillsIcon }}"></i>
       </a>
-      <a class="rail-btn" href="{{ $portalDocumentsUrl }}" title="Documents" id="railDocuments">
-        <i class="fa-regular fa-folder-open"></i>
+      <a class="rail-btn" href="{{ $portalRepaymentsUrl }}" title="{{ $portalRepaymentsLabel }}" id="railRepayments">
+        <i class="{{ $portalRepaymentsIcon }}"></i>
+      </a>
+      <a class="rail-btn" href="{{ $portalDocumentsUrl }}" title="{{ $portalDocumentsLabel }}" id="railDocuments">
+        <i class="{{ $portalDocumentsIcon }}"></i>
       </a>
     </nav>
 
@@ -539,20 +554,24 @@ html.theme-dark .btn-secondary { background: rgba(255,255,255,0.02); border-colo
       <!-- Jobs -->
       <div class="nav-group" data-section="jobs">
         <a href="#" class="nav-link group-toggle" data-target="sm-jobs" aria-expanded="false">
-          <i class="fa-solid fa-briefcase"></i><span>Jobs</span>
+          <i class="{{ $portalJobsIcon }}"></i><span>{{ $portalJobsLabel }}</span>
           <i class="fa fa-chevron-down ms-auto chev"></i>
         </a>
         <div id="sm-jobs" class="submenu" role="group" aria-label="Jobs submenu">
-          <a href="{{ $portalJobsUrl }}" class="nav-link">View Jobs</a>
+          <a href="{{ $portalJobsUrl }}" class="nav-link">{{ $portalJobsItemLabel }}</a>
         </div>
       </div>
 
       <a href="{{ $portalBillsUrl }}" class="nav-link" id="navBills">
-        <i class="fa-solid fa-file-invoice-dollar"></i><span>Bills</span>
+        <i class="{{ $portalBillsIcon }}"></i><span>{{ $portalBillsLabel }}</span>
+      </a>
+
+      <a href="{{ $portalRepaymentsUrl }}" class="nav-link" id="navRepayments">
+        <i class="{{ $portalRepaymentsIcon }}"></i><span>{{ $portalRepaymentsLabel }}</span>
       </a>
 
       <a href="{{ $portalDocumentsUrl }}" class="nav-link" id="navDocuments">
-        <i class="fa-regular fa-folder-open"></i><span>Documents</span>
+        <i class="{{ $portalDocumentsIcon }}"></i><span>{{ $portalDocumentsLabel }}</span>
       </a>
     </div>
 

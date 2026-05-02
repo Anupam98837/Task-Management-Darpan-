@@ -13,6 +13,8 @@
 
   <!-- Main theme (tokens come from here) -->
   <link rel="stylesheet" href="{{ asset('/assets/css/common/main.css') }}">
+  <!-- Shared UI components -->
+  <link rel="stylesheet" href="{{ asset('/assets/css/common/components.css') }}">
 
   <!-- Structure 2 (refined) -->
   <style>
@@ -545,9 +547,9 @@ html.theme-dark .btn-secondary { background: rgba(255,255,255,0.02); border-colo
           <i class="fa fa-chevron-down ms-auto chev"></i>
         </a>
         <div id="sm-clients" class="submenu" role="group" aria-label="Clients submenu">
-          <a href="/admin/client/add" class="nav-link">Add Client</a>
-          <a href="/admin/client/manage" class="nav-link">Manage Client</a>
-          <a href="/admin/client-users/manage" class="nav-link">Manage Client Users</a>
+          <a href="/admin/client/add" class="nav-link">New Client</a>
+          <a href="/admin/client/manage" class="nav-link">Clients</a>
+          <a href="/admin/client-users/manage" class="nav-link">Client Contacts</a>
         </div>
       </div>
 
@@ -558,8 +560,8 @@ html.theme-dark .btn-secondary { background: rgba(255,255,255,0.02); border-colo
           <i class="fa fa-chevron-down ms-auto chev"></i>
         </a>
         <div id="sm-doc-types" class="submenu" role="group" aria-label="Document Types submenu">
-          <a href="/admin/document-types/create" class="nav-link">Add Document Type</a>
-          <a href="/admin/document-types" class="nav-link">Manage Document Types</a>
+          <a href="/admin/document-types/create" class="nav-link">New Document Type</a>
+          <a href="/admin/document-types" class="nav-link">Document Types</a>
         </div>
       </div>
 
@@ -570,8 +572,8 @@ html.theme-dark .btn-secondary { background: rgba(255,255,255,0.02); border-colo
           <i class="fa fa-chevron-down ms-auto chev"></i>
         </a>
         <div id="sm-documents" class="submenu" role="group" aria-label="Documents submenu">
-          <a href="/documents/upload" class="nav-link">Upload New Documents</a>
-          <a href="/admin/documents" class="nav-link">Manage Documents</a>
+          <a href="/documents/upload" class="nav-link">Upload Documents</a>
+          <a href="/admin/documents" class="nav-link">Documents</a>
         </div>
       </div>
 
@@ -584,19 +586,19 @@ html.theme-dark .btn-secondary { background: rgba(255,255,255,0.02); border-colo
         <div id="sm-jobs" class="submenu" role="group" aria-label="Jobs submenu">
           <a href="/admin/jobs/add" class="nav-link">Create Job</a>
           <a href="/admin/jobs/view" class="nav-link">View Jobs</a>
-           <a href="/job-expense/claim/manage" class="nav-link">Manage Job Expenses</a>
+           <a href="/job-expense/claim/manage" class="nav-link">Job Expenses</a>
 
         </div>
       </div>
 
-      <!-- Assigned People -->
+      <!-- Team -->
       <div class="nav-group" data-section="assigned-people">
         <a href="#" class="nav-link group-toggle" data-target="sm-assigned-people" aria-expanded="false">
-          <i class="fa-solid fa-user-tag"></i><span>Assigned People</span>
+          <i class="fa-solid fa-user-tag"></i><span>Team</span>
           <i class="fa fa-chevron-down ms-auto chev"></i>
         </a>
-        <div id="sm-assigned-people" class="submenu" role="group" aria-label="Assigned People submenu">
-          <a href="/admin/assignedpeople/manage" class="nav-link">Manage Assigned People</a>
+        <div id="sm-assigned-people" class="submenu" role="group" aria-label="Team submenu">
+          <a href="/admin/assignedpeople/manage" class="nav-link">Team Members</a>
         </div>
       </div>
       <div class="nav-group" data-section="accounting">
@@ -605,10 +607,11 @@ html.theme-dark .btn-secondary { background: rgba(255,255,255,0.02); border-colo
           <i class="fa fa-chevron-down ms-auto chev"></i>
         </a>
         <div id="sm-accounting" class="submenu" role="group" aria-label="Accounting submenu">
-          <a href="/admin/accounting/client-bills" class="nav-link">Client Bills</a>
-          <a href="/admin/accounting/bill-heads/create" class="nav-link">Add Bill Head</a>
-          <a href="/admin/accounting/bill-heads/manage" class="nav-link">Manage Bill Heads</a>
-          <a href="/admin/accountant-users/manage" class="nav-link">Manage Accountant Users</a>
+          <a href="/admin/accounting/client-bills" class="nav-link">Bills</a>
+          <a href="/admin/accounting/repayments" class="nav-link">Repayments</a>
+          <a href="/admin/accounting/bill-heads/create" class="nav-link">New Bill Head</a>
+          <a href="/admin/accounting/bill-heads/manage" class="nav-link">Bill Heads</a>
+          <a href="/admin/accountant-users/manage" class="nav-link">Accountants</a>
         </div>
       </div>
       <!-- Expense Head -->
@@ -618,8 +621,8 @@ html.theme-dark .btn-secondary { background: rgba(255,255,255,0.02); border-colo
     <i class="fa fa-chevron-down ms-auto chev"></i>
   </a>
   <div id="sm-expense-heads" class="submenu" role="group" aria-label="Expense Heads submenu">
-    <a href="/admin/expenseHead/create" class="nav-link">Add Expense Head</a>
-    <a href="/admin/expenseHead/manage" class="nav-link">Manage Expense Heads</a>
+    <a href="/admin/expenseHead/create" class="nav-link">New Expense Head</a>
+    <a href="/admin/expenseHead/manage" class="nav-link">Expense Heads</a>
   </div>
 </div>
 

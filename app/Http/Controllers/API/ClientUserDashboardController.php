@@ -34,12 +34,12 @@ class ClientUserDashboardController extends Controller
 
     public function __invoke(Request $request)
     {
-        if ($resp = $this->requireRole($request, ['client_user'])) {
+        if ($resp = $this->requireRole($request, ['client_user', 'accountant_user'])) {
             return $resp;
         }
 
         $actor = $this->actor($request);
-        $clientIds = $this->scopeService->visibleClientIdsForUser($actor['id']);
+        $clientIds = $this->scopeService->visibleClientIdsForActor($actor['role'] ?? null, $actor['id']) ?? [];
 
         try {
             if (empty($clientIds)) {
@@ -59,6 +59,7 @@ class ClientUserDashboardController extends Controller
                         'recent_jobs' => [],
                         'recent_documents' => [],
                         'recent_bills' => [],
+                        'all_published_bills' => [],
                     ],
                 ]);
             }
@@ -132,6 +133,23 @@ class ClientUserDashboardController extends Controller
                     'c.name as client_name',
                 ]);
 
+            $allPublishedBills = DB::table('client_bills as cb')
+                ->leftJoin('clients as c', 'c.id', '=', 'cb.client_id')
+                ->whereIn('cb.client_id', $clientIds)
+                ->where('cb.is_published', true)
+                ->orderBy('cb.published_at', 'desc')
+                ->orderBy('cb.id', 'desc')
+                ->limit(100)
+                ->get([
+                    'cb.id',
+                    'cb.client_id',
+                    'cb.bill_date',
+                    'cb.due_date',
+                    'cb.total_amount',
+                    'cb.published_at',
+                    'c.name as client_name',
+                ]);
+
             return response()->json([
                 'status'  => 'success',
                 'message' => 'Dashboard data',
@@ -151,6 +169,7 @@ class ClientUserDashboardController extends Controller
                     'recent_jobs' => $recentJobs,
                     'recent_documents' => $recentDocuments,
                     'recent_bills' => $recentBills,
+                    'all_published_bills' => $allPublishedBills,
                 ],
             ]);
         } catch (\Throwable $e) {
@@ -168,12 +187,12 @@ class ClientUserDashboardController extends Controller
      */
     public function documents(Request $request)
     {
-        if ($resp = $this->requireRole($request, ['client_user'])) {
+        if ($resp = $this->requireRole($request, ['client_user', 'accountant_user'])) {
             return $resp;
         }
 
         $actor     = $this->actor($request);
-        $clientIds = $this->scopeService->visibleClientIdsForUser($actor['id']);
+        $clientIds = $this->scopeService->visibleClientIdsForActor($actor['role'] ?? null, $actor['id']) ?? [];
 
         if (empty($clientIds)) {
             return response()->json([

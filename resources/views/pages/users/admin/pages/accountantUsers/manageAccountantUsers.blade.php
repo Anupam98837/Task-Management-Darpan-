@@ -1,6 +1,6 @@
 @extends('pages.users.admin.layout.structure')
 
-@section('title', 'Manage Accountant Users')
+@section('title', 'Accountants')
 @section('content')
 @include('modules.accountantUsers.manageAccountantUsers')
 @endsection

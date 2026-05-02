@@ -85,8 +85,8 @@ textarea.form-control {height:auto;padding:10px 14px;resize:vertical;}
 @section('content')
 <div class="clientusers-page">
   <div class="page-header">
-    <h1>Client User Management</h1>
-    <p>Create client-scoped users who can log in and view jobs for selected client trees.</p>
+    <h1>Client Contacts</h1>
+    <p>Create client-scoped contacts who can log in and view jobs for selected client trees.</p>
   </div>
 
   <div class="toolbar">
@@ -94,7 +94,7 @@ textarea.form-control {height:auto;padding:10px 14px;resize:vertical;}
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
         <path d="M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/>
       </svg>
-      <input id="searchInput" type="text" placeholder="Search client users by name, email, role, or contact...">
+      <input id="searchInput" type="text" placeholder="Search client contacts by name, email, role, or contact...">
     </div>
 
     <select id="statusFilter" class="select-box">
@@ -106,7 +106,7 @@ textarea.form-control {height:auto;padding:10px 14px;resize:vertical;}
 
     <button id="addClientUserBtn" class="btn btn-primary">
       <i class="fa-solid fa-user-plus"></i>
-      Add Client User
+      New Client Contact
     </button>
 
     <button id="exportBtn" class="btn btn-secondary">
@@ -136,7 +136,7 @@ textarea.form-control {height:auto;padding:10px 14px;resize:vertical;}
     </div>
 
     <div class="pagination">
-      <div id="paginationInfo">Showing 0-0 of 0 client users</div>
+      <div id="paginationInfo">Showing 0-0 of 0 client contacts</div>
       <div class="pagination-controls" id="pager"></div>
     </div>
   </div>
@@ -146,7 +146,7 @@ textarea.form-control {height:auto;padding:10px 14px;resize:vertical;}
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="modalTitle">Add Client User</h5>
+        <h5 class="modal-title" id="modalTitle">New Client Contact</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <form id="clientUserForm" autocomplete="off">
@@ -554,7 +554,7 @@ textarea.form-control {height:auto;padding:10px 14px;resize:vertical;}
     const totalPages = Math.max(1, state.totalPages || 1);
     const start = state.total ? ((state.page - 1) * PER_PAGE) + 1 : 0;
     const end = Math.min(state.total, state.page * PER_PAGE);
-    els.paginationInfo.textContent = `Showing ${start}-${end} of ${state.total} client users`;
+    els.paginationInfo.textContent = `Showing ${start}-${end} of ${state.total} client contacts`;
 
     const buttons = [];
     buttons.push(`<button class="page-btn" data-page="${state.page - 1}" ${state.page <= 1 ? 'disabled' : ''}>Previous</button>`);
@@ -580,7 +580,7 @@ textarea.form-control {height:auto;padding:10px 14px;resize:vertical;}
 
   function openCreateModal(){
     resetForm();
-    els.modalTitle.textContent = 'Add Client User';
+    els.modalTitle.textContent = 'New Client Contact';
     clientUserModal.show();
   }
 
@@ -604,7 +604,7 @@ textarea.form-control {height:auto;padding:10px 14px;resize:vertical;}
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data?.message || 'Failed to load client user');
       populateForm(data.data || {});
-      els.modalTitle.textContent = 'Edit Client User';
+      els.modalTitle.textContent = 'Edit Client Contact';
       clientUserModal.show();
     } catch (error) {
       Swal.fire({ icon:'error', title:'Unable to load client user', text:String(error.message || error) });

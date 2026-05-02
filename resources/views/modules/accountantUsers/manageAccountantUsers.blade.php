@@ -84,8 +84,8 @@ textarea.form-control {height:auto;padding:10px 14px;resize:vertical;}
 @section('content')
 <div class="clientusers-page">
   <div class="page-header">
-    <h1>Accountant User Management</h1>
-    <p>Create accountant users with client scope so they can manage billing for assigned client trees.</p>
+    <h1>Accountants</h1>
+    <p>Create and maintain accountant access for the client trees assigned to your billing team.</p>
   </div>
 
   <div class="toolbar">
@@ -93,7 +93,7 @@ textarea.form-control {height:auto;padding:10px 14px;resize:vertical;}
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
         <path d="M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/>
       </svg>
-      <input id="searchInput" type="text" placeholder="Search accountant users by name, email, role, or contact...">
+      <input id="searchInput" type="text" placeholder="Search accountants by name, email, role, or contact...">
     </div>
 
     <select id="statusFilter" class="select-box">
@@ -105,7 +105,7 @@ textarea.form-control {height:auto;padding:10px 14px;resize:vertical;}
 
     <button id="addClientUserBtn" class="btn btn-primary">
       <i class="fa-solid fa-user-plus"></i>
-      Add Accountant User
+      New Accountant
     </button>
 
     <button id="exportBtn" class="btn btn-secondary">
@@ -135,7 +135,7 @@ textarea.form-control {height:auto;padding:10px 14px;resize:vertical;}
     </div>
 
     <div class="pagination">
-      <div id="paginationInfo">Showing 0-0 of 0 accountant users</div>
+      <div id="paginationInfo">Showing 0-0 of 0 accountants</div>
       <div class="pagination-controls" id="pager"></div>
     </div>
   </div>
@@ -145,7 +145,7 @@ textarea.form-control {height:auto;padding:10px 14px;resize:vertical;}
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="modalTitle">Add Accountant User</h5>
+        <h5 class="modal-title" id="modalTitle">New Accountant</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <form id="clientUserForm" autocomplete="off">
@@ -447,7 +447,7 @@ textarea.form-control {height:auto;padding:10px 14px;resize:vertical;}
     try {
       const res = await fetch(`${API_BASE}/accountant-users?${params.toString()}`, { headers });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data?.message || 'Failed to fetch accountant users');
+      if (!res.ok) throw new Error(data?.message || 'Failed to fetch accountants');
 
       state.items = Array.isArray(data?.data) ? data.data : [];
       state.total = data?.meta?.total || 0;
@@ -455,7 +455,7 @@ textarea.form-control {height:auto;padding:10px 14px;resize:vertical;}
       renderRows();
       renderPager();
     } catch (error) {
-      Swal.fire({ icon:'error', title:'Unable to fetch accountant users', text:String(error.message || error) });
+      Swal.fire({ icon:'error', title:'Unable to fetch accountants', text:String(error.message || error) });
     }
   }
 
@@ -472,8 +472,8 @@ textarea.form-control {height:auto;padding:10px 14px;resize:vertical;}
       els.rows.innerHTML = `
         <tr><td colspan="7">
           <div class="empty-state">
-            <h3>No accountant users found</h3>
-            <p>Try adjusting the search or create a new accountant user.</p>
+            <h3>No accountants found</h3>
+            <p>Try adjusting the search or create a new accountant profile.</p>
           </div>
         </td></tr>`;
       return;
@@ -512,7 +512,7 @@ textarea.form-control {height:auto;padding:10px 14px;resize:vertical;}
     const totalPages = Math.max(1, state.totalPages || 1);
     const start = state.total ? ((state.page - 1) * PER_PAGE) + 1 : 0;
     const end = Math.min(state.total, state.page * PER_PAGE);
-    els.paginationInfo.textContent = `Showing ${start}-${end} of ${state.total} accountant users`;
+    els.paginationInfo.textContent = `Showing ${start}-${end} of ${state.total} accountants`;
 
     const buttons = [];
     buttons.push(`<button class="page-btn" data-page="${state.page - 1}" ${state.page <= 1 ? 'disabled' : ''}>Previous</button>`);
@@ -535,7 +535,7 @@ textarea.form-control {height:auto;padding:10px 14px;resize:vertical;}
 
   function openCreateModal(){
     resetForm();
-    els.modalTitle.textContent = 'Add Accountant User';
+    els.modalTitle.textContent = 'New Accountant';
     clientUserModal.show();
   }
 
@@ -557,12 +557,12 @@ textarea.form-control {height:auto;padding:10px 14px;resize:vertical;}
     try {
       const res = await fetch(`${API_BASE}/accountant-users/${encodeURIComponent(id)}`, { headers });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data?.message || 'Failed to load accountant user');
+      if (!res.ok) throw new Error(data?.message || 'Failed to load accountant');
       populateForm(data.data || {});
-      els.modalTitle.textContent = 'Edit Accountant User';
+      els.modalTitle.textContent = 'Edit Accountant';
       clientUserModal.show();
     } catch (error) {
-      Swal.fire({ icon:'error', title:'Unable to load accountant user', text:String(error.message || error) });
+      Swal.fire({ icon:'error', title:'Unable to load accountant', text:String(error.message || error) });
     }
   }
 
@@ -656,7 +656,7 @@ textarea.form-control {height:auto;padding:10px 14px;resize:vertical;}
     e.preventDefault();
     const id = deleteBtn.dataset.id;
     const result = await Swal.fire({
-      title:'Delete accountant user?',
+      title:'Delete accountant?',
       text:'This action cannot be undone.',
       icon:'warning',
       showCancelButton:true,
@@ -668,11 +668,11 @@ textarea.form-control {height:auto;padding:10px 14px;resize:vertical;}
     try {
       const res = await fetch(`${API_BASE}/accountant-users/${encodeURIComponent(id)}`, { method:'DELETE', headers });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data?.message || 'Failed to delete accountant user');
+      if (!res.ok) throw new Error(data?.message || 'Failed to delete accountant');
       toast('success', 'Accountant user deleted');
       fetchClientUsers();
     } catch (error) {
-      Swal.fire({ icon:'error', title:'Could not delete accountant user', text:String(error.message || error) });
+      Swal.fire({ icon:'error', title:'Could not delete accountant', text:String(error.message || error) });
     }
   });
 
@@ -716,7 +716,7 @@ textarea.form-control {height:auto;padding:10px 14px;resize:vertical;}
         await Swal.fire({
           icon:'success',
           title:'Accountant user created',
-          html:`<div style="text-align:left"><p style="margin-bottom:8px">The accountant user was created successfully.</p><p style="margin:0"><strong>Generated password:</strong> <code>${esc(data.plain_password)}</code></p></div>`,
+          html:`<div style="text-align:left"><p style="margin-bottom:8px">The accountant profile was created successfully.</p><p style="margin:0"><strong>Generated password:</strong> <code>${esc(data.plain_password)}</code></p></div>`,
         });
       } else {
         toast('success', isEdit ? 'Accountant user updated' : 'Accountant user created');
@@ -724,7 +724,7 @@ textarea.form-control {height:auto;padding:10px 14px;resize:vertical;}
       clientUserModal.hide();
       fetchClientUsers();
     } catch (error) {
-      Swal.fire({ icon:'error', title:'Could not save accountant user', text:String(error.message || error) });
+      Swal.fire({ icon:'error', title:'Could not save accountant', text:String(error.message || error) });
     } finally {
       setBtnLoading(els.saveBtn, false);
     }
@@ -754,7 +754,7 @@ textarea.form-control {height:auto;padding:10px 14px;resize:vertical;}
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `accountant_users_${new Date().toISOString().slice(0,10)}.csv`;
+    a.download = `accountants_${new Date().toISOString().slice(0,10)}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

@@ -4,11 +4,12 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Services\ClientUserScopeService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Storage;
 
 class ClientBillController extends Controller
 {
@@ -121,13 +122,131 @@ class ClientBillController extends Controller
         return round($total, 2);
     }
 
+    private function generateAttachmentUrls(string $publicPath): array
+    {
+        $absoluteUrl = Storage::disk('public')->url($publicPath);
+        $relativeUrl = parse_url($absoluteUrl, PHP_URL_PATH) ?: '/f/' . $publicPath;
+        if (!str_starts_with($relativeUrl, '/f/')) {
+            $relativeUrl = str_replace('/storage/', '/f/', $relativeUrl);
+        }
+        $absoluteUrl = rtrim(config('app.url'), '/') . $relativeUrl;
+
+        return [
+            'absolute_url' => $absoluteUrl,
+            'relative_url' => $relativeUrl,
+        ];
+    }
+
+    private function normalizeRepaymentAttachments($row)
+    {
+        if (!$row || empty($row->attachments_json)) {
+            return $row;
+        }
+
+        $attachments = is_string($row->attachments_json)
+            ? (json_decode($row->attachments_json, true) ?: [])
+            : (is_array($row->attachments_json) ? $row->attachments_json : []);
+
+        foreach ($attachments as &$attachment) {
+            if (!empty($attachment['disk']) && !empty($attachment['disk_path'])) {
+                $urlData = $this->generateAttachmentUrls($attachment['disk_path']);
+                $attachment['absolute_url'] = $urlData['absolute_url'];
+                $attachment['relative_url'] = $urlData['relative_url'];
+            }
+        }
+
+        $row->attachments_json = json_encode($attachments, JSON_UNESCAPED_UNICODE);
+        $row->attachments = $attachments;
+        $row->attachments_count = (int) ($row->attachments_count ?? count($attachments));
+        $row->has_attachments = (bool) ($row->has_attachments ?? ($row->attachments_count > 0));
+
+        return $row;
+    }
+
+    private function resolveActorName(?string $role, ?int $id): ?string
+    {
+        $id = (int) ($id ?? 0);
+        if ($id <= 0 || !$role) {
+            return null;
+        }
+
+        return match ($role) {
+            'admin' => DB::table('admins')->where('id', $id)->value('name'),
+            'accountant_user' => DB::table('accountant_users')->where('id', $id)->value('name'),
+            'client_user' => DB::table('client_users')->where('id', $id)->value('name'),
+            'assignee' => DB::table('assigned_people')->where('id', $id)->value('name'),
+            default => null,
+        };
+    }
+
+    private function billRepayments(int $billId)
+    {
+        return DB::table('client_bill_repayments')
+            ->where('client_bill_id', $billId)
+            ->orderBy('repayment_date', 'desc')
+            ->orderBy('id', 'desc')
+            ->get()
+            ->map(function ($row) {
+                $row = $this->normalizeRepaymentAttachments($row);
+                $row->submitted_by_name = $this->resolveActorName($row->submitted_by_role ?? null, (int) ($row->submitted_by ?? 0));
+                $row->approved_by_name = $this->resolveActorName($row->approved_by_role ?? null, (int) ($row->approved_by ?? 0));
+                return $row;
+            });
+    }
+
+    private function repaymentAggregates(array $billIds): array
+    {
+        $billIds = array_values(array_filter(array_map('intval', $billIds), fn ($id) => $id > 0));
+        if (empty($billIds)) {
+            return [];
+        }
+
+        return DB::table('client_bill_repayments')
+            ->whereIn('client_bill_id', $billIds)
+            ->selectRaw(
+                'client_bill_id,
+                COUNT(*) as repayment_count,
+                SUM(CASE WHEN status = ? THEN amount ELSE 0 END) as approved_repayment_amount,
+                SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as pending_repayment_count',
+                ['approved', 'pending']
+            )
+            ->groupBy('client_bill_id')
+            ->get()
+            ->keyBy('client_bill_id')
+            ->map(fn ($row) => [
+                'repayment_count' => (int) ($row->repayment_count ?? 0),
+                'approved_repayment_amount' => round((float) ($row->approved_repayment_amount ?? 0), 2),
+                'pending_repayment_count' => (int) ($row->pending_repayment_count ?? 0),
+            ])
+            ->all();
+    }
+
+    private function applyRepaymentAggregate(object $row, array $aggregateMap): object
+    {
+        $meta = $aggregateMap[(int) ($row->id ?? 0)] ?? [
+            'repayment_count' => 0,
+            'approved_repayment_amount' => 0,
+            'pending_repayment_count' => 0,
+        ];
+
+        $row->repayment_count = (int) ($meta['repayment_count'] ?? 0);
+        $row->approved_repayment_amount = round((float) ($meta['approved_repayment_amount'] ?? 0), 2);
+        $row->pending_repayment_count = (int) ($meta['pending_repayment_count'] ?? 0);
+
+        return $row;
+    }
+
     private function mapBill(object $row): object
     {
         $row->items = DB::table('client_bill_items')
             ->where('client_bill_id', $row->id)
             ->orderBy('ordering')
             ->get();
+        $row->repayments = $this->billRepayments((int) $row->id);
         $row->items_count = $row->items->count();
+        $row->repayment_count = $row->repayments->count();
+        $row->approved_repayment_amount = round((float) $row->repayments->where('status', 'approved')->sum('amount'), 2);
+        $row->pending_repayment_count = (int) $row->repayments->where('status', 'pending')->count();
         return $row;
     }
 
@@ -237,10 +356,12 @@ class ClientBillController extends Controller
             ->orderBy("cb.$sortBy", $sortDir)
             ->orderBy('cb.id', $sortDir)
             ->forPage($page, $perPage)
-            ->get()
-            ->map(function ($row) {
+            ->get();
+
+        $repaymentAggregates = $this->repaymentAggregates($rows->pluck('id')->all());
+        $rows = $rows->map(function ($row) use ($repaymentAggregates) {
                 $row->items_count = DB::table('client_bill_items')->where('client_bill_id', $row->id)->count();
-                return $row;
+                return $this->applyRepaymentAggregate($row, $repaymentAggregates);
             });
 
         return response()->json([
@@ -321,14 +442,15 @@ class ClientBillController extends Controller
             ->get();
 
         $previousBills = $this->baseQuery()
-            ->whereIn('cb.client_id', $treeIds)
+            ->where('cb.client_id', $clientId)
             ->orderBy('cb.bill_date', 'desc')
             ->orderBy('cb.id', 'desc')
-            ->limit(20)
-            ->get()
-            ->map(function ($row) {
+            ->get();
+
+        $repaymentAggregates = $this->repaymentAggregates($previousBills->pluck('id')->all());
+        $previousBills = $previousBills->map(function ($row) use ($repaymentAggregates) {
                 $row->items_count = DB::table('client_bill_items')->where('client_bill_id', $row->id)->count();
-                return $row;
+                return $this->applyRepaymentAggregate($row, $repaymentAggregates);
             });
 
         $stats = [
@@ -342,6 +464,8 @@ class ClientBillController extends Controller
             'published_billed_amount' => round((float) (DB::table('client_bills')->whereIn('client_id', $treeIds)->where('is_published', true)->sum('total_amount') ?? 0), 2),
             'draft_bill_count' => DB::table('client_bills')->whereIn('client_id', $treeIds)->where('is_published', false)->count(),
             'published_bill_count' => DB::table('client_bills')->whereIn('client_id', $treeIds)->where('is_published', true)->count(),
+            'approved_repayment_amount' => round((float) (DB::table('client_bill_repayments')->whereIn('client_id', $treeIds)->where('status', 'approved')->sum('amount') ?? 0), 2),
+            'pending_repayment_count' => DB::table('client_bill_repayments')->whereIn('client_id', $treeIds)->where('status', 'pending')->count(),
             'remaining_budget' => round(
                 round((float) ((clone $jobsBase)->sum('j.budget') ?? 0), 2)
                 - round((float) ((clone $expensesBase)->sum('e.amount') ?? 0), 2),
@@ -525,5 +649,27 @@ class ClientBillController extends Controller
 
         DB::table('client_bills')->where('id', $id)->delete();
         return response()->json(['status' => 'success', 'message' => 'Client bill deleted']);
+    }
+
+    public function pdf(Request $request, int $id)
+    {
+        if ($resp = $this->requireRole($request, ['admin', 'accountant_user', 'client_user'])) {
+            return $resp;
+        }
+
+        $row = $this->baseQuery()->where('cb.id', $id)->first();
+        if (!$row) {
+            return response()->json(['status' => 'error', 'message' => 'Client bill not found'], 404);
+        }
+
+        $this->ensureClientVisible($request, (int) $row->client_id);
+        if (!(bool) $row->is_published) {
+            return response()->json(['status' => 'error', 'message' => 'Only published bills can be downloaded as PDF'], 422);
+        }
+
+        $bill = $this->mapBill($row);
+        $pdf = Pdf::loadView('exports.client_bill_pdf', ['bill' => $bill])->setPaper('a4');
+
+        return $pdf->download('client_bill_' . $bill->id . '.pdf');
     }
 }

@@ -1,10 +1,14 @@
+@php
+  $billHeadCreateUrl = $billHeadCreateUrl ?? '/admin/accounting/bill-heads/create';
+@endphp
+
 {{-- resources/views/modules/accounting/manageClientBillHeads.blade.php --}}
 
 @section('content')
 <div class="doctypes-page">
   <div class="page-header">
-    <h1>Client Bill Head Management</h1>
-    <p>Manage reusable client bill heads for invoice and billing line items.</p>
+    <h1>Bill Heads</h1>
+    <p>Maintain reusable bill heads for billing line items and client statements.</p>
   </div>
 
   <!-- Toolbar -->
@@ -38,11 +42,11 @@
       </ul>
     </div>
 
-    <a href="{{ url('/admin/accounting/bill-heads/create') }}" class="btn btn-primary" aria-label="Add Client Bill Head">
+    <a href="{{ $billHeadCreateUrl }}" class="btn btn-primary" aria-label="Add Client Bill Head">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
       </svg>
-      Add Bill Head
+      New Bill Head
     </a>
 
     <button id="exportBtn" class="btn btn-secondary" aria-label="Export bill heads">

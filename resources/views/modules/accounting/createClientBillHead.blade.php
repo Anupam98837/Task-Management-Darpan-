@@ -1,10 +1,14 @@
+@php
+  $billHeadManageUrl = $billHeadManageUrl ?? '/admin/accounting/bill-heads/manage';
+@endphp
+
 @section('content')
 <div class="container py-3">
 
   <!-- centered panel -->
   <div class="card doc-panel">
-    <h2 class="doc-title">Add New Client Bill Head</h2>
-    <p class="doc-sub">Create a reusable client bill head for future billing line items.</p>
+    <h2 class="doc-title">New Bill Head</h2>
+    <p class="doc-sub">Create a reusable bill head for future billing line items.</p>
 
     <form id="expenseHeadForm" autocomplete="off" novalidate>
       <!-- Title -->
@@ -49,7 +53,7 @@
 
       <!-- Actions -->
       <div class="actions">
-        <a href="{{ url('admin/accounting/bill-heads/manage') }}" class="btn btn-secondary" style="display:none">Cancel</a>
+        <a href="{{ $billHeadManageUrl }}" class="btn btn-secondary" style="display:none">Cancel</a>
         <button id="expenseHeadSubmit" type="submit" class="btn btn-primary">
           <span class="btn-label">Submit</span>
         </button>
@@ -227,7 +231,7 @@
         if (res.status === 201 || res.ok) {
           toast('success', body.message || 'Client bill head created');
           // redirect to list (adjust URL if your resource list is under admin area)
-          return setTimeout(() => location.href = "{{ url('admin/accounting/bill-heads/manage') }}", 400);
+          return setTimeout(() => location.href = @json($billHeadManageUrl), 400);
         }
 
         if (res.status === 422 && body.errors) {

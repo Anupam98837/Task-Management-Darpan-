@@ -95,11 +95,53 @@ Route::get('/assignee/login', function () {
 Route::get('/client-user/login', function () {
     return view('pages/users/clientUser/pages/common/login');
 });
+Route::get('/accountant-user/login', function () {
+    return view('pages/users/clientUser/pages/common/login', [
+        'portalTitle' => 'Accountant Portal',
+        'portalLoginApi' => '/api/accountant-users/login',
+        'portalAfterLoginUrl' => '/accountant-user/dashboard',
+        'portalSubtitle' => 'Sign in to manage scoped billing, bill heads, and client analysis',
+        'portalHelpText' => 'Contact your admin if you need billing access or password help.',
+    ]);
+});
 Route::get('/assignee/dashboard', function () {
     return view('pages/users/assignee/pages/common/dashboard');
 });
 Route::get('/client-user/dashboard', function () {
     return view('pages/users/clientUser/pages/common/dashboard');
+});
+Route::get('/accountant-user/dashboard', function () {
+    return view('pages/users/clientUser/pages/common/dashboard', [
+        'portalPrefix' => 'accountant-user',
+        'portalDashboardUrl' => '/accountant-user/dashboard',
+        'portalJobsUrl' => '/accountant-user/accounting/client-bills/create',
+        'portalBillsUrl' => '/accountant-user/accounting/client-bills',
+        'portalRepaymentsUrl' => '/accountant-user/accounting/repayments',
+        'portalDocumentsUrl' => '/accountant-user/accounting/bill-heads/manage',
+        'portalNotificationsUrl' => '/accountant-user/accounting/bill-heads/manage',
+        'portalLoginUrl' => '/accountant-user/login',
+        'portalLogoutApi' => '/api/accountant-users/logout',
+        'portalThemeKey' => 'theme:accountant-user',
+        'portalJobsLabel' => 'Billing',
+        'portalJobsItemLabel' => 'New Bill',
+        'portalJobsIcon' => 'fa-solid fa-file-circle-plus',
+        'portalBillsLabel' => 'Bills',
+        'portalBillsIcon' => 'fa-solid fa-file-invoice-dollar',
+        'portalRepaymentsLabel' => 'Repayments',
+        'portalRepaymentsIcon' => 'fa-solid fa-money-bill-transfer',
+        'portalDocumentsLabel' => 'Bill Heads',
+        'portalDocumentsIcon' => 'fa-solid fa-layer-group',
+        'dashboardMeApi' => '/api/accountant-users/me',
+        'dashboardApi' => '/api/accountant-users/dashboard',
+        'dashboardBadge' => 'Accountant Portal',
+        'dashboardTitle' => 'Accountant Dashboard',
+        'dashboardPrimaryLabel' => 'New Bill',
+        'dashboardPrimaryUrl' => '/accountant-user/accounting/client-bills/create',
+        'dashboardSecondaryLabel' => 'Bills',
+        'dashboardSecondaryUrl' => '/accountant-user/accounting/client-bills',
+        'dashboardTertiaryLabel' => 'Bill Heads',
+        'dashboardTertiaryUrl' => '/accountant-user/accounting/bill-heads/manage',
+    ]);
 });
  Route::get('/assignee/jobs/view', function () {
     return view('pages/users/assignee/pages/jobs/viewJobs');
@@ -112,6 +154,9 @@ Route::get('/client-user/documents', function () {
 });
 Route::get('/client-user/bills', function () {
     return view('pages/users/clientUser/pages/bills/viewBills');
+});
+Route::get('/client-user/repayments', function () {
+    return view('pages/users/clientUser/pages/repayments/viewRepayments');
 });
 // Route::get('assignee/documents/upload', function () {
 //     return view('pages/users/assignee/pages/documents/uploadDocuments');
@@ -142,6 +187,24 @@ Route::get('admin/accounting/client-bills', function () {
 });
 Route::get('admin/accounting/client-bills/create', function () {
     return view('pages/users/admin/pages/accounting/createClientBill');
+});
+Route::get('admin/accounting/repayments', function () {
+    return view('pages/users/admin/pages/accounting/manageBillRepayments');
+});
+Route::get('accountant-user/accounting/client-bills', function () {
+    return view('pages/users/accountantUser/pages/accounting/manageClientBills');
+});
+Route::get('accountant-user/accounting/client-bills/create', function () {
+    return view('pages/users/accountantUser/pages/accounting/createClientBill');
+});
+Route::get('accountant-user/accounting/repayments', function () {
+    return view('pages/users/accountantUser/pages/accounting/manageBillRepayments');
+});
+Route::get('accountant-user/accounting/bill-heads/manage', function () {
+    return view('pages/users/accountantUser/pages/accounting/manageClientBillHeads');
+});
+Route::get('accountant-user/accounting/bill-heads/create', function () {
+    return view('pages/users/accountantUser/pages/accounting/createClientBillHead');
 });
 Route::get('job-expense/claim/manage', function () {
     return view('pages/users/admin/pages/jobs/jobExpenseClaim');

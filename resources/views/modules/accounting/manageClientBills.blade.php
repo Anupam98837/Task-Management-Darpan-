@@ -1,3 +1,8 @@
+@php
+  $billingBuilderUrl = $billingBuilderUrl ?? '/admin/accounting/client-bills/create';
+  $billingRepaymentsUrl = $billingRepaymentsUrl ?? '/admin/accounting/repayments';
+@endphp
+
 @push('styles')
 <style>
 * { box-sizing: border-box; }
@@ -18,6 +23,19 @@ textarea.form-control { min-height: 100px; padding: 10px 14px; resize: vertical;
 .btn-secondary { background: var(--surface); color: var(--text-color); border:1px solid #e2e8f0; }
 .btn-danger-soft { background:#fff1f2; color:#be123c; border:1px solid #fecdd3; }
 .btn-linkish { background:transparent; border:none; color:#2563eb; padding:0; font-weight:700; }
+.filter-chip {
+  min-width:220px; height:44px; padding:0 14px; border:1px solid #e2e8f0; border-radius:12px; background:#fff;
+  color:#0f172a; font-size:14px; display:inline-flex; align-items:center; justify-content:space-between; gap:10px; cursor:pointer;
+}
+.tree-shell { border:1px solid #e2e8f0; border-radius:16px; background:#fff; max-height:420px; overflow:auto; padding:10px; }
+.tree-node { display:flex; align-items:flex-start; gap:10px; padding:8px 10px; border-radius:12px; }
+.tree-node:hover { background:#f8fafc; }
+.tree-node.active { background:#eff6ff; box-shadow: inset 0 0 0 1px #bfdbfe; }
+.tree-children { margin-left:18px; padding-left:12px; border-left:1px solid #e2e8f0; }
+.tree-node input { margin-top:4px; }
+.tree-meta { display:flex; flex-direction:column; gap:3px; }
+.tree-meta strong { font-size:14px; color:#0f172a; }
+.tree-meta small { color:#94a3b8; font-size:12px; }
 .data-card { background:var(--surface); border-radius:16px; box-shadow:0 1px 3px rgba(0,0,0,.04); overflow:hidden; }
 .table-container { overflow-x:auto; }
 table { width:100%; border-collapse:collapse; color:var(--text-color); }
@@ -111,8 +129,8 @@ tbody td { padding:16px 18px; font-size:14px; color:var(--text-color); vertical-
 
 <div class="billing-page">
   <div class="page-header">
-    <h1>Client Bills</h1>
-    <p>Create draft client bills, filter by client, and publish finalized bills when they are ready.</p>
+    <h1>Billing</h1>
+    <p>Create draft bills, filter them by client tree, and publish finalized billing records when they are ready.</p>
   </div>
 
   <div class="summary-strip">
@@ -142,9 +160,15 @@ tbody td { padding:16px 18px; font-size:14px; color:var(--text-color); vertical-
       <input id="searchInput" type="text" placeholder="Search bills by client, note, or bill head...">
     </div>
 
-    <select id="clientFilter" class="select-box" style="min-width:220px">
-      <option value="">All Clients</option>
-    </select>
+    <button id="clientFilterBtn" class="filter-chip" type="button">
+      <span id="clientFilterLabel">All Clients</span>
+      <i class="fa-solid fa-sitemap"></i>
+    </button>
+
+    <button id="clearClientFilterBtn" class="btn btn-secondary" type="button">
+      <i class="fa-solid fa-xmark"></i>
+      Clear Client
+    </button>
 
     <select id="publishFilter" class="select-box" style="min-width:170px">
       <option value="">All Status</option>
@@ -157,9 +181,19 @@ tbody td { padding:16px 18px; font-size:14px; color:var(--text-color); vertical-
       Refresh
     </button>
 
+    <button id="exportBillsBtn" class="btn btn-secondary" type="button">
+      <i class="fa-solid fa-file-export"></i>
+      Export
+    </button>
+
+    <a href="{{ $billingRepaymentsUrl }}" class="btn btn-secondary">
+      <i class="fa-solid fa-money-bill-transfer"></i>
+      Repayments
+    </a>
+
     <button id="addBillBtn" class="btn btn-primary" type="button">
       <i class="fa-solid fa-plus"></i>
-      Open Bill Builder
+      New Bill
     </button>
   </div>
 
@@ -191,11 +225,43 @@ tbody td { padding:16px 18px; font-size:14px; color:var(--text-color); vertical-
   </div>
 </div>
 
+<div class="modal fade" id="clientFilterModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <h5 class="modal-title mb-1">Choose Client Tree</h5>
+          <div class="muted-small">Select a parent client to filter bills across that exact client branch.</div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="search-box mb-3" style="max-width:none;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <input id="clientTreeSearch" type="text" placeholder="Search clients...">
+        </div>
+        <div class="tree-shell" id="clientTreeShell">
+          <div class="text-center py-4 text-muted">Loading client tree…</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <div class="muted-small" id="clientFilterPickerLabel">All Clients</div>
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" id="applyClientFilterBtn">Use Client</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="modal fade" id="billModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-xl modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="billModalTitle">Create Client Bill</h5>
+        <h5 class="modal-title" id="billModalTitle">New Client Bill</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <form id="billForm" autocomplete="off">
@@ -229,7 +295,7 @@ tbody td { padding:16px 18px; font-size:14px; color:var(--text-color); vertical-
               <h6 class="section-title mb-0">Bill Heads and Amounts</h6>
               <button id="addItemBtn" type="button" class="btn btn-secondary">
                 <i class="fa-solid fa-plus"></i>
-                Add Bill Head
+                New Bill Head
               </button>
             </div>
             <div class="item-list mt-3" id="itemList"></div>
@@ -278,6 +344,7 @@ tbody td { padding:16px 18px; font-size:14px; color:var(--text-color); vertical-
 
   const billModal = new bootstrap.Modal(document.getElementById('billModal'));
   const billDetailModal = new bootstrap.Modal(document.getElementById('billDetailModal'));
+  const clientFilterModal = new bootstrap.Modal(document.getElementById('clientFilterModal'));
 
   const state = {
     page: 1,
@@ -288,8 +355,10 @@ tbody td { padding:16px 18px; font-size:14px; color:var(--text-color); vertical-
     publish: '',
     items: [],
     clients: [],
+    clientTreeRoots: [],
     billHeads: [],
     editingBill: null,
+    pendingClientId: '',
   };
 
   const els = {
@@ -297,9 +366,16 @@ tbody td { padding:16px 18px; font-size:14px; color:var(--text-color); vertical-
     pager: document.getElementById('pager'),
     paginationInfo: document.getElementById('paginationInfo'),
     searchInput: document.getElementById('searchInput'),
-    clientFilter: document.getElementById('clientFilter'),
+    clientFilterBtn: document.getElementById('clientFilterBtn'),
+    clientFilterLabel: document.getElementById('clientFilterLabel'),
+    clearClientFilterBtn: document.getElementById('clearClientFilterBtn'),
+    clientTreeSearch: document.getElementById('clientTreeSearch'),
+    clientTreeShell: document.getElementById('clientTreeShell'),
+    applyClientFilterBtn: document.getElementById('applyClientFilterBtn'),
+    clientFilterPickerLabel: document.getElementById('clientFilterPickerLabel'),
     publishFilter: document.getElementById('publishFilter'),
     refreshBtn: document.getElementById('refreshBtn'),
+    exportBillsBtn: document.getElementById('exportBillsBtn'),
     addBillBtn: document.getElementById('addBillBtn'),
     statTotalBills: document.getElementById('statTotalBills'),
     statPublishedBills: document.getElementById('statPublishedBills'),
@@ -343,6 +419,62 @@ tbody td { padding:16px 18px; font-size:14px; color:var(--text-color); vertical-
       options.push(`<option value="${esc(client.id)}" ${isSelected}>${esc(client.label)}</option>`);
     });
     return options.join('');
+  }
+
+  function buildTree(flatRows) {
+    const byParent = new Map();
+    flatRows.forEach((row) => {
+      const key = row.parent_id == null ? 'root' : String(row.parent_id);
+      if (!byParent.has(key)) byParent.set(key, []);
+      byParent.get(key).push(row);
+    });
+    byParent.forEach((rows) => rows.sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''))));
+    const walk = (parentId = null) => {
+      const key = parentId == null ? 'root' : String(parentId);
+      return (byParent.get(key) || []).map((row) => ({ ...row, children: walk(row.id) }));
+    };
+    return walk(null);
+  }
+
+  function updateClientFilterLabel() {
+    if (!state.clientId) {
+      els.clientFilterLabel.textContent = 'All Clients';
+      return;
+    }
+    const match = state.clients.find((client) => String(client.id) === String(state.clientId));
+    els.clientFilterLabel.textContent = match ? (match.name || `Client #${match.id}`) : `Client #${state.clientId}`;
+  }
+
+  function renderClientTree() {
+    const query = String(els.clientTreeSearch.value || '').trim().toLowerCase();
+    const activeId = Number(state.pendingClientId || state.clientId || 0);
+    const matchNode = (node) => {
+      const selfMatch = !query || String(node.name || '').toLowerCase().includes(query);
+      const childMatches = (node.children || []).map(matchNode).filter(Boolean);
+      if (!selfMatch && !childMatches.length) return null;
+      return { ...node, children: childMatches };
+    };
+    const filteredRoots = state.clientTreeRoots.map(matchNode).filter(Boolean);
+    if (!filteredRoots.length) {
+      els.clientTreeShell.innerHTML = '<div class="text-center py-4 text-muted">No clients match your search.</div>';
+      return;
+    }
+    const renderNodes = (nodes, depth = 0) => nodes.map((node) => {
+      const checked = activeId === Number(node.id) ? 'checked' : '';
+      const active = activeId === Number(node.id) ? 'active' : '';
+      return `
+        <div class="tree-node ${active}">
+          <input type="radio" name="client_filter_pick" value="${esc(node.id)}" ${checked}>
+          <div class="tree-meta">
+            <strong>${esc(node.name || `Client #${node.id}`)}</strong>
+            <small>${depth === 0 ? 'Root client' : `Nested level ${depth}`}</small>
+          </div>
+        </div>
+        ${node.children && node.children.length ? `<div class="tree-children">${renderNodes(node.children, depth + 1)}</div>` : ''}`;
+    }).join('');
+    els.clientTreeShell.innerHTML = renderNodes(filteredRoots);
+    const match = state.clients.find((client) => String(client.id) === String(state.pendingClientId || state.clientId || ''));
+    els.clientFilterPickerLabel.textContent = match ? (match.name || `Client #${match.id}`) : 'All Clients';
   }
 
   function normalizeClients(rows) {
@@ -395,10 +527,9 @@ tbody td { padding:16px 18px; font-size:14px; color:var(--text-color); vertical-
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data?.message || 'Failed to load clients');
     state.clients = normalizeClients(data.data || []);
-    const filterValue = els.clientFilter.value;
-    els.clientFilter.innerHTML = '<option value="">All Clients</option>' + state.clients.map((client) => (
-      `<option value="${esc(client.id)}" ${String(filterValue) === String(client.id) ? 'selected' : ''}>${esc(client.label)}</option>`
-    )).join('');
+    state.clientTreeRoots = buildTree(Array.isArray(data.data) ? data.data : []);
+    updateClientFilterLabel();
+    renderClientTree();
     els.billClientId.innerHTML = buildClientOptions(els.billClientId.value);
   }
 
@@ -417,6 +548,37 @@ tbody td { padding:16px 18px; font-size:14px; color:var(--text-color); vertical-
     els.statPublishedBills.textContent = String(publishedCount);
     els.statDraftBills.textContent = String(draftCount);
     els.statVisibleAmount.textContent = money(visibleAmount);
+  }
+
+  function exportBills() {
+    if (!state.items.length) {
+      Swal.fire({ icon:'info', title:'Nothing to export', text:'No bills are loaded in the current view.' });
+      return;
+    }
+    const rows = state.items.map((bill) => ({
+      bill_id: bill.id || '',
+      client: bill.client_name || '',
+      bill_date: bill.bill_date || '',
+      due_date: bill.due_date || '',
+      status: bill.is_published ? 'Published' : 'Draft',
+      total_amount: Number(bill.total_amount || 0).toFixed(2),
+      published_at: bill.published_at || '',
+      items_count: bill.items_count || 0,
+    }));
+    const headersRow = Object.keys(rows[0]);
+    const csv = [
+      headersRow.join(','),
+      ...rows.map((row) => headersRow.map((key) => `"${String(row[key] ?? '').replace(/"/g, '""')}"`).join(',')),
+    ].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `bills_${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
   }
 
   function renderRows() {
@@ -449,6 +611,7 @@ tbody td { padding:16px 18px; font-size:14px; color:var(--text-color); vertical-
         <td>
           <div class="actions-cell">
             <button class="btn-icon" type="button" data-action="view" data-id="${esc(row.id)}" title="View"><i class="fa-solid fa-eye"></i></button>
+            ${row.is_published ? `<button class="btn-icon" type="button" data-action="pdf" data-id="${esc(row.id)}" title="Download PDF"><i class="fa-solid fa-file-pdf"></i></button>` : ''}
             ${row.is_published ? '' : `<button class="btn-icon" type="button" data-action="edit" data-id="${esc(row.id)}" title="Edit"><i class="fa-solid fa-pen"></i></button>`}
             ${row.is_published ? '' : `<button class="btn-icon" type="button" data-action="publish" data-id="${esc(row.id)}" title="Publish"><i class="fa-solid fa-paper-plane"></i></button>`}
             ${row.is_published ? '' : `<button class="btn-icon" type="button" data-action="delete" data-id="${esc(row.id)}" title="Delete"><i class="fa-solid fa-trash"></i></button>`}
@@ -555,7 +718,7 @@ tbody td { padding:16px 18px; font-size:14px; color:var(--text-color); vertical-
   function resetForm() {
     els.billForm.reset();
     els.billId.value = '';
-    els.billModalTitle.textContent = 'Create Client Bill';
+    els.billModalTitle.textContent = 'New Client Bill';
     els.billClientId.innerHTML = buildClientOptions('');
     els.billDate.value = new Date().toISOString().slice(0, 10);
     els.itemList.innerHTML = '';
@@ -600,6 +763,7 @@ tbody td { padding:16px 18px; font-size:14px; color:var(--text-color); vertical-
 
     const bill = data.data || {};
     const items = Array.isArray(bill.items) ? bill.items : [];
+    const repayments = Array.isArray(bill.repayments) ? bill.repayments : [];
     els.billDetailBody.innerHTML = `
       <div class="detail-grid">
         <div class="detail-box"><small>Bill ID</small><strong>#${esc(bill.id || '—')}</strong></div>
@@ -625,8 +789,39 @@ tbody td { padding:16px 18px; font-size:14px; color:var(--text-color); vertical-
               <div style="font-weight:700">${esc(money(item.amount))}</div>
             </div>`).join('') : '<div class="muted-small">No bill items.</div>'}
         </div>
-        <div class="detail-total">Total: <span class="ms-2">${esc(money(bill.total_amount))}</span></div>
-      </div>`;
+      </div>
+      <div class="section-card mt-3">
+        <h6 class="section-title">Repayments</h6>
+        <div class="detail-items">
+          ${repayments.length ? repayments.map((repayment) => `
+            <div class="detail-item">
+              <div>
+                <strong>${esc(fmtDate(repayment.repayment_date))}</strong>
+                <div class="muted-small">${esc(String(repayment.status || 'pending').replaceAll('_', ' '))}</div>
+              </div>
+              <div style="font-weight:700">${esc(money(repayment.amount || 0))}</div>
+            </div>`).join('') : '<div class="muted-small">No repayments recorded yet.</div>'}
+        </div>
+      </div>
+      <div class="detail-total">Total: <span class="ms-2">${esc(money(bill.total_amount))}</span></div>
+      `;
+  }
+
+  async function downloadBillPdf(id) {
+    const res = await fetch(`${API_BASE}/client-bills/${encodeURIComponent(id)}/pdf`, { headers });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data?.message || 'Failed to download bill PDF');
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `client_bill_${id}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
   }
 
   async function saveBill(event) {
@@ -730,9 +925,10 @@ tbody td { padding:16px 18px; font-size:14px; color:var(--text-color); vertical-
   }
 
   els.addBillBtn.addEventListener('click', () => {
-    const clientId = els.clientFilter.value ? `?client_id=${encodeURIComponent(els.clientFilter.value)}` : '';
-    window.location.href = `/admin/accounting/client-bills/create${clientId}`;
+    const clientId = state.clientId ? `?client_id=${encodeURIComponent(state.clientId)}` : '';
+    window.location.href = `{{ $billingBuilderUrl }}${clientId}`;
   });
+  els.exportBillsBtn.addEventListener('click', exportBills);
 
   els.addItemBtn.addEventListener('click', () => addItemRow());
   els.billForm.addEventListener('submit', saveBill);
@@ -748,8 +944,30 @@ tbody td { padding:16px 18px; font-size:14px; color:var(--text-color); vertical-
     }, 300);
   });
 
-  els.clientFilter.addEventListener('change', () => {
-    state.clientId = els.clientFilter.value;
+  els.clientFilterBtn.addEventListener('click', () => {
+    state.pendingClientId = state.clientId;
+    els.clientTreeSearch.value = '';
+    renderClientTree();
+    clientFilterModal.show();
+  });
+  els.clearClientFilterBtn.addEventListener('click', () => {
+    state.clientId = '';
+    state.pendingClientId = '';
+    updateClientFilterLabel();
+    state.page = 1;
+    fetchBills().catch((error) => Swal.fire({ icon:'error', title:'Filter failed', text:String(error.message || error) }));
+  });
+  els.clientTreeSearch.addEventListener('input', renderClientTree);
+  els.clientTreeShell.addEventListener('change', (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLInputElement) || target.name !== 'client_filter_pick') return;
+    state.pendingClientId = target.value || '';
+    renderClientTree();
+  });
+  els.applyClientFilterBtn.addEventListener('click', () => {
+    state.clientId = state.pendingClientId || '';
+    updateClientFilterLabel();
+    clientFilterModal.hide();
     state.page = 1;
     fetchBills().catch((error) => Swal.fire({ icon:'error', title:'Filter failed', text:String(error.message || error) }));
   });
@@ -779,6 +997,7 @@ tbody td { padding:16px 18px; font-size:14px; color:var(--text-color); vertical-
 
     try {
       if (action === 'view') await openDetailModal(id);
+      if (action === 'pdf') await downloadBillPdf(id);
       if (action === 'edit') await openEditModal(id);
       if (action === 'publish') await publishBill(id);
       if (action === 'delete') await deleteBill(id);

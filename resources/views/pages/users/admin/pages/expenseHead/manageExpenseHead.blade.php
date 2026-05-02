@@ -1,7 +1,7 @@
 {{-- resources/views/pages/users/admin/pages/expenseHead/manageExpenseHead.blade.php --}}
 @extends('pages.users.admin.layout.structure')
  
-@section('title', 'Manage Expense Head')
+@section('title', 'Expense Heads')
 @section('content')
 @include('modules.expenseHead.manageExpenseHead')
 @endsection

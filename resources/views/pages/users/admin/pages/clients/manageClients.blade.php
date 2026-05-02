@@ -1,7 +1,7 @@
 {{-- resources/views/pages/users/admin/pages/clients/manageClients.blade.php --}}
 @extends('pages.users.admin.layout.structure')
 
-@section('title', 'Manage Client')
+@section('title', 'Clients')
 @section('content')
 @include('modules.clients.manageClients')
 @endsection

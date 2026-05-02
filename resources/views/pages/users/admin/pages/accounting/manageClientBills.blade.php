@@ -1,6 +1,6 @@
 @extends('pages.users.admin.layout.structure')
 
-@section('title', 'Manage Client Bills')
+@section('title', 'Billing')
 @section('content')
 @include('modules.accounting.manageClientBills')
 @endsection

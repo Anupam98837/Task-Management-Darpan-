@@ -1,7 +1,7 @@
 {{-- resources/views/pages/users/admin/pages/clients/addClients.blade.php --}}
 @extends('pages.users.admin.layout.structure')
 
-@section('title', 'Add Client')
+@section('title', 'New Client')
 @section('content')
 @include('modules.clients.addClients')
 @endsection

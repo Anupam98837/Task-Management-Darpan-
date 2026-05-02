@@ -25,6 +25,8 @@
 
   <!-- Main theme -->
   <link rel="stylesheet" href="{{ asset('/assets/css/common/main.css') }}">
+  <!-- Shared UI components -->
+  <link rel="stylesheet" href="{{ asset('/assets/css/common/components.css') }}">
 
   <style>
     :root{

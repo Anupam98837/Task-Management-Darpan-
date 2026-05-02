@@ -1,6 +1,6 @@
 @extends('pages.users.admin.layout.structure')
 
-@section('title', 'Manage Client Users')
+@section('title', 'Client Contacts')
 
 @section('content')
 @include('modules.clientUsers.manageClientUsers')

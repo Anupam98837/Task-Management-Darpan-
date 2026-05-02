@@ -1,7 +1,7 @@
 {{-- resources/views/pages/users/admin/pages/assignedPeople/manageAssignedPeople.blade.php --}}
 @extends('pages.users.admin.layout.structure')
 
-@section('title', 'Manage Assigned People')
+@section('title', 'Team Members')
 @section('content')
 @include('modules.assignedPeople.manageAssignedPeople')
 @endsection

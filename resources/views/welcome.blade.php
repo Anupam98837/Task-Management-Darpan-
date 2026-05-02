@@ -742,6 +742,29 @@
                             </div>
                         </div>
                     </a>
+
+                    <div class="divider">
+                        <div class="divider-line"></div>
+                        <span class="divider-text">or</span>
+                        <div class="divider-line"></div>
+                    </div>
+
+                    <a href="/accountant-user/login" class="portal-card">
+                        <div class="portal-content">
+                            <div class="portal-icon-wrapper">
+                                <i class="fas fa-calculator"></i>
+                            </div>
+                            <div class="portal-info">
+                                <h3 class="portal-name">
+                                    Accountant Portal
+                                    <i class="fas fa-arrow-right portal-arrow"></i>
+                                </h3>
+                                <p class="portal-description">
+                                    Manage client bills, bill heads, and scoped billing analysis for assigned client trees
+                                </p>
+                            </div>
+                        </div>
+                    </a>
                 </div>
                 
                 <div class="footer-note">

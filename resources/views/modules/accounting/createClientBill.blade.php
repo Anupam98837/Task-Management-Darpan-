@@ -1,11 +1,15 @@
+@php
+  $billingBackUrl = $billingBackUrl ?? '/admin/accounting/client-bills';
+@endphp
+
 @push('styles')
 <style>
 * { box-sizing: border-box; }
 
 .bill-builder-page {
   background:
-    radial-gradient(circle at top left, rgba(59,130,246,.08), transparent 22%),
-    radial-gradient(circle at bottom right, rgba(16,185,129,.08), transparent 20%),
+    radial-gradient(circle at top left, rgba(59,130,246,.1), transparent 24%),
+    radial-gradient(circle at bottom right, rgba(14,165,233,.08), transparent 20%),
     var(--bg-body);
   min-height: 100vh;
   padding: 24px;
@@ -14,16 +18,22 @@
 .builder-header { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; margin-bottom:20px; }
 .builder-header h1 { margin:0; font-size:28px; font-weight:800; color:var(--text-color); }
 .builder-header p { margin:6px 0 0; color:#64748b; font-size:14px; max-width:760px; }
-.builder-actions { display:flex; gap:10px; flex-wrap:wrap; }
-.builder-grid { display:grid; grid-template-columns: minmax(0, 1.55fr) minmax(320px, .95fr); gap:20px; align-items:start; }
+.builder-back { display:inline-flex; align-items:center; gap:8px; color:#1d4ed8; font-size:13px; font-weight:700; text-decoration:none; margin-top:10px; }
+.builder-actions { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+.builder-grid { display:grid; grid-template-columns: minmax(0, 1.55fr) minmax(320px, .95fr); gap:20px; align-items:stretch; }
 .panel-card {
   background: rgba(255,255,255,.94);
   border:1px solid rgba(226,232,240,.9);
   border-radius:22px;
   box-shadow:0 18px 36px rgba(15,23,42,.08);
   overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  height:100%;
 }
-.panel-inner { padding:20px; }
+.left-scroll, .right-scroll { padding:20px; height:100%; }
+.right-scroll { overflow:auto; }
+.stack { display:flex; flex-direction:column; gap:18px; }
 .section-title { font-size:16px; font-weight:800; color:#0f172a; margin:0 0 12px; }
 .section-sub { font-size:13px; color:#64748b; margin:0 0 16px; }
 .btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:44px; padding:0 18px; border-radius:12px; font-size:14px; font-weight:700; cursor:pointer; transition:all .2s; text-decoration:none; border:none; }
@@ -31,15 +41,142 @@
 .btn-secondary { background:#fff; border:1px solid #dbe5f0; color:#0f172a; }
 .btn-soft { background:#eff6ff; border:1px solid #bfdbfe; color:#1d4ed8; }
 .btn-danger-soft { background:#fff1f2; border:1px solid #fecdd3; color:#be123c; }
+.btn.is-loading, .btn[aria-busy="true"] { pointer-events:none; opacity:.85; position:relative; }
+.btn.is-loading .btn-label { visibility:hidden; }
+.btn.is-loading::after { content:""; position:absolute; inset:0; margin:auto; width:18px; height:18px; border-radius:50%; border:2.5px solid rgba(255,255,255,.75); border-top-color:transparent; animation:spin .7s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+
 .form-label { display:block; font-size:13px; font-weight:700; color:#475569; margin-bottom:8px; }
 .form-control, .form-select {
-  width:100%; min-height:44px; padding:10px 14px; border:1px solid #dbe5f0; border-radius:12px;
-  background:#fff; font-size:14px; color:#0f172a;
+  width:100%;
+  min-height:44px;
+  padding:10px 14px;
+  border:1px solid #dbe5f0;
+  border-radius:12px;
+  background:#fff;
+  font-size:14px;
+  color:#0f172a;
 }
 textarea.form-control { min-height: 96px; resize: vertical; }
 .field-grid { display:grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap:14px; }
-.stack { display:flex; flex-direction:column; gap:18px; }
-.tree-shell { border:1px solid #e2e8f0; border-radius:16px; background:#fff; max-height:320px; overflow:auto; padding:10px; }
+.helper-text { color:#64748b; font-size:12px; margin-top:6px; }
+.picker-head { display:flex; justify-content:space-between; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:12px; }
+.selected-client-banner {
+  display:flex; justify-content:space-between; gap:12px; align-items:center; flex-wrap:wrap;
+  padding:16px 18px; border-radius:18px; background:linear-gradient(135deg,#eff6ff,#f8fbff); border:1px solid #bfdbfe;
+}
+.selected-client-banner strong { display:block; color:#0f172a; font-size:16px; }
+.selected-client-banner small { color:#64748b; }
+.selected-client-banner .client-tag {
+  display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:999px;
+  background:#fff; border:1px solid #bfdbfe; color:#1d4ed8; font-size:12px; font-weight:800;
+}
+.pill { display:inline-flex; align-items:center; gap:6px; padding:5px 10px; border-radius:999px; font-size:12px; font-weight:700; background:#f8fafc; border:1px solid #e2e8f0; color:#475569; }
+.subsection-card { border:1px solid #dbeafe; border-radius:18px; padding:16px; background:#fff; }
+.expense-table-wrap { border:1px solid #dbeafe; border-radius:18px; overflow:hidden; background:linear-gradient(180deg,#ffffff,#f8fbff); }
+.expense-table-scroll { max-height:320px; overflow:auto; }
+.expense-table { width:100%; border-collapse:collapse; }
+.expense-table th, .expense-table td { padding:12px 14px; border-bottom:1px solid #eef2f7; font-size:13px; vertical-align:top; text-align:left; }
+.expense-table th { position:sticky; top:0; background:#f8fafc; text-transform:uppercase; letter-spacing:.4px; font-size:11px; color:#64748b; z-index:1; }
+.expense-check { width:18px; height:18px; }
+.item-list { display:flex; flex-direction:column; gap:12px; }
+.item-row { border:1px solid #e2e8f0; border-radius:16px; background:#fff; padding:14px; }
+.item-row.source-expense { background:linear-gradient(180deg,#eff6ff,#ffffff); border-color:#bfdbfe; }
+.item-top { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:12px; flex-wrap:wrap; }
+.item-top strong { color:#0f172a; }
+.item-top small { color:#64748b; display:block; margin-top:4px; }
+.item-grid { display:grid; grid-template-columns: 1fr 1fr 180px; gap:12px; align-items:end; }
+.item-grid.expense-grid { grid-template-columns: 1fr 180px; }
+.item-close {
+  width:34px; height:34px; border-radius:999px; border:1px solid #fecdd3; background:#fff1f2; color:#be123c;
+  display:inline-flex; align-items:center; justify-content:center; cursor:pointer;
+}
+.item-close:hover { background:#ffe4e6; }
+.total-bar {
+  display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap;
+  padding:16px 18px; border-radius:18px; background:#0f172a; color:#fff;
+}
+.empty-note { padding:18px; border:1px dashed #cbd5e1; border-radius:16px; color:#94a3b8; text-align:center; background:#fff; }
+
+.analysis-topbar {
+  display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;
+  padding:16px; border-radius:18px; background:linear-gradient(135deg,#0f3b93,#2563eb 58%,#38bdf8 100%); color:#fff;
+}
+.analysis-topbar h2, .analysis-topbar p { color:#fff; margin:0; }
+.analysis-topbar p { opacity:.84; font-size:13px; max-width:320px; margin-top:6px; }
+.btn-chip {
+  height:36px; padding:0 14px; border-radius:999px; border:1px solid rgba(255,255,255,.28); background:rgba(255,255,255,.14);
+  color:#fff; font-size:13px; font-weight:700; cursor:pointer;
+}
+.btn-chip.light { background:#fff; color:#1d4ed8; border-color:#bfdbfe; }
+.summary-kpis { display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:12px; }
+.kpi-box { border:1px solid rgba(191,219,254,.9); border-radius:18px; padding:16px; background:linear-gradient(145deg,#ffffff,#eef6ff); box-shadow:0 12px 24px rgba(37,99,235,.08); }
+.kpi-box.blue { background:linear-gradient(145deg,#eff6ff,#dbeafe); }
+.kpi-box.cyan { background:linear-gradient(145deg,#ecfeff,#cffafe); }
+.kpi-box.indigo { background:linear-gradient(145deg,#eef2ff,#dbeafe); }
+.kpi-box.sky { background:linear-gradient(145deg,#f0f9ff,#dbeafe); }
+.kpi-box .label { color:#1e40af; font-size:11px; text-transform:uppercase; letter-spacing:.5px; font-weight:800; }
+.kpi-box .value { margin-top:8px; font-size:24px; font-weight:800; color:#0f172a; }
+.visual-card { border:1px solid #dbeafe; border-radius:20px; padding:16px; background:linear-gradient(180deg,#eff6ff,#ffffff); }
+.visual-head { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:14px; }
+.visual-head strong { color:#0f172a; }
+.visual-legend { display:flex; gap:12px; flex-wrap:wrap; color:#475569; font-size:12px; }
+.visual-legend span::before { content:''; display:inline-block; width:10px; height:10px; border-radius:999px; margin-right:6px; vertical-align:-1px; }
+.visual-legend .budget::before { background:#2563eb; }
+.visual-legend .expenses::before { background:#06b6d4; }
+.visual-legend .billed::before { background:#7c3aed; }
+.visual-bars { display:flex; flex-direction:column; gap:12px; }
+.visual-row { display:grid; grid-template-columns: 82px 1fr 88px; gap:10px; align-items:center; }
+.visual-row label { font-size:12px; font-weight:700; color:#475569; text-transform:uppercase; letter-spacing:.45px; }
+.visual-track { height:14px; border-radius:999px; background:#dbeafe; overflow:hidden; }
+.visual-fill { height:100%; border-radius:999px; min-width:4px; }
+.visual-fill.budget { background:linear-gradient(90deg,#1d4ed8,#3b82f6); }
+.visual-fill.expenses { background:linear-gradient(90deg,#0891b2,#22d3ee); }
+.visual-fill.billed { background:linear-gradient(90deg,#6d28d9,#8b5cf6); }
+.visual-row strong { text-align:right; font-size:12px; color:#0f172a; }
+.analysis-list { display:flex; flex-direction:column; gap:10px; }
+.analysis-card { border:1px solid #dbeafe; border-radius:18px; padding:14px; background:linear-gradient(180deg,#ffffff,#f8fbff); }
+.analysis-card strong { color:#0f172a; }
+.analysis-card small { color:#64748b; display:block; margin-top:4px; }
+.bill-tabbar { display:flex; gap:8px; flex-wrap:wrap; margin:12px 0 14px; }
+.bill-tab {
+  height:36px; padding:0 14px; border-radius:999px; border:1px solid #dbeafe; background:#eff6ff; color:#1d4ed8;
+  font-size:13px; font-weight:800; cursor:pointer;
+}
+.bill-tab.active { background:linear-gradient(135deg,#1d4ed8,#2563eb); color:#fff; border-color:#1d4ed8; }
+.bill-card-top { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
+.bill-card-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+.bill-action {
+  display:inline-flex; align-items:center; gap:6px; height:34px; padding:0 12px; border-radius:999px;
+  border:1px solid #dbeafe; background:#fff; color:#1d4ed8; font-size:12px; font-weight:800; cursor:pointer;
+}
+.bill-action.publish { background:#eff6ff; border-color:#bfdbfe; }
+.bill-status {
+  display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; font-size:11px; font-weight:800;
+  background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; margin-top:8px;
+}
+.bill-status.draft { background:#fff7ed; color:#c2410c; border-color:#fdba74; }
+
+.picker-modal {
+  position:fixed; inset:0; z-index:1050; display:none; align-items:center; justify-content:center;
+  padding:20px; background:rgba(15,23,42,.52);
+}
+.picker-modal.show { display:flex; }
+.picker-modal-card {
+  width:min(860px, 100%); max-height:min(82vh, 760px); display:flex; flex-direction:column;
+  background:#fff; border-radius:24px; overflow:hidden; box-shadow:0 30px 60px rgba(15,23,42,.28);
+}
+.picker-modal-head, .picker-modal-foot {
+  padding:18px 20px; border-bottom:1px solid #e2e8f0; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+}
+.picker-modal-foot { border-bottom:none; border-top:1px solid #e2e8f0; }
+.picker-modal-head h3 { margin:0; font-size:18px; font-weight:800; color:#0f172a; }
+.picker-modal-head p { margin:6px 0 0; font-size:13px; color:#64748b; }
+.picker-modal-body { padding:18px 20px 20px; overflow:auto; }
+.search-box { position:relative; margin-bottom:14px; }
+.search-box input { width:100%; height:44px; padding:0 14px 0 40px; border:1px solid #dbe5f0; border-radius:12px; background:#fff; }
+.search-box i { position:absolute; left:14px; top:50%; transform:translateY(-50%); color:#94a3b8; }
+.tree-shell { border:1px solid #e2e8f0; border-radius:16px; background:#fff; max-height:420px; overflow:auto; padding:10px; }
 .tree-node { display:flex; align-items:flex-start; gap:10px; padding:8px 10px; border-radius:12px; }
 .tree-node:hover { background:#f8fafc; }
 .tree-node.active { background:#eff6ff; box-shadow: inset 0 0 0 1px #bfdbfe; }
@@ -48,50 +185,6 @@ textarea.form-control { min-height: 96px; resize: vertical; }
 .tree-meta { display:flex; flex-direction:column; gap:3px; }
 .tree-meta strong { font-size:14px; color:#0f172a; }
 .tree-meta small { color:#94a3b8; font-size:12px; }
-.picker-head { display:flex; justify-content:space-between; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:12px; }
-.selected-client-banner {
-  display:flex; justify-content:space-between; gap:12px; align-items:center; flex-wrap:wrap;
-  padding:14px 16px; border-radius:16px; background:linear-gradient(135deg,#eff6ff,#f8fafc); border:1px solid #bfdbfe;
-}
-.selected-client-banner strong { display:block; color:#0f172a; font-size:16px; }
-.selected-client-banner small { color:#64748b; }
-.search-box { position:relative; flex:1; min-width:220px; }
-.search-box input { width:100%; height:44px; padding:0 14px 0 40px; border:1px solid #dbe5f0; border-radius:12px; background:#fff; }
-.search-box i { position:absolute; left:14px; top:50%; transform:translateY(-50%); color:#94a3b8; }
-.expense-table-wrap { border:1px solid #e2e8f0; border-radius:18px; overflow:hidden; background:#fff; }
-.expense-table-scroll { max-height:320px; overflow:auto; }
-.expense-table { width:100%; border-collapse:collapse; }
-.expense-table th, .expense-table td { padding:12px 14px; border-bottom:1px solid #eef2f7; font-size:13px; vertical-align:top; text-align:left; }
-.expense-table th { position:sticky; top:0; background:#f8fafc; text-transform:uppercase; letter-spacing:.4px; font-size:11px; color:#64748b; z-index:1; }
-.expense-check { width:18px; height:18px; }
-.pill { display:inline-flex; align-items:center; gap:6px; padding:5px 10px; border-radius:999px; font-size:12px; font-weight:700; background:#f8fafc; border:1px solid #e2e8f0; color:#475569; }
-.item-list { display:flex; flex-direction:column; gap:12px; }
-.item-row { border:1px solid #e2e8f0; border-radius:16px; background:#fff; padding:14px; }
-.item-row.source-expense { background:linear-gradient(180deg,#f8fbff,#ffffff); border-color:#cfe0ff; }
-.item-top { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:12px; flex-wrap:wrap; }
-.item-top strong { color:#0f172a; }
-.item-top small { color:#64748b; display:block; margin-top:4px; }
-.item-grid { display:grid; grid-template-columns: 1fr 1fr 180px auto; gap:12px; align-items:end; }
-.summary-kpis { display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:12px; }
-.kpi-box { border:1px solid #e2e8f0; border-radius:16px; padding:16px; background:#fff; }
-.kpi-box .label { color:#64748b; font-size:11px; text-transform:uppercase; letter-spacing:.5px; font-weight:700; }
-.kpi-box .value { margin-top:8px; font-size:22px; font-weight:800; color:#0f172a; }
-.analysis-list { display:flex; flex-direction:column; gap:10px; }
-.analysis-card { border:1px solid #e2e8f0; border-radius:16px; padding:14px; background:#fff; }
-.analysis-card strong { color:#0f172a; }
-.analysis-card small { color:#64748b; display:block; margin-top:4px; }
-.total-bar {
-  display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap;
-  padding:16px 18px; border-radius:18px; background:#0f172a; color:#fff;
-}
-.empty-note { padding:18px; border:1px dashed #cbd5e1; border-radius:16px; color:#94a3b8; text-align:center; background:#fff; }
-.right-scroll { max-height: calc(100vh - 170px); overflow:auto; padding:20px; }
-.left-scroll { padding:20px; }
-.helper-text { color:#64748b; font-size:12px; margin-top:6px; }
-.btn.is-loading, .btn[aria-busy="true"] { pointer-events:none; opacity:.85; position:relative; }
-.btn.is-loading .btn-label { visibility:hidden; }
-.btn.is-loading::after { content:""; position:absolute; inset:0; margin:auto; width:18px; height:18px; border-radius:50%; border:2.5px solid rgba(255,255,255,.75); border-top-color:transparent; animation:spin .7s linear infinite; }
-@keyframes spin { to { transform:rotate(360deg); } }
 
 @media (max-width: 1200px) {
   .builder-grid { grid-template-columns: 1fr; }
@@ -99,8 +192,8 @@ textarea.form-control { min-height: 96px; resize: vertical; }
 }
 @media (max-width: 768px) {
   .bill-builder-page { padding:16px; }
-  .field-grid, .summary-kpis, .item-grid { grid-template-columns: 1fr; }
-  .left-scroll, .right-scroll { padding:16px; }
+  .field-grid, .summary-kpis, .item-grid, .item-grid.expense-grid, .visual-row { grid-template-columns: 1fr; }
+  .left-scroll, .right-scroll, .picker-modal-head, .picker-modal-body, .picker-modal-foot { padding:16px; }
 }
 </style>
 @endpush
@@ -109,17 +202,21 @@ textarea.form-control { min-height: 96px; resize: vertical; }
 <div class="bill-builder-page">
   <div class="builder-header">
     <div>
-      <h1>Create Client Bill</h1>
-      <p>Choose a client tree, pull in existing expenses, and build a bill while comparing it against job budgets, total expenses, and previous client bills.</p>
-    </div>
-    <div class="builder-actions">
-      <a href="{{ url('/admin/accounting/client-bills') }}" class="btn btn-secondary">
+      <h1>New Client Bill</h1>
+      <p>Build a client bill with expense-based items, compare it against the selected client tree, and review earlier bills without leaving this page.</p>
+      <a href="{{ $billingBackUrl }}" class="builder-back">
         <i class="fa-solid fa-arrow-left"></i>
         Back To Bills
       </a>
-      <button type="button" class="btn btn-soft" id="clearSelectedClientBtn">
+    </div>
+    <div class="builder-actions">
+      <button type="button" class="btn btn-soft" id="openClientPickerBtn">
+        <i class="fa-solid fa-sitemap"></i>
+        Choose Client
+      </button>
+      <button type="button" class="btn btn-secondary" id="clearSelectedClientBtn">
         <i class="fa-solid fa-rotate-left"></i>
-        Reset Client
+        Clear
       </button>
     </div>
   </div>
@@ -127,34 +224,17 @@ textarea.form-control { min-height: 96px; resize: vertical; }
   <div class="builder-grid">
     <section class="panel-card">
       <div class="left-scroll stack">
-        <div>
-          <div class="picker-head">
-            <div>
-              <h2 class="section-title">1. Choose Client Tree</h2>
-              <p class="section-sub">Selecting a parent client includes child client jobs and expenses in the analysis.</p>
-            </div>
-            <div class="search-box">
-              <i class="fa-solid fa-magnifying-glass"></i>
-              <input type="text" id="clientTreeSearch" placeholder="Search clients...">
-            </div>
+        <div class="selected-client-banner" id="selectedClientBanner">
+          <div>
+            <strong>No client selected</strong>
+            <small>Choose a client tree from the right panel to load budgets, expenses, and earlier bills.</small>
           </div>
-
-          <div class="selected-client-banner" id="selectedClientBanner">
-            <div>
-              <strong>No client selected</strong>
-              <small>Pick a client or parent client tree to load budgets, expenses, and previous bills.</small>
-            </div>
-            <span class="pill">Waiting</span>
-          </div>
-
-          <div class="tree-shell mt-3" id="clientTreeShell">
-            <div class="empty-note">Loading client tree…</div>
-          </div>
+          <span class="client-tag">Waiting</span>
         </div>
 
         <form id="billCreateForm" class="stack" autocomplete="off">
           <div>
-            <h2 class="section-title">2. Bill Basics</h2>
+            <h2 class="section-title">Bill Basics</h2>
             <div class="field-grid">
               <div>
                 <label class="form-label">Bill Date <span class="text-danger">*</span></label>
@@ -178,44 +258,44 @@ textarea.form-control { min-height: 96px; resize: vertical; }
           <div>
             <div class="picker-head">
               <div>
-                <h2 class="section-title">3. Pull Client Expenses</h2>
-                <p class="section-sub">Tick expenses to add them into the bill automatically. You can still edit the amount afterward.</p>
-              </div>
-              <span class="pill" id="expenseSelectionCount">0 selected</span>
-            </div>
-            <div class="expense-table-wrap">
-              <div class="expense-table-scroll">
-                <table class="expense-table">
-                  <thead>
-                    <tr>
-                      <th></th>
-                      <th>Expense Head</th>
-                      <th>Job</th>
-                      <th>Date</th>
-                      <th>Amount</th>
-                    </tr>
-                  </thead>
-                  <tbody id="expenseRows">
-                    <tr><td colspan="5" class="text-center py-4">Choose a client to load expenses.</td></tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <div class="picker-head">
-              <div>
-                <h2 class="section-title">4. Bill Items</h2>
-                <p class="section-sub">Selected expenses appear here as bill items. You can also add manual bill heads for extra charges or adjustments.</p>
+                <h2 class="section-title">Bill Items</h2>
+                <p class="section-sub">Pick client expenses below or add custom bill heads manually. Checked expenses create bill rows automatically.</p>
               </div>
               <button type="button" class="btn btn-secondary" id="addManualItemBtn">
                 <i class="fa-solid fa-plus"></i>
-                Add Manual Item
+                New Manual Item
               </button>
             </div>
 
-            <div class="item-list" id="billItemsList">
+            <div class="subsection-card">
+              <div class="picker-head" style="margin-bottom:14px;">
+                <div>
+                  <h3 class="section-title" style="font-size:15px;margin-bottom:6px;">Client Expenses</h3>
+                  <p class="section-sub" style="margin:0;">Select any expense to pull its title and amount directly into the bill.</p>
+                </div>
+                <span class="pill" id="expenseSelectionCount">0 selected</span>
+              </div>
+              <div class="expense-table-wrap">
+                <div class="expense-table-scroll">
+                  <table class="expense-table">
+                    <thead>
+                      <tr>
+                        <th></th>
+                        <th>Expense Head</th>
+                        <th>Job</th>
+                        <th>Date</th>
+                        <th>Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody id="expenseRows">
+                      <tr><td colspan="5" class="text-center py-4">Choose a client to load expenses.</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <div class="item-list mt-3" id="billItemsList">
               <div class="empty-note">No bill items yet. Select client expenses or add a manual item.</div>
             </div>
           </div>
@@ -235,43 +315,117 @@ textarea.form-control { min-height: 96px; resize: vertical; }
 
     <aside class="panel-card">
       <div class="right-scroll stack">
-        <div>
-          <h2 class="section-title">Client Analysis</h2>
-          <p class="section-sub">Use this panel to compare billing against budgets, real expenses, and previous bills for the same client tree.</p>
+        <div class="analysis-topbar">
+          <div>
+            <h2>Client Analysis</h2>
+            <p>Pick a client tree here, then review budget, expense, and billing history while you prepare the next draft.</p>
+          </div>
         </div>
 
         <div class="summary-kpis">
-          <div class="kpi-box">
+          <div class="kpi-box blue">
             <div class="label">Total Budget</div>
             <div class="value" id="statBudget">Rs 0.00</div>
           </div>
-          <div class="kpi-box">
+          <div class="kpi-box cyan">
             <div class="label">Total Expenses</div>
             <div class="value" id="statExpenses">Rs 0.00</div>
           </div>
-          <div class="kpi-box">
-            <div class="label">Published Bills</div>
-            <div class="value" id="statPublishedBills">0</div>
+          <div class="kpi-box indigo">
+            <div class="label">Approved Repayments</div>
+            <div class="value" id="statApprovedRepayments">Rs 0.00</div>
           </div>
-          <div class="kpi-box">
-            <div class="label">Remaining Budget</div>
-            <div class="value" id="statRemainingBudget">Rs 0.00</div>
+          <div class="kpi-box sky">
+            <div class="label">Draft Bills</div>
+            <div class="value" id="statDraftBills">0</div>
           </div>
         </div>
 
-        <div class="analysis-card">
-          <strong>Scope Overview</strong>
-          <small id="scopeOverview">Choose a client tree to see the analysis summary.</small>
+        <div class="visual-card">
+          <div class="visual-head">
+            <strong>Budget vs Billing View</strong>
+            <div class="visual-legend">
+              <span class="budget">Budget</span>
+              <span class="expenses">Expenses</span>
+              <span class="billed">Billed</span>
+            </div>
+          </div>
+          <div class="visual-bars">
+            <div class="visual-row">
+              <label>Budget</label>
+              <div class="visual-track"><div class="visual-fill budget" id="barBudget" style="width:0%;"></div></div>
+              <strong id="barBudgetText">Rs 0.00</strong>
+            </div>
+            <div class="visual-row">
+              <label>Expenses</label>
+              <div class="visual-track"><div class="visual-fill expenses" id="barExpenses" style="width:0%;"></div></div>
+              <strong id="barExpensesText">Rs 0.00</strong>
+            </div>
+            <div class="visual-row">
+              <label>Billed</label>
+              <div class="visual-track"><div class="visual-fill billed" id="barBilled" style="width:0%;"></div></div>
+              <strong id="barBilledText">Rs 0.00</strong>
+            </div>
+          </div>
         </div>
 
         <div>
-          <h3 class="section-title" style="font-size:15px;">Recent Bills In This Client Tree</h3>
+          <h3 class="section-title" style="font-size:15px;">Bills For This Client</h3>
           <div class="analysis-list" id="previousBillsList">
-            <div class="empty-note">No analysis yet.</div>
+            <div class="empty-note">Choose a client to review its earlier bills.</div>
           </div>
         </div>
       </div>
     </aside>
+  </div>
+</div>
+
+<div class="picker-modal" id="clientPickerModal" aria-hidden="true">
+  <div class="picker-modal-card" role="dialog" aria-modal="true" aria-labelledby="clientPickerTitle">
+    <div class="picker-modal-head">
+      <div>
+        <h3 id="clientPickerTitle">Choose Client Tree</h3>
+        <p>Select a client or parent client. Child client jobs and expenses stay included in the analysis.</p>
+      </div>
+      <button type="button" class="item-close" id="closeClientPickerBtn" aria-label="Close client picker">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <div class="picker-modal-body">
+      <div class="search-box">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="clientTreeSearch" placeholder="Search clients...">
+      </div>
+      <div class="tree-shell" id="clientTreeShell">
+        <div class="empty-note">Loading client tree…</div>
+      </div>
+    </div>
+    <div class="picker-modal-foot">
+      <span class="pill" id="pickerSelectionLabel">No client selected</span>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button type="button" class="btn btn-secondary" id="cancelClientPickerBtn">Cancel</button>
+        <button type="button" class="btn btn-primary" id="applyClientPickerBtn">
+          <span class="btn-label">Use Selected Client</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="picker-modal" id="billDetailModal" aria-hidden="true">
+  <div class="picker-modal-card" role="dialog" aria-modal="true" aria-labelledby="billDetailTitle" style="width:min(760px, 100%);">
+    <div class="picker-modal-head">
+      <div>
+        <h3 id="billDetailTitle">Client Bill Details</h3>
+        <p>Review every bill item, amount, status, and due date for the selected bill.</p>
+      </div>
+      <button type="button" class="item-close" id="closeBillDetailBtn" aria-label="Close bill details">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <div class="picker-modal-body" id="billDetailBody">
+      <div class="empty-note">Select a bill to view its details.</div>
+    </div>
   </div>
 </div>
 @endsection
@@ -300,11 +454,21 @@ textarea.form-control { min-height: 96px; resize: vertical; }
     expenseMap: new Map(),
     selectedExpenseIds: new Set(),
     manualRowCounter: 0,
+    pickerClientId: null,
+    analysisBills: [],
+    activeBillTab: 'published',
   };
 
   const els = {
+    clientPickerModal: document.getElementById('clientPickerModal'),
+    billDetailModal: document.getElementById('billDetailModal'),
     clientTreeSearch: document.getElementById('clientTreeSearch'),
     clientTreeShell: document.getElementById('clientTreeShell'),
+    pickerSelectionLabel: document.getElementById('pickerSelectionLabel'),
+    openClientPickerBtn: document.getElementById('openClientPickerBtn'),
+    closeClientPickerBtn: document.getElementById('closeClientPickerBtn'),
+    cancelClientPickerBtn: document.getElementById('cancelClientPickerBtn'),
+    applyClientPickerBtn: document.getElementById('applyClientPickerBtn'),
     selectedClientBanner: document.getElementById('selectedClientBanner'),
     clearSelectedClientBtn: document.getElementById('clearSelectedClientBtn'),
     billDate: document.getElementById('bill_date'),
@@ -319,10 +483,17 @@ textarea.form-control { min-height: 96px; resize: vertical; }
     billCreateForm: document.getElementById('billCreateForm'),
     statBudget: document.getElementById('statBudget'),
     statExpenses: document.getElementById('statExpenses'),
-    statPublishedBills: document.getElementById('statPublishedBills'),
-    statRemainingBudget: document.getElementById('statRemainingBudget'),
-    scopeOverview: document.getElementById('scopeOverview'),
+    statApprovedRepayments: document.getElementById('statApprovedRepayments'),
+    statDraftBills: document.getElementById('statDraftBills'),
     previousBillsList: document.getElementById('previousBillsList'),
+    billDetailBody: document.getElementById('billDetailBody'),
+    closeBillDetailBtn: document.getElementById('closeBillDetailBtn'),
+    barBudget: document.getElementById('barBudget'),
+    barExpenses: document.getElementById('barExpenses'),
+    barBilled: document.getElementById('barBilled'),
+    barBudgetText: document.getElementById('barBudgetText'),
+    barExpensesText: document.getElementById('barExpensesText'),
+    barBilledText: document.getElementById('barBilledText'),
   };
 
   const esc = (value = '') => String(value).replace(/[&<>"']/g, (m) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[m]));
@@ -343,6 +514,42 @@ textarea.form-control { min-height: 96px; resize: vertical; }
     btn.classList.toggle('is-loading', !!isLoading);
     btn.setAttribute('aria-busy', isLoading ? 'true' : 'false');
     btn.disabled = !!isLoading;
+  }
+  function openPicker() {
+    els.clientPickerModal.classList.add('show');
+    els.clientPickerModal.setAttribute('aria-hidden', 'false');
+    requestAnimationFrame(() => els.clientTreeSearch.focus());
+  }
+  function closePicker() {
+    els.clientPickerModal.classList.remove('show');
+    els.clientPickerModal.setAttribute('aria-hidden', 'true');
+  }
+  function openBillDetails() {
+    els.billDetailModal.classList.add('show');
+    els.billDetailModal.setAttribute('aria-hidden', 'false');
+  }
+  function closeBillDetails() {
+    els.billDetailModal.classList.remove('show');
+    els.billDetailModal.setAttribute('aria-hidden', 'true');
+  }
+  function resetBuilderState() {
+    state.selectedClientId = null;
+    state.selectedClientLabel = '';
+    state.selectedTreeIds = [];
+    state.expenses = [];
+    state.expenseMap = new Map();
+    state.selectedExpenseIds = new Set();
+    state.pickerClientId = null;
+    state.analysisBills = [];
+    state.activeBillTab = 'published';
+    updateBanner();
+    renderClientTree();
+    renderExpenses([]);
+    renderPreviousBills([]);
+    updateSummary({});
+    els.billItemsList.innerHTML = '<div class="empty-note">No bill items yet. Select client expenses or add a manual item.</div>';
+    updateBillTotal();
+    setCookie(KNOWN_COOKIE, '');
   }
 
   async function fetchJSON(url, opts = {}) {
@@ -377,6 +584,7 @@ textarea.form-control { min-height: 96px; resize: vertical; }
 
   function renderClientTree() {
     const query = String(els.clientTreeSearch.value || '').trim().toLowerCase();
+    const activeId = Number(state.pickerClientId || state.selectedClientId || 0);
 
     const matchNode = (node) => {
       const selfMatch = !query || String(node.name || '').toLowerCase().includes(query);
@@ -392,8 +600,8 @@ textarea.form-control { min-height: 96px; resize: vertical; }
     }
 
     const renderNodes = (nodes, depth = 0) => nodes.map((node) => {
-      const checked = Number(state.selectedClientId) === Number(node.id) ? 'checked' : '';
-      const active = Number(state.selectedClientId) === Number(node.id) ? 'active' : '';
+      const checked = activeId === Number(node.id) ? 'checked' : '';
+      const active = activeId === Number(node.id) ? 'active' : '';
       return `
         <div class="tree-node ${active}" data-client-id="${esc(node.id)}">
           <input type="radio" name="client_tree_pick" value="${esc(node.id)}" ${checked}>
@@ -406,6 +614,17 @@ textarea.form-control { min-height: 96px; resize: vertical; }
     }).join('');
 
     els.clientTreeShell.innerHTML = renderNodes(filteredRoots);
+    updatePickerLabel();
+  }
+
+  function updatePickerLabel() {
+    const selectedId = Number(state.pickerClientId || state.selectedClientId || 0);
+    if (!selectedId) {
+      els.pickerSelectionLabel.textContent = 'No client selected';
+      return;
+    }
+    const client = state.clients.find((row) => Number(row.id) === selectedId);
+    els.pickerSelectionLabel.textContent = client ? client.name || `Client #${client.id}` : `Client #${selectedId}`;
   }
 
   function updateBanner() {
@@ -414,37 +633,159 @@ textarea.form-control { min-height: 96px; resize: vertical; }
         <strong>${esc(state.selectedClientLabel || `Client #${state.selectedClientId}`)}</strong>
         <small>${state.selectedTreeIds.length} client records included in this billing tree.</small>
       </div>
-      <span class="pill">${state.selectedTreeIds.length} in scope</span>` : `
+      <span class="client-tag"><i class="fa-solid fa-sitemap"></i>${state.selectedTreeIds.length} in scope</span>` : `
       <div>
         <strong>No client selected</strong>
-        <small>Pick a client or parent client tree to load budgets, expenses, and previous bills.</small>
+        <small>Choose a client tree from the right panel to load budgets, expenses, and earlier bills.</small>
       </div>
-      <span class="pill">Waiting</span>`;
+      <span class="client-tag">Waiting</span>`;
     els.selectedClientBanner.innerHTML = html;
   }
 
   function renderPreviousBills(rows) {
-    if (!Array.isArray(rows) || !rows.length) {
-      els.previousBillsList.innerHTML = '<div class="empty-note">No previous bills found for this client tree.</div>';
+    state.analysisBills = Array.isArray(rows) ? rows : [];
+    const published = state.analysisBills.filter((bill) => !!bill.is_published);
+    const drafts = state.analysisBills.filter((bill) => !bill.is_published);
+    if (state.activeBillTab === 'published' && !published.length && drafts.length) {
+      state.activeBillTab = 'draft';
+    } else if (state.activeBillTab === 'draft' && !drafts.length && published.length) {
+      state.activeBillTab = 'published';
+    }
+    const visibleBills = state.activeBillTab === 'draft' ? drafts : published;
+    const publishedActive = state.activeBillTab === 'published' ? 'active' : '';
+    const draftActive = state.activeBillTab === 'draft' ? 'active' : '';
+
+    if (!state.analysisBills.length) {
+      els.previousBillsList.innerHTML = '<div class="empty-note">No bills found for the selected client.</div>';
       return;
     }
-    els.previousBillsList.innerHTML = rows.map((bill) => `
-      <div class="analysis-card">
-        <strong>Bill #${esc(bill.id)}</strong>
-        <small>${esc(bill.client_name || '—')} · ${bill.is_published ? 'Published' : 'Draft'} · ${fmtDate(bill.bill_date)}</small>
-        <div style="margin-top:8px;font-weight:800;color:#0f172a;">${esc(money(bill.total_amount))}</div>
+    els.previousBillsList.innerHTML = `
+      <div class="bill-tabbar">
+        <button type="button" class="bill-tab ${publishedActive}" data-bill-tab="published">Published (${published.length})</button>
+        <button type="button" class="bill-tab ${draftActive}" data-bill-tab="draft">Draft (${drafts.length})</button>
       </div>
-    `).join('');
+      ${visibleBills.length ? visibleBills.map((bill) => `
+        <div class="analysis-card">
+          <div class="bill-card-top">
+            <div>
+              <strong>Bill #${esc(bill.id)}</strong>
+              <small>${esc(bill.client_name || '—')} · ${fmtDate(bill.bill_date)} · Due ${fmtDate(bill.due_date)}</small>
+            </div>
+            <div class="bill-status ${bill.is_published ? '' : 'draft'}">${bill.is_published ? 'Published' : 'Draft'}</div>
+          </div>
+          <div style="margin-top:10px;font-weight:800;color:#0f172a;">${esc(money(bill.total_amount))}</div>
+          <small style="margin-top:6px;">Approved repayments ${esc(money(bill.approved_repayment_amount || 0))}${Number(bill.pending_repayment_count || 0) ? ` · ${esc(bill.pending_repayment_count)} pending` : ''}</small>
+          <div class="bill-card-actions">
+            <button type="button" class="bill-action" data-bill-view="${esc(bill.id)}"><i class="fa-solid fa-eye"></i>View</button>
+            ${bill.is_published ? `<button type="button" class="bill-action" data-bill-pdf="${esc(bill.id)}"><i class="fa-solid fa-file-pdf"></i>PDF</button>` : ''}
+            ${bill.is_published ? '' : `<button type="button" class="bill-action publish" data-bill-publish="${esc(bill.id)}"><i class="fa-solid fa-paper-plane"></i>Publish</button>`}
+          </div>
+        </div>
+      `).join('') : '<div class="empty-note">No bills found in this tab.</div>'}
+    `;
+  }
+
+  async function openBillDetailModal(id) {
+    openBillDetails();
+    els.billDetailBody.innerHTML = '<div class="empty-note">Loading bill details…</div>';
+    const data = await fetchJSON(`${API_BASE}/client-bills/${encodeURIComponent(id)}`);
+    const bill = data.data || {};
+    const items = Array.isArray(bill.items) ? bill.items : [];
+    const repayments = Array.isArray(bill.repayments) ? bill.repayments : [];
+    els.billDetailBody.innerHTML = `
+      <div class="detail-grid" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;">
+        <div class="analysis-card"><small>Bill ID</small><strong>#${esc(bill.id || '—')}</strong></div>
+        <div class="analysis-card"><small>Client</small><strong>${esc(bill.client_name || '—')}</strong></div>
+        <div class="analysis-card"><small>Bill Date</small><strong>${fmtDate(bill.bill_date)}</strong></div>
+        <div class="analysis-card"><small>Due Date</small><strong>${fmtDate(bill.due_date)}</strong></div>
+        <div class="analysis-card"><small>Status</small><strong>${bill.is_published ? 'Published' : 'Draft'}</strong></div>
+        <div class="analysis-card"><small>Published Date</small><strong>${fmtDate(bill.published_at)}</strong></div>
+      </div>
+      <div class="analysis-card" style="margin-top:14px;">
+        <strong>Notes</strong>
+        <small style="margin-top:8px;white-space:pre-wrap;">${bill.notes ? esc(bill.notes) : 'No notes added.'}</small>
+      </div>
+      <div style="margin-top:14px;display:flex;flex-direction:column;gap:10px;">
+        ${items.length ? items.map((item) => `
+          <div class="analysis-card" style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">
+            <div>
+              <strong>${esc(item.bill_head_title || 'Untitled')}</strong>
+              <small>${item.client_bill_head_id ? `Head #${esc(item.client_bill_head_id)}` : 'Custom line item'}</small>
+            </div>
+            <strong>${esc(money(item.amount))}</strong>
+          </div>
+        `).join('') : '<div class="empty-note">No bill items found.</div>'}
+      </div>
+      <div class="analysis-card" style="margin-top:14px;">
+        <strong>Repayments</strong>
+        <div style="margin-top:12px;display:flex;flex-direction:column;gap:10px;">
+          ${repayments.length ? repayments.map((repayment) => `
+            <div class="analysis-card" style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;background:#fff;">
+              <div>
+                <strong>${fmtDate(repayment.repayment_date)}</strong>
+                <small>${esc(String(repayment.status || 'pending').replaceAll('_', ' '))}${repayment.submitted_by_name ? ` · ${esc(repayment.submitted_by_name)}` : ''}</small>
+              </div>
+              <strong>${esc(money(repayment.amount || 0))}</strong>
+            </div>
+          `).join('') : '<div class="empty-note">No repayments recorded yet.</div>'}
+        </div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;margin-top:16px;font-size:18px;font-weight:800;color:#0f172a;">Total: ${esc(money(bill.total_amount))}</div>
+    `;
+  }
+
+  async function downloadBillPdf(id) {
+    const res = await fetch(`${API_BASE}/client-bills/${encodeURIComponent(id)}/pdf`, { headers });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data?.message || 'Failed to download bill PDF');
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `client_bill_${id}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  async function publishBillFromAnalysis(id) {
+    const confirm = await Swal.fire({
+      title: 'Publish this bill?',
+      text: 'After publishing, this bill can no longer be edited.',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Publish',
+    });
+    if (!confirm.isConfirmed) return;
+    await fetchJSON(`${API_BASE}/client-bills/${encodeURIComponent(id)}/publish`, { method: 'PATCH' });
+    await Swal.fire({ icon:'success', title:'Bill published', timer:1400, showConfirmButton:false });
+    if (state.selectedClientId) {
+      await loadAnalysis(state.selectedClientId);
+    }
   }
 
   function updateSummary(stats = {}) {
-    els.statBudget.textContent = money(stats.total_budget || 0);
-    els.statExpenses.textContent = money(stats.total_expense_amount || 0);
-    els.statPublishedBills.textContent = String(stats.published_bill_count || 0);
-    els.statRemainingBudget.textContent = money(stats.remaining_budget || 0);
-    els.scopeOverview.textContent = state.selectedClientId
-      ? `${stats.tree_client_count || 0} clients, ${stats.jobs_count || 0} jobs, ${stats.expense_count || 0} expenses, ${stats.draft_bill_count || 0} draft bills.`
-      : 'Choose a client tree to see the analysis summary.';
+    const totalBudget = Number(stats.total_budget || 0);
+    const totalExpenses = Number(stats.total_expense_amount || 0);
+    const totalBilled = Number(stats.total_billed_amount || 0);
+    const approvedRepayments = Number(stats.approved_repayment_amount || 0);
+    const draftCount = Number(stats.draft_bill_count || 0);
+    const maxValue = Math.max(totalBudget, totalExpenses, totalBilled, 1);
+
+    els.statBudget.textContent = money(totalBudget);
+    els.statExpenses.textContent = money(totalExpenses);
+    els.statApprovedRepayments.textContent = money(approvedRepayments);
+    els.statDraftBills.textContent = String(draftCount);
+
+    els.barBudget.style.width = `${Math.max((totalBudget / maxValue) * 100, totalBudget > 0 ? 6 : 0)}%`;
+    els.barExpenses.style.width = `${Math.max((totalExpenses / maxValue) * 100, totalExpenses > 0 ? 6 : 0)}%`;
+    els.barBilled.style.width = `${Math.max((totalBilled / maxValue) * 100, totalBilled > 0 ? 6 : 0)}%`;
+    els.barBudgetText.textContent = money(totalBudget);
+    els.barExpensesText.textContent = money(totalExpenses);
+    els.barBilledText.textContent = money(totalBilled);
   }
 
   function ensureItemsAreaVisible() {
@@ -484,7 +825,7 @@ textarea.form-control { min-height: 96px; resize: vertical; }
           <strong>Manual Bill Item</strong>
           <small>Use this for fees, adjustments, or charges not tied to a specific expense.</small>
         </div>
-        <button type="button" class="btn btn-danger-soft remove-item-btn"><i class="fa-solid fa-trash"></i>Remove</button>
+        <button type="button" class="item-close remove-item-btn" aria-label="Remove bill item"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="item-grid">
         <div>
@@ -501,9 +842,6 @@ textarea.form-control { min-height: 96px; resize: vertical; }
         <div>
           <label class="form-label">Amount <span class="text-danger">*</span></label>
           <input type="number" min="0" step="0.01" class="form-control item-amount" placeholder="0.00">
-        </div>
-        <div>
-          <button type="button" class="btn btn-secondary remove-item-btn"><i class="fa-solid fa-xmark"></i>Remove</button>
         </div>
       </div>`;
     row.querySelectorAll('.remove-item-btn').forEach((btn) => btn.addEventListener('click', () => removeItemRow(key)));
@@ -536,9 +874,9 @@ textarea.form-control { min-height: 96px; resize: vertical; }
           <strong>${esc(expense.expense_head_title || 'Expense item')}</strong>
           <small>Linked expense #${esc(expense.id)} · ${esc(expense.job_title || `Job #${expense.job_id}`)} · ${fmtDate(expense.expense_date)}</small>
         </div>
-        <button type="button" class="btn btn-danger-soft remove-item-btn"><i class="fa-solid fa-trash"></i>Remove</button>
+        <button type="button" class="item-close remove-item-btn" aria-label="Remove expense item"><i class="fa-solid fa-xmark"></i></button>
       </div>
-      <div class="item-grid">
+      <div class="item-grid expense-grid">
         <div>
           <label class="form-label">Bill Title <span class="text-danger">*</span></label>
           <input type="text" class="form-control item-title" value="${esc(expense.expense_head_title || `Expense #${expense.id}`)}">
@@ -546,9 +884,6 @@ textarea.form-control { min-height: 96px; resize: vertical; }
         <div>
           <label class="form-label">Amount <span class="text-danger">*</span></label>
           <input type="number" min="0" step="0.01" class="form-control item-amount" value="${esc(expense.amount || 0)}">
-        </div>
-        <div>
-          <button type="button" class="btn btn-secondary remove-item-btn"><i class="fa-solid fa-xmark"></i>Remove</button>
         </div>
       </div>`;
 
@@ -565,6 +900,11 @@ textarea.form-control { min-height: 96px; resize: vertical; }
   }
 
   function renderExpenses(rows) {
+    if (!state.selectedClientId) {
+      els.expenseRows.innerHTML = '<tr><td colspan="5" class="text-center py-4">Choose a client to load expenses.</td></tr>';
+      updateExpenseSelectionCount();
+      return;
+    }
     if (!Array.isArray(rows) || !rows.length) {
       els.expenseRows.innerHTML = '<tr><td colspan="5" class="text-center py-4">No expenses found for the selected client tree.</td></tr>';
       updateExpenseSelectionCount();
@@ -602,6 +942,7 @@ textarea.form-control { min-height: 96px; resize: vertical; }
     state.selectedClientId = Number(clientId);
     state.selectedClientLabel = clientLabel || `Client #${clientId}`;
     state.selectedExpenseIds = new Set();
+    state.pickerClientId = Number(clientId);
     els.billItemsList.innerHTML = '<div class="empty-note">No bill items yet. Select client expenses or add a manual item.</div>';
     updateBillTotal();
     setCookie(KNOWN_COOKIE, String(clientId));
@@ -671,34 +1012,49 @@ textarea.form-control { min-height: 96px; resize: vertical; }
   }
 
   els.clientTreeSearch.addEventListener('input', renderClientTree);
-  els.clearSelectedClientBtn.addEventListener('click', () => {
-    state.selectedClientId = null;
-    state.selectedClientLabel = '';
-    state.selectedTreeIds = [];
-    state.expenses = [];
-    state.expenseMap = new Map();
-    state.selectedExpenseIds = new Set();
+  els.openClientPickerBtn.addEventListener('click', () => {
+    state.pickerClientId = state.selectedClientId;
     renderClientTree();
-    updateBanner();
-    renderExpenses([]);
-    renderPreviousBills([]);
-    updateSummary({});
-    els.billItemsList.innerHTML = '<div class="empty-note">No bill items yet. Select client expenses or add a manual item.</div>';
-    updateBillTotal();
-    setCookie(KNOWN_COOKIE, '');
+    openPicker();
   });
-  els.addManualItemBtn.addEventListener('click', addManualItem);
-  els.clientTreeShell.addEventListener('change', async (event) => {
-    const target = event.target;
-    if (!(target instanceof HTMLInputElement) || target.name !== 'client_tree_pick') return;
-    const clientId = Number(target.value || 0);
+  [els.closeClientPickerBtn, els.cancelClientPickerBtn].forEach((btn) => btn.addEventListener('click', closePicker));
+  els.clientPickerModal.addEventListener('click', (event) => {
+    if (event.target === els.clientPickerModal) closePicker();
+  });
+  els.billDetailModal.addEventListener('click', (event) => {
+    if (event.target === els.billDetailModal) closeBillDetails();
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && els.clientPickerModal.classList.contains('show')) {
+      closePicker();
+    }
+    if (event.key === 'Escape' && els.billDetailModal.classList.contains('show')) {
+      closeBillDetails();
+    }
+  });
+  els.closeBillDetailBtn.addEventListener('click', closeBillDetails);
+  els.applyClientPickerBtn.addEventListener('click', async () => {
+    const clientId = Number(state.pickerClientId || 0);
+    if (!clientId) {
+      Swal.fire({ icon:'warning', title:'Client required', text:'Select a client tree before continuing.' });
+      return;
+    }
     const client = state.clients.find((row) => Number(row.id) === clientId);
     if (!client) return;
+    closePicker();
     try {
       await selectClient(client.id, client.name || `Client #${client.id}`);
     } catch (error) {
       Swal.fire({ icon:'error', title:'Unable to load client analysis', text:String(error.message || error) });
     }
+  });
+  els.clearSelectedClientBtn.addEventListener('click', resetBuilderState);
+  els.addManualItemBtn.addEventListener('click', addManualItem);
+  els.clientTreeShell.addEventListener('change', (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLInputElement) || target.name !== 'client_tree_pick') return;
+    state.pickerClientId = Number(target.value || 0);
+    renderClientTree();
   });
   els.expenseRows.addEventListener('change', (event) => {
     const target = event.target;
@@ -714,6 +1070,40 @@ textarea.form-control { min-height: 96px; resize: vertical; }
       removeItemRow(`expense-${expenseId}`);
     }
     updateExpenseSelectionCount();
+  });
+  els.previousBillsList.addEventListener('click', async (event) => {
+    const tabBtn = event.target.closest('[data-bill-tab]');
+    if (tabBtn) {
+      state.activeBillTab = tabBtn.dataset.billTab === 'draft' ? 'draft' : 'published';
+      renderPreviousBills(state.analysisBills);
+      return;
+    }
+    const viewBtn = event.target.closest('[data-bill-view]');
+    if (viewBtn) {
+      try {
+        await openBillDetailModal(viewBtn.dataset.billView);
+      } catch (error) {
+        Swal.fire({ icon:'error', title:'Unable to load bill', text:String(error.message || error) });
+      }
+      return;
+    }
+    const pdfBtn = event.target.closest('[data-bill-pdf]');
+    if (pdfBtn) {
+      try {
+        await downloadBillPdf(pdfBtn.dataset.billPdf);
+      } catch (error) {
+        Swal.fire({ icon:'error', title:'Download failed', text:String(error.message || error) });
+      }
+      return;
+    }
+    const publishBtn = event.target.closest('[data-bill-publish]');
+    if (publishBtn) {
+      try {
+        await publishBillFromAnalysis(publishBtn.dataset.billPublish);
+      } catch (error) {
+        Swal.fire({ icon:'error', title:'Unable to publish bill', text:String(error.message || error) });
+      }
+    }
   });
 
   els.billCreateForm.addEventListener('submit', async (event) => {
@@ -748,7 +1138,7 @@ textarea.form-control { min-height: 96px; resize: vertical; }
         throw new Error(errs ? `${data?.message || 'Create failed'}\n${errs}` : (data?.message || 'Create failed'));
       }
       await Swal.fire({ icon:'success', title:'Draft bill created', text:'The new client bill has been saved as a draft.' });
-      window.location.href = '{{ url('/admin/accounting/client-bills') }}';
+      window.location.href = @json($billingBackUrl);
     } catch (error) {
       Swal.fire({ icon:'error', title:'Unable to create bill', text:String(error.message || error) });
     } finally {

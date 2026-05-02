@@ -20,6 +20,10 @@
 .cb-search input { padding:0 14px 0 40px; }
 .cb-search i { position:absolute; left:14px; top:50%; transform:translateY(-50%); color:#94a3b8; }
 .cb-filter { min-width:220px; padding:0 14px; }
+.cb-btn {
+  height:44px; padding:0 14px; border-radius:12px; border:1px solid #dbe5f0; background:#fff; color:#0f172a;
+  font-size:14px; font-weight:700; display:inline-flex; align-items:center; gap:8px; cursor:pointer;
+}
 .cb-card {
   background:rgba(255,255,255,.95);
   border:1px solid rgba(226,232,240,.92);
@@ -40,6 +44,12 @@
 }
 .cb-page-btn.active { background:#2563eb; border-color:#2563eb; color:#fff; }
 .cb-page-btn:disabled { opacity:.4; cursor:not-allowed; }
+.cb-icon-btn {
+  width:34px; height:34px; border-radius:10px; border:1px solid #dbe5f0; background:#fff; color:#1e293b;
+  display:inline-flex; align-items:center; justify-content:center; cursor:pointer;
+}
+.cb-icon-btn:hover { background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; }
+.cb-inline-actions { display:flex; gap:8px; flex-wrap:wrap; }
 .empty-state { text-align:center; padding:56px 20px; color:#94a3b8; }
 .empty-state h3 { margin:0 0 8px; font-size:18px; color:#475569; }
 .detail-grid { display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:12px; }
@@ -48,6 +58,14 @@
 .detail-items { display:flex; flex-direction:column; gap:10px; margin-top:16px; }
 .detail-item { display:flex; justify-content:space-between; gap:12px; border:1px solid #e2e8f0; border-radius:14px; padding:12px 14px; background:#fff; }
 .detail-total { display:flex; justify-content:flex-end; margin-top:16px; font-weight:800; font-size:18px; color:#0f172a; }
+.tree-shell { border:1px solid #e2e8f0; border-radius:16px; background:#fff; max-height:420px; overflow:auto; padding:10px; }
+.tree-node { display:flex; align-items:flex-start; gap:10px; padding:8px 10px; border-radius:12px; }
+.tree-node:hover { background:#f8fafc; }
+.tree-node.active { background:#eff6ff; box-shadow: inset 0 0 0 1px #bfdbfe; }
+.tree-children { margin-left:18px; padding-left:12px; border-left:1px solid #e2e8f0; }
+.tree-meta { display:flex; flex-direction:column; gap:3px; }
+.tree-meta strong { font-size:14px; color:#0f172a; }
+.tree-meta small { color:#94a3b8; font-size:12px; }
 @media (max-width: 768px) {
   .client-bills-page { padding:16px; }
   .detail-grid { grid-template-columns: 1fr; }
@@ -69,9 +87,22 @@
       <i class="fa-solid fa-magnifying-glass"></i>
       <input type="text" id="billSearch" placeholder="Search bills by client or bill head...">
     </div>
-    <select id="clientFilter" class="cb-filter">
-      <option value="">All Clients</option>
-    </select>
+    <button type="button" class="cb-btn cb-filter" id="clientFilterBtn" style="justify-content:space-between;">
+      <span id="clientFilterLabel">All Clients</span>
+      <i class="fa-solid fa-sitemap"></i>
+    </button>
+    <button type="button" class="cb-btn" id="clearClientFilterBtn">
+      <i class="fa-solid fa-xmark"></i>
+      Clear Client
+    </button>
+    <button type="button" class="cb-btn" id="exportBillsBtn">
+      <i class="fa-solid fa-file-export"></i>
+      Export
+    </button>
+    <a href="/client-user/repayments" class="cb-btn">
+      <i class="fa-solid fa-money-bill-transfer"></i>
+      Repayments
+    </a>
   </div>
 
   <div class="cb-card">
@@ -85,16 +116,47 @@
             <th>Due Date</th>
             <th>Total</th>
             <th>Status</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody id="billRows">
-          <tr><td colspan="6" class="text-center py-4">Loading…</td></tr>
+          <tr><td colspan="7" class="text-center py-4">Loading…</td></tr>
         </tbody>
       </table>
     </div>
     <div class="cb-pagination">
       <div id="paginationInfo">Showing 0-0 of 0 bills</div>
       <div class="cb-pages" id="pager"></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="clientTreeModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <h5 class="modal-title mb-1">Choose Client Tree</h5>
+          <div class="text-muted small">Filter published bills by one client branch.</div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="cb-search mb-3" style="max-width:none;">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" id="clientTreeSearch" placeholder="Search clients...">
+        </div>
+        <div class="tree-shell" id="clientTreeShell">
+          <div class="text-center py-4 text-muted">Loading client tree…</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <div class="text-muted small" id="clientTreeSelectionLabel">All Clients</div>
+        <div class="d-flex gap-2">
+          <button type="button" class="cb-btn" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="cb-btn" id="applyClientTreeBtn">Use Client</button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -124,14 +186,22 @@
   }
   const headers = { 'Authorization': 'Bearer ' + TOKEN, 'Accept': 'application/json' };
   const detailModal = new bootstrap.Modal(document.getElementById('billDetailModal'));
-  const state = { page: 1, total: 0, totalPages: 1, q: '', clientId: '', items: [] };
+  const treeModal = new bootstrap.Modal(document.getElementById('clientTreeModal'));
+  const state = { page: 1, total: 0, totalPages: 1, q: '', clientId: '', items: [], clients: [], clientTreeRoots: [], pendingClientId: '' };
   const els = {
     billSearch: document.getElementById('billSearch'),
-    clientFilter: document.getElementById('clientFilter'),
+    clientFilterBtn: document.getElementById('clientFilterBtn'),
+    clientFilterLabel: document.getElementById('clientFilterLabel'),
+    clearClientFilterBtn: document.getElementById('clearClientFilterBtn'),
     billRows: document.getElementById('billRows'),
     paginationInfo: document.getElementById('paginationInfo'),
     pager: document.getElementById('pager'),
     billDetailBody: document.getElementById('billDetailBody'),
+    exportBillsBtn: document.getElementById('exportBillsBtn'),
+    clientTreeSearch: document.getElementById('clientTreeSearch'),
+    clientTreeShell: document.getElementById('clientTreeShell'),
+    clientTreeSelectionLabel: document.getElementById('clientTreeSelectionLabel'),
+    applyClientTreeBtn: document.getElementById('applyClientTreeBtn'),
   };
   const esc = (value = '') => String(value).replace(/[&<>"']/g, (m) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[m]));
   const fmtDate = (value) => {
@@ -140,6 +210,33 @@
     return Number.isNaN(dt.getTime()) ? esc(value) : dt.toLocaleDateString('en-IN', { year:'numeric', month:'short', day:'numeric' });
   };
   const money = (value) => `Rs ${Number(value || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  function exportBills() {
+    if (!state.items.length) {
+      return;
+    }
+    const rows = state.items.map((bill) => ({
+      bill_id: bill.id || '',
+      client: bill.client_name || '',
+      bill_date: bill.bill_date || '',
+      due_date: bill.due_date || '',
+      total_amount: Number(bill.total_amount || 0).toFixed(2),
+      published_at: bill.published_at || '',
+    }));
+    const headersRow = Object.keys(rows[0]);
+    const csv = [
+      headersRow.join(','),
+      ...rows.map((row) => headersRow.map((key) => `"${String(row[key] ?? '').replace(/"/g, '""')}"`).join(',')),
+    ].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `published_bills_${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
 
   async function fetchJSON(url) {
     const res = await fetch(url, { headers });
@@ -148,17 +245,69 @@
     return data;
   }
 
+  function buildTree(flatRows) {
+    const byParent = new Map();
+    flatRows.forEach((row) => {
+      const key = row.parent_id == null ? 'root' : String(row.parent_id);
+      if (!byParent.has(key)) byParent.set(key, []);
+      byParent.get(key).push(row);
+    });
+    byParent.forEach((rows) => rows.sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''))));
+    const walk = (parentId = null) => {
+      const key = parentId == null ? 'root' : String(parentId);
+      return (byParent.get(key) || []).map((row) => ({ ...row, children: walk(row.id) }));
+    };
+    return walk(null);
+  }
+
+  function clientLabel(clientId, fallback = 'All Clients') {
+    const match = state.clients.find((row) => String(row.id) === String(clientId || ''));
+    return match ? (match.name || `Client #${match.id}`) : fallback;
+  }
+
+  function renderClientTree() {
+    const query = String(els.clientTreeSearch.value || '').trim().toLowerCase();
+    const activeId = Number(state.pendingClientId || state.clientId || 0);
+    const matchNode = (node) => {
+      const selfMatch = !query || String(node.name || '').toLowerCase().includes(query);
+      const childMatches = (node.children || []).map(matchNode).filter(Boolean);
+      if (!selfMatch && !childMatches.length) return null;
+      return { ...node, children: childMatches };
+    };
+    const filteredRoots = state.clientTreeRoots.map(matchNode).filter(Boolean);
+    if (!filteredRoots.length) {
+      els.clientTreeShell.innerHTML = '<div class="text-center py-4 text-muted">No clients match your search.</div>';
+      return;
+    }
+    const renderNodes = (nodes, depth = 0) => nodes.map((node) => {
+      const checked = activeId === Number(node.id) ? 'checked' : '';
+      const active = activeId === Number(node.id) ? 'active' : '';
+      return `
+        <div class="tree-node ${active}">
+          <input type="radio" name="client_tree_pick" value="${esc(node.id)}" ${checked}>
+          <div class="tree-meta">
+            <strong>${esc(node.name || `Client #${node.id}`)}</strong>
+            <small>${depth === 0 ? 'Root client' : `Nested level ${depth}`}</small>
+          </div>
+        </div>
+        ${node.children && node.children.length ? `<div class="tree-children">${renderNodes(node.children, depth + 1)}</div>` : ''}`;
+    }).join('');
+    els.clientTreeShell.innerHTML = renderNodes(filteredRoots);
+    els.clientTreeSelectionLabel.textContent = activeId ? clientLabel(activeId, 'Choose Client') : 'All Clients';
+  }
+
   async function loadClients() {
     const data = await fetchJSON('/api/clients/all');
     const rows = Array.isArray(data.data) ? data.data : [];
-    els.clientFilter.innerHTML = '<option value="">All Clients</option>' + rows.map((client) => (
-      `<option value="${esc(client.id)}">${esc(client.name || `Client #${client.id}`)}</option>`
-    )).join('');
+    state.clients = rows;
+    state.clientTreeRoots = buildTree(rows);
+    els.clientFilterLabel.textContent = state.clientId ? clientLabel(state.clientId) : 'All Clients';
+    renderClientTree();
   }
 
   function renderRows() {
     if (!state.items.length) {
-      els.billRows.innerHTML = '<tr><td colspan="6"><div class="empty-state"><h3>No published bills found</h3><p>No bills are currently visible inside your scope.</p></div></td></tr>';
+      els.billRows.innerHTML = '<tr><td colspan="7"><div class="empty-state"><h3>No published bills found</h3><p>No bills are currently visible inside your scope.</p></div></td></tr>';
       return;
     }
     els.billRows.innerHTML = state.items.map((bill) => `
@@ -172,6 +321,12 @@
         <td>${fmtDate(bill.due_date)}</td>
         <td style="font-weight:800;">${esc(money(bill.total_amount))}</td>
         <td><span class="bill-badge">Published</span></td>
+        <td>
+          <div class="cb-inline-actions">
+            <button type="button" class="cb-icon-btn" data-bill-id="${esc(bill.id)}" title="View"><i class="fa-solid fa-eye"></i></button>
+            <button type="button" class="cb-icon-btn" data-bill-pdf="${esc(bill.id)}" title="Download PDF"><i class="fa-solid fa-file-pdf"></i></button>
+          </div>
+        </td>
       </tr>
     `).join('');
   }
@@ -207,6 +362,7 @@
     const data = await fetchJSON(`/api/client-bills/${encodeURIComponent(id)}`);
     const bill = data.data || {};
     const items = Array.isArray(bill.items) ? bill.items : [];
+    const repayments = Array.isArray(bill.repayments) ? bill.repayments : [];
     els.billDetailBody.innerHTML = `
       <div class="detail-grid">
         <div class="detail-box"><small>Bill</small><strong>#${esc(bill.id || '—')}</strong></div>
@@ -224,7 +380,35 @@
           </div>
         `).join('') : '<div class="empty-state" style="padding:16px;">No bill items found.</div>'}
       </div>
+      <div class="detail-items" style="margin-top:16px;">
+        ${repayments.length ? repayments.map((repayment) => `
+          <div class="detail-item">
+            <div>
+              <strong>${fmtDate(repayment.repayment_date)}</strong>
+              <div style="font-size:12px;color:#64748b;">${esc(String(repayment.status || 'pending').replaceAll('_', ' '))}</div>
+            </div>
+            <div style="font-weight:800;">${esc(money(repayment.amount || 0))}</div>
+          </div>
+        `).join('') : '<div class="empty-state" style="padding:16px;">No repayments recorded yet.</div>'}
+      </div>
       <div class="detail-total">Total: <span class="ms-2">${esc(money(bill.total_amount))}</span></div>`;
+  }
+
+  async function downloadBillPdf(id) {
+    const res = await fetch(`/api/client-bills/${encodeURIComponent(id)}/pdf`, { headers });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data?.message || `HTTP ${res.status}`);
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `client_bill_${id}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
   }
 
   let searchTimer;
@@ -238,9 +422,29 @@
       });
     }, 300);
   });
-  els.clientFilter.addEventListener('change', () => {
-    state.clientId = els.clientFilter.value;
+  els.clientFilterBtn.addEventListener('click', () => {
+    state.pendingClientId = state.clientId || '';
+    renderClientTree();
+    treeModal.show();
+  });
+  els.clearClientFilterBtn.addEventListener('click', () => {
+    state.clientId = '';
     state.page = 1;
+    els.clientFilterLabel.textContent = 'All Clients';
+    loadBills().catch(() => {});
+  });
+  els.clientTreeSearch.addEventListener('input', renderClientTree);
+  els.clientTreeShell.addEventListener('change', (event) => {
+    const input = event.target.closest('input[name="client_tree_pick"]');
+    if (!input) return;
+    state.pendingClientId = input.value;
+    renderClientTree();
+  });
+  els.applyClientTreeBtn.addEventListener('click', () => {
+    state.clientId = state.pendingClientId || '';
+    state.page = 1;
+    els.clientFilterLabel.textContent = state.clientId ? clientLabel(state.clientId, 'Choose Client') : 'All Clients';
+    treeModal.hide();
     loadBills().catch(() => {});
   });
   els.pager.addEventListener('click', (event) => {
@@ -254,11 +458,19 @@
   });
   els.billRows.addEventListener('click', (event) => {
     const btn = event.target.closest('[data-bill-id]');
-    if (!btn) return;
-    openDetails(btn.dataset.billId).catch((error) => {
-      els.billDetailBody.innerHTML = `<div class="text-danger">${esc(error.message || error)}</div>`;
+    if (btn) {
+      openDetails(btn.dataset.billId).catch((error) => {
+        els.billDetailBody.innerHTML = `<div class="text-danger">${esc(error.message || error)}</div>`;
+      });
+      return;
+    }
+    const pdfBtn = event.target.closest('[data-bill-pdf]');
+    if (!pdfBtn) return;
+    downloadBillPdf(pdfBtn.dataset.billPdf).catch((error) => {
+      window.alert(error.message || error);
     });
   });
+  els.exportBillsBtn.addEventListener('click', exportBills);
 
   Promise.all([loadClients(), loadBills()]).catch((error) => {
     els.billRows.innerHTML = `<tr><td colspan="6" class="text-danger text-center py-4">${esc(error.message || error)}</td></tr>`;
