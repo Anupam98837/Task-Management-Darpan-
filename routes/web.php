@@ -118,7 +118,7 @@ Route::get('/accountant-user/dashboard', function () {
         'portalBillsUrl' => '/accountant-user/accounting/client-bills',
         'portalRepaymentsUrl' => '/accountant-user/accounting/repayments',
         'portalDocumentsUrl' => '/accountant-user/accounting/bill-heads/manage',
-        'portalNotificationsUrl' => '/accountant-user/accounting/bill-heads/manage',
+        'portalNotificationsUrl' => '/accountant-user/notifications',
         'portalLoginUrl' => '/accountant-user/login',
         'portalLogoutApi' => '/api/accountant-users/logout',
         'portalThemeKey' => 'theme:accountant-user',
@@ -169,6 +169,9 @@ Route::get('assignee/notifications', function () {
 });
 Route::get('client-user/notifications', function () {
     return view('pages/users/clientUser/pages/notifications/notificationPage');
+});
+Route::get('accountant-user/notifications', function () {
+    return view('pages/users/accountantUser/pages/notifications/notificationPage');
 });
 Route::get('admin/expenseHead/create', function () {
     return view('pages/users/admin/pages/expenseHead/createExpenseHead');

@@ -1015,15 +1015,25 @@ async function doLogout(){
     let lastErr;
     for (const url of urls) {
       try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
         const res = await fetch(url, {
           method,
           headers: apiHeaders(),
-          body: body ? JSON.stringify(body) : undefined
+          body: body ? JSON.stringify(body) : undefined,
+          signal: controller.signal
         });
+        clearTimeout(timeoutId);
         if (res.ok) return res.json();
         if ([404, 405].includes(res.status)) { lastErr = new Error(`HTTP ${res.status}`); continue; }
         throw new Error(`HTTP ${res.status}`);
-      } catch (e) { lastErr = e; }
+      } catch (e) {
+        if (e.name === 'AbortError') {
+          lastErr = new Error('Request timeout');
+        } else {
+          lastErr = e;
+        }
+      }
     }
     throw lastErr || new Error('Request failed');
   }

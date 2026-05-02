@@ -204,15 +204,27 @@
     html.theme-dark .admin-header{ background:#161b27 !important; border-bottom-color:#1e2a3a !important; }
     .rail{ background:#1b2240 !important; }
     .drawer{ background:#222849 !important; }
+
+    /* ===========================
+       Notifications Drawer (Right)
+       =========================== */
+    .notif-drawer {
+      position: fixed; top: 0; right: 0; height: 100svh; width: 360px;
+      background: #fff; border-left: 1px solid var(--border-color, #e5e7eb);
+      box-shadow: 0 8px 30px rgba(0,0,0,.18);
+      transform: translateX(100%); opacity: 0; visibility: hidden;
+      transition: transform .22s var(--ease), opacity .22s var(--ease), visibility .22s var(--ease);
+      z-index: 1100; display: flex; flex-direction: column;
+      backdrop-filter: saturate(1.4) blur(4px);
+    }
     .notif-drawer.open{ transform:none; opacity:1; visibility:visible; }
-    .nd-head{ padding:12px 14px; border-bottom:1px solid var(--border-color); display:flex; align-items:center; justify-content:space-between; gap:8px; }
-    .nd-body {
-  flex: 1;
-  overflow-y: auto;   /* only vertical scrolling */
-  overflow-x: hidden; /* hide horizontal scrollbar completely */
-}
- 
-    .nd-foot{ padding:10px 12px; border-top:1px solid var(--border-color); display:flex; justify-content:space-between; gap:8px; }
+    .notif-drawer[aria-hidden="true"] { pointer-events: none; }
+    .notif-drawer-head {
+      padding: 12px 14px; border-bottom: 1px solid var(--border-color, #e5e7eb);
+      display: flex; align-items: center; justify-content: space-between; background: #fff;
+    }
+    .notif-drawer-list { flex: 1; overflow: auto; padding: 8px; background: var(--bg-body, #fafbfc); }
+    .notif-drawer-foot { border-top: 1px solid var(--border-color, #e5e7eb); padding: 10px; background: #fff; position: sticky; bottom: 0; }
  
     /* Dark */
     html.theme-dark .notif-drawer,
@@ -220,7 +232,7 @@
     html.theme-dark .notif-drawer-foot { background: var(--light-color, #0f172a); border-color: var(--border-color, #273244); }
     html.theme-dark .notif-drawer-list { background: var(--bg-body, #0b1220); }
     /* Apply to the notif drawer body only */
-.nd-body {
+.notif-drawer-list {
   /* ensure only vertical scrolling and reserve space for scrollbar */
   overflow-y: auto;
   overflow-x: hidden;
@@ -228,20 +240,20 @@
 }
  
 /* -------- WebKit browsers (Chrome, Edge, Safari) -------- */
-html.theme-dark .nd-body::-webkit-scrollbar {
+html.theme-dark .notif-drawer-list::-webkit-scrollbar {
   width: 10px;                /* thin but reachable like your example */
   height: 0;                  /* hide bottom horizontal scrollbar handle */
 }
  
 /* Track: slightly darker than drawer bg so it reads as subtle groove */
-html.theme-dark .nd-body::-webkit-scrollbar-track {
+html.theme-dark .notif-drawer-list::-webkit-scrollbar-track {
   background: transparent;    /* use transparent to blend with drawer bg */
   border-left: 1px solid rgba(255,255,255,0.02); /* subtle edge separation */
   margin: 8px 0;              /* give vertical breathing at top/bottom (works in some browsers) */
 }
  
 /* Thumb: slim, rounded, slightly lighter than track, with subtle inset shadow */
-html.theme-dark .nd-body::-webkit-scrollbar-thumb {
+html.theme-dark .notif-drawer-list::-webkit-scrollbar-thumb {
   background-color: rgba(148,163,184,0.18); /* pale bluish-gray — visible but soft */
   min-height: 28px;                          /* ensure easy grab on touch/trackpads */
   border-radius: 999px;                      /* pill / fully rounded */
@@ -250,22 +262,22 @@ html.theme-dark .nd-body::-webkit-scrollbar-thumb {
 }
  
 /* Hover state: slightly brighter thumb */
-html.theme-dark .nd-body::-webkit-scrollbar-thumb:hover {
+html.theme-dark .notif-drawer-list::-webkit-scrollbar-thumb:hover {
   background-color: rgba(148,163,184,0.28);
   box-shadow: inset 0 0 6px rgba(0,0,0,0.25);
 }
  
 /* Optional: hide the up/down buttons on the scrollbar if browser shows them */
-html.theme-dark .nd-body::-webkit-scrollbar-button { display: none; }
+html.theme-dark .notif-drawer-list::-webkit-scrollbar-button { display: none; }
  
 /* Corner: match drawer bg */
-html.theme-dark .nd-body::-webkit-scrollbar-corner {
+html.theme-dark .notif-drawer-list::-webkit-scrollbar-corner {
   background: transparent;
 }
  
 /* -------- Firefox -------- */
 /* thin + colors */
-html.theme-dark .nd-body {
+html.theme-dark .notif-drawer-list {
   scrollbar-width: thin;
   scrollbar-color: rgba(148,163,184,0.18) transparent; /* thumb | track */
 }
@@ -273,11 +285,11 @@ html.theme-dark .nd-body {
 /* -------- Optional: auto-hide until hover (sleek behavior) --------
    NOTE: This only visually hides by making the thumb transparent; it's optional.
 */
-html.theme-dark .nd-body::-webkit-scrollbar-thumb {
+html.theme-dark .notif-drawer-list::-webkit-scrollbar-thumb {
   transition: background-color .18s ease, opacity .18s ease;
   opacity: 0.9;
 }
-html.theme-dark .nd-body:not(:hover)::-webkit-scrollbar-thumb { opacity: 0.6; }
+html.theme-dark .notif-drawer-list:not(:hover)::-webkit-scrollbar-thumb { opacity: 0.6; }
  
       /* Bell hover */
     #notifBellOpen:hover{ color: var(--accent-color,#6366f1); transform: translateY(-1px); transition: color .18s ease, transform .18s ease; }
@@ -620,18 +632,19 @@ html.theme-dark .btn-secondary { background: rgba(255,255,255,0.02); border-colo
 </div>
 
 <!-- ===== Notification Drawer (right) ===== -->
-<aside class="notif-drawer" id="notifDrawer" aria-hidden="true" aria-label="Notifications">
-  <div class="nd-head">
-    <strong class="me-2">Notifications</strong>
+<aside class="notif-drawer" id="notifDrawer" role="dialog" aria-modal="true" aria-labelledby="notifDrawerTitle" aria-hidden="true">
+  <div class="notif-drawer-head">
+    <strong id="notifDrawerTitle" class="me-2">Notifications</strong>
     <div class="ms-auto d-flex gap-2">
+      <button class="btn btn-sm btn-outline-secondary" id="notifDrawerRefreshBtn">Refresh</button>
       <button class="btn btn-sm btn-outline-secondary" id="notifMarkAllReadBtn">Mark all read</button>
-      <button class="btn btn-sm btn-light" id="notifCloseBtn" aria-label="Close"><i class="fa fa-times"></i></button>
+      <button class="btn btn-sm btn-light" id="notifCloseBtn" aria-label="Close notifications"><i class="fa fa-times"></i></button>
     </div>
   </div>
-  <div class="nd-body" id="notifList">
+  <div class="notif-drawer-list" id="notifList">
     <div class="p-3 text-center text-muted small">Loading…</div>
   </div>
-  <div class="nd-foot">
+  <div class="notif-drawer-foot">
     <a href="{{ $portalNotificationsUrl }}" class="btn btn-sm btn-primary" id="notifViewAllBtn">View all</a>
     <button class="btn btn-sm btn-outline-secondary" id="notifRefreshBtn">Refresh</button>
   </div>
@@ -889,12 +902,16 @@ document.addEventListener('DOMContentLoaded', ()=>{
     let lastErr;
     for(const url of candidates(path)){
       try{
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
         const res = await fetch(url, {
           method,
           headers: apiHeaders(),
           body: body ? JSON.stringify(body) : undefined,
           credentials: 'same-origin',
+          signal: controller.signal
         });
+        clearTimeout(timeoutId);
         if(!res.ok){
           if([404,405].includes(res.status)){ lastErr = new Error(`HTTP ${res.status}`); continue; }
           throw new Error(`HTTP ${res.status}`);
@@ -902,7 +919,13 @@ document.addEventListener('DOMContentLoaded', ()=>{
         const ct = res.headers.get('content-type') || '';
         if(!ct.includes('application/json')) throw new Error('Non-JSON response');
         return await res.json();
-      }catch(e){ lastErr = e; }
+      }catch(e){
+        if (e.name === 'AbortError') {
+          lastErr = new Error('Request timeout');
+        } else {
+          lastErr = e;
+        }
+      }
     }
     throw lastErr || new Error('Request failed');
   }
@@ -922,17 +945,27 @@ document.addEventListener('DOMContentLoaded', ()=>{
   }
 
   async function fetchUnreadCount(){
-    const qp = buildBaseQuery(10);
-    const res = await apiGet(`/notifications/unread-count?${qp.toString()}`);
-    return Number(res?.unread ?? 0);
+    try{
+      const qp = buildBaseQuery(10);
+      const res = await apiGet(`/notifications/unread-count?${qp.toString()}`);
+      return Number(res?.unread ?? 0);
+    }catch(e){
+      console.error('[unread-count] fetch failed', e);
+      return 0;
+    }
   }
   async function fetchNotifications({ onlyUnread=false, limit=100 }={}){
-    const qp = buildBaseQuery(limit);
-    if(onlyUnread) qp.set('unread','1');      // controller expects boolean('unread')
-    // To match unread-count (active only), uncomment:
-    // qp.set('status','active');
-    const res = await apiGet(`/notifications/my?${qp.toString()}`);
-    return Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []);
+    try{
+      const qp = buildBaseQuery(limit);
+      if(onlyUnread) qp.set('unread','1');      // controller expects boolean('unread')
+      // To match unread-count (active only), uncomment:
+      // qp.set('status','active');
+      const res = await apiGet(`/notifications/my?${qp.toString()}`);
+      return Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []);
+    }catch(e){
+      console.error('[notifications] fetch failed', e);
+      return [];
+    }
   }
 
   // Render
@@ -1056,8 +1089,13 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
   async function loadDropdownList(){
     if(notifListEl) notifListEl.innerHTML = `<div class="p-3 text-center text-muted small">Loading…</div>`;
-    const items = await fetchNotifications({ onlyUnread:true, limit:100 });
-    renderNotificationsInto(notifListEl, items);
+    try{
+      const items = await fetchNotifications({ onlyUnread:true, limit:100 });
+      renderNotificationsInto(notifListEl, items);
+    }catch(e){
+      console.error(e);
+      if(notifListEl) notifListEl.innerHTML = `<div class="p-3 text-center text-danger small">Failed to load notifications</div>`;
+    }
   }
 
   // Wire events

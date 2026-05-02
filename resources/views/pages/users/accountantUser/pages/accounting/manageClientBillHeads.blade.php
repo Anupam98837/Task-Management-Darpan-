@@ -7,7 +7,7 @@
   $portalBillsUrl = '/accountant-user/accounting/client-bills';
   $portalRepaymentsUrl = '/accountant-user/accounting/repayments';
   $portalDocumentsUrl = '/accountant-user/accounting/bill-heads/manage';
-  $portalNotificationsUrl = '/accountant-user/accounting/bill-heads/manage';
+  $portalNotificationsUrl = '/accountant-user/notifications';
   $portalLoginUrl = '/accountant-user/login';
   $portalLogoutApi = '/api/accountant-users/logout';
   $portalThemeKey = 'theme:accountant-user';
