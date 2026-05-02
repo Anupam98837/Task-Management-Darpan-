@@ -883,6 +883,7 @@ public function show(Request $request, int $id)
             'type'                  => ['sometimes','nullable', Rule::in($this->TYPES)],
             'priority'              => ['sometimes','nullable', Rule::in($this->PRIORITY)],
             'status'                => ['sometimes','nullable', Rule::in($this->STATUS)],
+            'budget'                => 'sometimes|nullable|numeric|min:0',
             'client_id'             => ['sometimes','nullable','integer','exists:clients,id'],
             'document_id'           => ['sometimes','nullable','integer','exists:documents,id'],
             'planned_duration_days' => 'sometimes|nullable|integer|min:0',
@@ -930,6 +931,7 @@ public function show(Request $request, int $id)
             'type'                  => $data['type']           ?? 'task',
             'priority'              => $data['priority']       ?? 'normal',
             'status'                => $data['status']         ?? 'planned',
+            'budget'                => array_key_exists('budget', $data) ? $data['budget'] : null,
             'planned_duration_days' => $payload['planned_duration_days'],
             'planned_start_at'      => $payload['planned_start_at'],
             'planned_end_at'        => $payload['planned_end_at'],
@@ -1084,6 +1086,7 @@ public function changeStatus(Request $r, int $id)
         'type'                  => ['sometimes','nullable', Rule::in($this->TYPES)],
         'priority'              => ['sometimes','nullable', Rule::in($this->PRIORITY)],
         'status'                => ['sometimes','nullable', Rule::in($this->STATUS)],
+        'budget'                => 'sometimes|nullable|numeric|min:0',
         'client_id'             => ['sometimes','nullable','integer','exists:clients,id'],
         'document_id'           => ['sometimes','nullable','integer','exists:documents,id'],
         'planned_duration_days' => 'sometimes|nullable|integer|min:0',
@@ -1128,7 +1131,7 @@ public function changeStatus(Request $r, int $id)
     Log::info('[JobUpdate] Planned dates validated successfully');
 
     $update = [];
-    foreach (['title','description','type','priority','status','client_id','document_id','ordering','metadata'] as $f) {
+    foreach (['title','description','type','priority','status','budget','client_id','document_id','ordering','metadata'] as $f) {
         if (array_key_exists($f, $data)) {
             $update[$f] = $f === 'metadata'
                 ? ($data['metadata'] === null ? null : json_encode($data['metadata']))

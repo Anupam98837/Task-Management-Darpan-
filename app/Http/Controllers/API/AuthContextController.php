@@ -22,6 +22,7 @@ class AuthContextController extends Controller
             'admin' => ['admins', 'name', 'email'],
             'assignee' => ['assigned_people', 'name', 'email'],
             'client_user' => ['client_users', 'name', 'email'],
+            'accountant_user' => ['accountant_users', 'name', 'email'],
             default => [null, null, null],
         };
 

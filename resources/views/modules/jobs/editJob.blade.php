@@ -241,6 +241,16 @@ body{background:var(--bg-body);font-family:-apple-system,BlinkMacSystemFont,'Seg
         </div>
 
         <div class="col-md-6">
+          <label class="form-label">Budget</label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="fa-solid fa-indian-rupee-sign"></i></span>
+            <input type="number" min="0" step="0.01" class="form-control" id="budget" placeholder="e.g., 25000">
+          </div>
+          <div class="tiny mt-1">Optional overall job budget for planning and billing reference.</div>
+          <div class="field-error" data-for="budget"></div>
+        </div>
+
+        <div class="col-md-6">
           <label class="form-label">Parent Job</label>
           <div class="d-flex gap-2">
             <button type="button" class="btn btn-secondary" id="btnPickParent">
@@ -685,6 +695,7 @@ body{background:var(--bg-body);font-family:-apple-system,BlinkMacSystemFont,'Seg
     type: byId('type'),
     priority: byId('priority'),
     status: byId('status'),
+    budget: byId('budget'),
     client: byId('client_id'),
     clientCurrent: byId('clientCurrent'),
     btnPickClient: byId('btnPickClient'),
@@ -921,6 +932,7 @@ body{background:var(--bg-body);font-family:-apple-system,BlinkMacSystemFont,'Seg
       if (data.type) fields.type.value = data.type;
       if (data.priority) fields.priority.value = data.priority;
       if (data.status) fields.status.value = data.status;
+      fields.budget.value = data.budget != null ? String(data.budget) : '';
 
       if (data.client_id) fields.client.value = String(data.client_id);
       else fields.client.value = '';
@@ -1715,6 +1727,7 @@ body{background:var(--bg-body);font-family:-apple-system,BlinkMacSystemFont,'Seg
       type: fields.type.value || 'task',
       priority: fields.priority.value || 'normal',
       status: fields.status.value || 'planned',
+      budget: fields.budget.value ? parseFloat(fields.budget.value) : null,
       client_id: fields.client.value ? parseInt(fields.client.value,10) : null,
       document_id: (fields.useDocument.checked && fields.document.value) ? parseInt(fields.document.value,10) : null,
       parent_id: fields.parentId.value ? parseInt(fields.parentId.value,10) : null,

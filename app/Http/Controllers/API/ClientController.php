@@ -327,7 +327,7 @@ class ClientController extends Controller
      * ========================= */
 public function index(Request $request)
 {
-    if ($resp = $this->requireRole($request, ['admin','user','assignee','client_user'])) return $resp;
+    if ($resp = $this->requireRole($request, ['admin','user','assignee','client_user','accountant_user'])) return $resp;
 
     $page     = max(1, (int) $request->query('page', 1));
     $perPage  = min(100, max(1, (int) $request->query('per_page', 10)));
@@ -409,7 +409,7 @@ public function index(Request $request)
 }
     public function all(Request $request)
     {
-        if ($resp = $this->requireRole($request, ['admin','user','assignee','client_user'])) return $resp;
+        if ($resp = $this->requireRole($request, ['admin','user','assignee','client_user','accountant_user'])) return $resp;
 
         $q        = trim((string) $request->query('q', ''));
         $status   = trim((string) $request->query('status', ''));
@@ -595,7 +595,7 @@ public function index(Request $request)
      * ========================= */
     public function show(string $slug, Request $request)
     {
-        if ($resp = $this->requireRole($request, ['admin','user','assignee','client_user'])) return $resp;
+        if ($resp = $this->requireRole($request, ['admin','user','assignee','client_user','accountant_user'])) return $resp;
 
         $client = $this->findBySlug($slug);
         if (!$client) return response()->json(['status'=>'error','message'=>'Client not found'], 404);
@@ -613,7 +613,7 @@ public function index(Request $request)
 
     public function showById(int $id, Request $request)
     {
-        if ($resp = $this->requireRole($request, ['admin','user','assignee','client_user'])) return $resp;
+        if ($resp = $this->requireRole($request, ['admin','user','assignee','client_user','accountant_user'])) return $resp;
 
         $client = $this->findById($id);
         if (!$client) return response()->json(['status'=>'error','message'=>'Client not found'], 404);

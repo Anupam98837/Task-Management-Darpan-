@@ -12,6 +12,9 @@ use App\Http\Controllers\API\ActivityLogsController;
 use App\Http\Controllers\API\JobDetailsController;
 use App\Http\Controllers\API\AssignedPeopleController;
 use App\Http\Controllers\API\ClientUserController;
+use App\Http\Controllers\API\AccountantUserController;
+use App\Http\Controllers\API\ClientBillController;
+use App\Http\Controllers\API\ClientBillHeadController;
 use App\Http\Controllers\API\ClientUserDashboardController;
 use App\Http\Controllers\API\AdminDashboardController;
 use App\Http\Controllers\API\AssigneeDashboardController;
@@ -48,12 +51,18 @@ Route::prefix('client-users')->group(function () {
     Route::get('/me', [ClientUserController::class, 'me'])->middleware('check.role:client_user');
 });
 
+Route::prefix('accountant-users')->group(function () {
+    Route::post('/login', [AccountantUserController::class, 'login']);
+    Route::post('/logout', [AccountantUserController::class, 'logout'])->middleware('check.role:accountant_user');
+    Route::get('/me', [AccountantUserController::class, 'me'])->middleware('check.role:accountant_user');
+});
+
 Route::get('/auth/context', AuthContextController::class)
-    ->middleware('check.role:admin,assignee,client_user');
+    ->middleware('check.role:admin,assignee,client_user,accountant_user');
 
 
 // READ (admin or user)
-Route::middleware('check.role:admin,assignee,client_user')->group(function () {
+Route::middleware('check.role:admin,assignee,client_user,accountant_user')->group(function () {
     Route::get('/clients',        [ClientController::class, 'index']);
     Route::get('/clients/all',    [ClientController::class, 'all']);
     Route::get('/clients/{slug}', [ClientController::class, 'show']);
@@ -238,6 +247,14 @@ Route::middleware('check.role:admin')->group(function () {
     Route::patch('/client-users/{id}', [ClientUserController::class, 'update'])->whereNumber('id');
     Route::patch('/client-users/{id}/toggle', [ClientUserController::class, 'toggle'])->whereNumber('id');
     Route::delete('/client-users/{id}', [ClientUserController::class, 'destroy'])->whereNumber('id');
+
+    Route::get('/accountant-users', [AccountantUserController::class, 'index']);
+    Route::get('/accountant-users/{id}', [AccountantUserController::class, 'show'])->whereNumber('id');
+    Route::post('/accountant-users', [AccountantUserController::class, 'store']);
+    Route::put('/accountant-users/{id}', [AccountantUserController::class, 'update'])->whereNumber('id');
+    Route::patch('/accountant-users/{id}', [AccountantUserController::class, 'update'])->whereNumber('id');
+    Route::patch('/accountant-users/{id}/toggle', [AccountantUserController::class, 'toggle'])->whereNumber('id');
+    Route::delete('/accountant-users/{id}', [AccountantUserController::class, 'destroy'])->whereNumber('id');
 });
 // Admin dashboard (admin only)
 Route::middleware('check.role:admin, assignee')->group(function () {
@@ -336,6 +353,46 @@ Route::prefix('expense-heads')->middleware('check.role:admin,assignee')->group(f
         // Toggle active/inactive status
         Route::patch('/{id}/toggle-status', [ExpenseHeadController::class, 'toggleStatus'])
             ->name('api.expense-heads.toggle');
+    });
+
+Route::prefix('client-bill-heads')->middleware('check.role:admin,accountant_user')->group(function () {
+        Route::get('/', [ClientBillHeadController::class, 'index'])
+            ->name('api.client-bill-heads.index');
+        Route::get('/all', [ClientBillHeadController::class, 'allHeads'])
+            ->name('api.client-bill-heads.all');
+        Route::post('/', [ClientBillHeadController::class, 'store'])
+            ->name('api.client-bill-heads.store');
+        Route::get('/{id}', [ClientBillHeadController::class, 'show'])
+            ->whereNumber('id')
+            ->name('api.client-bill-heads.show');
+        Route::put('/{id}', [ClientBillHeadController::class, 'update'])
+            ->whereNumber('id')
+            ->name('api.client-bill-heads.update');
+        Route::delete('/{id}', [ClientBillHeadController::class, 'destroy'])
+            ->whereNumber('id')
+            ->name('api.client-bill-heads.destroy');
+        Route::patch('/{id}/toggle-status', [ClientBillHeadController::class, 'toggleStatus'])
+            ->whereNumber('id')
+            ->name('api.client-bill-heads.toggle');
+    });
+
+Route::prefix('client-bills')->middleware('check.role:admin,accountant_user')->group(function () {
+        Route::get('/', [ClientBillController::class, 'index'])
+            ->name('api.client-bills.index');
+        Route::post('/', [ClientBillController::class, 'store'])
+            ->name('api.client-bills.store');
+        Route::get('/{id}', [ClientBillController::class, 'show'])
+            ->whereNumber('id')
+            ->name('api.client-bills.show');
+        Route::put('/{id}', [ClientBillController::class, 'update'])
+            ->whereNumber('id')
+            ->name('api.client-bills.update');
+        Route::patch('/{id}/publish', [ClientBillController::class, 'publish'])
+            ->whereNumber('id')
+            ->name('api.client-bills.publish');
+        Route::delete('/{id}', [ClientBillController::class, 'destroy'])
+            ->whereNumber('id')
+            ->name('api.client-bills.destroy');
     });
 Route::prefix('job-details')->middleware('check.role:admin,assignee,client_user')->group(function () {
     Route::get('{job}/expenses', [ExpenseController::class, 'listExpenses'])

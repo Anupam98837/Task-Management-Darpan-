@@ -43,6 +43,9 @@ Route::get('/admin/client/manage', function () {
 Route::get('/admin/client-users/manage', function () {
     return view('pages/users/admin/pages/clientUsers/manageClientUsers');
 });
+Route::get('/admin/accountant-users/manage', function () {
+    return view('pages/users/admin/pages/accountantUsers/manageAccountantUsers');
+});
 //Activity Logs
 Route::get('/admin/logs', function () {
     return view('pages/users/admin/pages/logs/activityLogs');
@@ -124,6 +127,15 @@ Route::get('admin/expenseHead/create', function () {
 });
 Route::get('admin/expenseHead/manage', function () {
     return view('pages/users/admin/pages/expenseHead/manageExpenseHead');
+});
+Route::get('admin/accounting/bill-heads/create', function () {
+    return view('pages/users/admin/pages/accounting/createClientBillHead');
+});
+Route::get('admin/accounting/bill-heads/manage', function () {
+    return view('pages/users/admin/pages/accounting/manageClientBillHeads');
+});
+Route::get('admin/accounting/client-bills', function () {
+    return view('pages/users/admin/pages/accounting/manageClientBills');
 });
 Route::get('job-expense/claim/manage', function () {
     return view('pages/users/admin/pages/jobs/jobExpenseClaim');

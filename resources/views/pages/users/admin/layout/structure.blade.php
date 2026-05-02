@@ -501,6 +501,7 @@ html.theme-dark .btn-secondary { background: rgba(255,255,255,0.02); border-colo
       <button class="rail-btn group-kicker" data-section="documents" type="button" title="Documents"><i class="fa-regular fa-folder-open"></i></button>
       <button class="rail-btn group-kicker" data-section="jobs" type="button" title="Jobs"><i class="fa-solid fa-briefcase"></i></button>
       <button class="rail-btn group-kicker" data-section="assigned-people" type="button" title="Assigned People"><i class="fa-solid fa-user-tag"></i></button>
+      <button class="rail-btn group-kicker" data-section="accounting" type="button" title="Accounting"><i class="fa-solid fa-file-invoice-dollar"></i></button>
       <button class="rail-btn group-kicker" data-section="expense-heads" type="button" title="Expense Heads">
   <i class="fa-solid fa-receipt"></i>
 </button>
@@ -596,6 +597,18 @@ html.theme-dark .btn-secondary { background: rgba(255,255,255,0.02); border-colo
         </a>
         <div id="sm-assigned-people" class="submenu" role="group" aria-label="Assigned People submenu">
           <a href="/admin/assignedpeople/manage" class="nav-link">Manage Assigned People</a>
+        </div>
+      </div>
+      <div class="nav-group" data-section="accounting">
+        <a href="#" class="nav-link group-toggle" data-target="sm-accounting" aria-expanded="false">
+          <i class="fa-solid fa-file-invoice-dollar"></i><span>Accounting</span>
+          <i class="fa fa-chevron-down ms-auto chev"></i>
+        </a>
+        <div id="sm-accounting" class="submenu" role="group" aria-label="Accounting submenu">
+          <a href="/admin/accounting/client-bills" class="nav-link">Client Bills</a>
+          <a href="/admin/accounting/bill-heads/create" class="nav-link">Add Bill Head</a>
+          <a href="/admin/accounting/bill-heads/manage" class="nav-link">Manage Bill Heads</a>
+          <a href="/admin/accountant-users/manage" class="nav-link">Manage Accountant Users</a>
         </div>
       </div>
       <!-- Expense Head -->
