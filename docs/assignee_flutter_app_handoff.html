@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Assignee Flutter App Handoff</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --card: #ffffff;
+      --text: #172033;
+      --muted: #5f6c80;
+      --line: #dce4ef;
+      --blue: #2377fc;
+      --navy: #1b2240;
+      --green: #109669;
+      --amber: #d97706;
+      --red: #dc2626;
+      --shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.55;
+    }
+    .wrap {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 32px 20px 60px;
+    }
+    .hero {
+      background: linear-gradient(135deg, var(--navy), #243263 60%, #2e4f8f);
+      color: #fff;
+      border-radius: 24px;
+      padding: 28px 30px;
+      box-shadow: var(--shadow);
+      margin-bottom: 24px;
+    }
+    .hero h1 {
+      margin: 0 0 8px;
+      font-size: 30px;
+      line-height: 1.15;
+    }
+    .hero p {
+      margin: 0;
+      font-size: 15px;
+      opacity: 0.92;
+    }
+    .notice {
+      margin-top: 16px;
+      display: inline-block;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.12);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+    }
+    .section {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    h2 {
+      margin: 0 0 14px;
+      font-size: 22px;
+      color: var(--navy);
+    }
+    h3 {
+      margin: 22px 0 10px;
+      font-size: 17px;
+      color: var(--navy);
+    }
+    p, li {
+      font-size: 14px;
+      color: var(--text);
+    }
+    .muted { color: var(--muted); }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 14px;
+    }
+    .mini-card {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 16px;
+      background: #fbfdff;
+    }
+    .mini-card strong {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--navy);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      overflow: hidden;
+    }
+    th, td {
+      border: 1px solid var(--line);
+      padding: 10px 12px;
+      font-size: 13px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background: #eef4ff;
+      color: var(--navy);
+    }
+    code, pre {
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    }
+    code {
+      background: #eef3fb;
+      padding: 2px 6px;
+      border-radius: 6px;
+      color: #0f3f9a;
+    }
+    pre {
+      background: #0f172a;
+      color: #e5eefc;
+      padding: 16px;
+      border-radius: 14px;
+      overflow: auto;
+      font-size: 12px;
+      line-height: 1.45;
+      border: 1px solid #1e293b;
+    }
+    .tag {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      margin-right: 6px;
+      margin-bottom: 6px;
+      border: 1px solid transparent;
+    }
+    .blue { background: #e8f0ff; color: #1858c8; border-color: #c8dcff; }
+    .green { background: #eafbf4; color: #0f8a61; border-color: #c8f1df; }
+    .amber { background: #fff5df; color: #b56b00; border-color: #f5dd9f; }
+    .red { background: #ffeded; color: #c32020; border-color: #f5c5c5; }
+    .footer-note {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="hero">
+      <h1>Assignee Mobile App Implementation Handoff</h1>
+      <p>This document is the implementation brief for building the assignee-side Flutter app against the current Laravel backend in this project. It is written to be reusable as input for another AI, a Flutter developer, or an app-builder workflow.</p>
+      <div class="notice">Derived from current codebase on 2026-05-04</div>
+    </div>
+
+    <div class="section">
+      <h2>1. Recommended Input Format</h2>
+      <p>Use this HTML file as the source brief for the Flutter app. It is a better machine-readable handoff than a Word file because it keeps structure, API details, screen flow, permissions, and sample JSON together in one place.</p>
+      <p class="muted">If needed later, this same file can be converted into DOCX or PDF, but for AI-assisted app generation the HTML version is the best base document.</p>
+    </div>
+
+    <div class="section">
+      <h2>2. Product Goal</h2>
+      <p>Build an <strong>Assignee Portal mobile app</strong> where a logged-in assignee can:</p>
+      <ul>
+        <li>Log in securely with assignee credentials.</li>
+        <li>See a personal dashboard with KPI cards and charts.</li>
+        <li>View only jobs assigned to them.</li>
+        <li>Open a job and see summary details, assignees, chat messages, and expenses.</li>
+        <li>View and manage only their own job expenses where allowed by backend rules.</li>
+        <li>Create expense claim requests from their own expenses.</li>
+        <li>Read and manage notifications.</li>
+        <li>Optionally register FCM tokens for push notifications.</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h2>3. Important Backend Truths</h2>
+      <div class="grid">
+        <div class="mini-card">
+          <strong>Authentication</strong>
+          <span>Assignee auth uses custom Bearer tokens returned by <code>/api/assignedpeople/login</code>.</span>
+        </div>
+        <div class="mini-card">
+          <strong>Role Validation</strong>
+          <span>After login, always verify role with <code>/api/auth/context</code> or <code>/api/assignedpeople/me</code>.</span>
+        </div>
+        <div class="mini-card">
+          <strong>Job Scope</strong>
+          <span>Assignees must only see jobs where they are actively assigned.</span>
+        </div>
+        <div class="mini-card">
+          <strong>Expense Scope</strong>
+          <span>Assignees only see expenses created by themselves inside a job.</span>
+        </div>
+      </div>
+      <h3>Known UI/permission mismatch in current web code</h3>
+      <p>The shared web job screen currently marks assignees as mostly read-only in some UI branches, but the backend still allows assignees to do several actions such as:</p>
+      <ul>
+        <li>Change job status.</li>
+        <li>Post job chat messages.</li>
+        <li>Add expenses to a job they can access.</li>
+        <li>Create expense claims from their own expenses.</li>
+      </ul>
+      <p><strong>Recommendation for Flutter:</strong> follow backend capability, not the older shared Blade UI restrictions.</p>
+    </div>
+
+    <div class="section">
+      <h2>4. Authentication Flow</h2>
+      <h3>Login</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Method</th>
+            <th>Endpoint</th>
+            <th>Body</th>
+            <th>Success Output</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>POST</td>
+            <td><code>/api/assignedpeople/login</code></td>
+            <td><code>{ "identifier": "email-or-name", "password": "..." }</code></td>
+            <td><code>{ status, message, access_token, token_type, tokenable_type }</code></td>
+          </tr>
+        </tbody>
+      </table>
+      <h3>Logout</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Method</th>
+            <th>Endpoint</th>
+            <th>Auth</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>POST</td>
+            <td><code>/api/assignedpeople/logout</code></td>
+            <td>Bearer token</td>
+            <td>Invalidate token, then clear local auth storage.</td>
+          </tr>
+        </tbody>
+      </table>
+      <h3>Profile and role confirmation</h3>
+      <ul>
+        <li><code>GET /api/assignedpeople/me</code> returns minimal assignee data: <code>id</code>, <code>name</code>, <code>email</code>.</li>
+        <li><code>GET /api/auth/context</code> returns <code>id</code>, <code>role</code>, <code>tokenable_type</code>, <code>name</code>, <code>email</code>.</li>
+      </ul>
+      <pre>{
+  "status": "success",
+  "data": {
+    "id": 12,
+    "role": "assignee",
+    "tokenable_type": "assignee",
+    "name": "Rahul Sen",
+    "email": "rahul@example.com"
+  }
+}</pre>
+      <h3>Flutter storage recommendation</h3>
+      <ul>
+        <li>Store access token in <code>flutter_secure_storage</code>.</li>
+        <li>Store only lightweight cache in memory or local persistence.</li>
+        <li>On app launch: read token, call <code>/api/auth/context</code>, confirm role is <code>assignee</code>, otherwise force logout.</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h2>5. Mobile Screen Map</h2>
+      <div class="grid">
+        <div class="mini-card">
+          <strong>Auth</strong>
+          <span>Login, splash/session restore, logout.</span>
+        </div>
+        <div class="mini-card">
+          <strong>Dashboard</strong>
+          <span>KPI cards, completion line chart, status pie chart, recent assigned jobs list.</span>
+        </div>
+        <div class="mini-card">
+          <strong>My Jobs</strong>
+          <span>Search, filters, pagination, job cards or list rows.</span>
+        </div>
+        <div class="mini-card">
+          <strong>Job Detail</strong>
+          <span>Summary, assignees, conversation, expenses, exports.</span>
+        </div>
+        <div class="mini-card">
+          <strong>Expense Claims</strong>
+          <span>Pick job, list own expenses, create claim, view claim history.</span>
+        </div>
+        <div class="mini-card">
+          <strong>Notifications</strong>
+          <span>Inbox, unread count, mark read, mark all read.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>6. Dashboard UX Spec</h2>
+      <h3>Main components</h3>
+      <ul>
+        <li>Welcome header with assignee name, email, and initials avatar.</li>
+        <li>4 KPI cards:
+          <span class="tag blue">Assigned Jobs</span>
+          <span class="tag amber">Due Today</span>
+          <span class="tag red">Overdue</span>
+          <span class="tag green">Completed</span>
+        </li>
+        <li>Completion chart with period tabs:
+          <code>7d</code>, <code>30d</code>, <code>60d</code>, <code>90d</code>.
+        </li>
+        <li>Status distribution pie chart.</li>
+        <li>Jobs table or mobile card list showing recent personal jobs.</li>
+        <li>Search + filter controls: search text, type, priority, status.</li>
+      </ul>
+
+      <h3>Dashboard APIs</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Purpose</th>
+            <th>Method</th>
+            <th>Endpoint</th>
+            <th>Query</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Profile for welcome card</td>
+            <td>GET</td>
+            <td><code>/api/assignedpeople/me</code></td>
+            <td>None</td>
+          </tr>
+          <tr>
+            <td>Dashboard jobs list</td>
+            <td>GET</td>
+            <td><code>/api/assignedpeople/my-jobs</code></td>
+            <td><code>page, per_page, q, client_id, type, priority, status, sort</code></td>
+          </tr>
+          <tr>
+            <td>Completion trend</td>
+            <td>GET</td>
+            <td><code>/api/assignedpeople/my-completion-stats</code></td>
+            <td><code>period=7d|30d|60d|90d</code></td>
+          </tr>
+          <tr>
+            <td>Status distribution</td>
+            <td>GET</td>
+            <td><code>/api/assignedpeople/status-stats</code></td>
+            <td>None</td>
+          </tr>
+          <tr>
+            <td>Enums for filters</td>
+            <td>GET</td>
+            <td><code>/api/job-details/enums</code></td>
+            <td>None</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>My jobs list response shape</h3>
+      <pre>{
+  "status": "success",
+  "message": "My jobs fetched",
+  "data": [
+    {
+      "id": 91,
+      "title": "Draft legal notice",
+      "description": "...",
+      "client_id": 4,
+      "client_name": "ABC Group",
+      "document_id": 11,
+      "document_name": "Case bundle",
+      "type": "task",
+      "priority": "high",
+      "status": "in_progress",
+      "planned_start_at": "2026-05-01 10:00:00",
+      "planned_end_at": "2026-05-05 18:00:00",
+      "planned_deadline_at": "2026-05-05 18:00:00",
+      "assigned_at": "2026-05-02 09:20:00"
+    }
+  ],
+  "meta": {
+    "page": 1,
+    "per_page": 10,
+    "total": 18,
+    "total_pages": 2,
+    "stats": {
+      "assigned": 18,
+      "due_today": 2,
+      "overdue": 3,
+      "completed": 5
+    }
+  }
+}</pre>
+    </div>
+
+    <div class="section">
+      <h2>7. My Jobs Screen UX Spec</h2>
+      <h3>Screen purpose</h3>
+      <p>Show only jobs assigned to the logged-in assignee, with fast filters and a drill-down into job detail.</p>
+
+      <h3>Recommended mobile structure</h3>
+      <ul>
+        <li>Top search bar.</li>
+        <li>Filter chips or modal filter sheet:
+          <code>Type</code>, <code>Priority</code>, <code>Status</code>.
+        </li>
+        <li>List as cards on mobile rather than a wide table.</li>
+        <li>Each job card should show:
+          <code>title</code>, <code>client_name</code>, <code>type</code>, <code>priority</code>, <code>status</code>, <code>deadline</code>, <code>assigned_at</code>.
+        </li>
+        <li>Tap card to open Job Detail screen.</li>
+      </ul>
+
+      <h3>Endpoints</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Method</th>
+            <th>Endpoint</th>
+            <th>Purpose</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>GET</td>
+            <td><code>/api/assignedpeople/my-jobs</code></td>
+            <td>Main assignee list.</td>
+          </tr>
+          <tr>
+            <td>GET</td>
+            <td><code>/api/job-details</code></td>
+            <td>Fallback only if the primary endpoint fails.</td>
+          </tr>
+          <tr>
+            <td>GET</td>
+            <td><code>/api/job-details/enums</code></td>
+            <td>Populate filter options.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section">
+      <h2>8. Job Detail Screen UX Spec</h2>
+      <p>This is the most important screen after dashboard and jobs list.</p>
+
+      <h3>Top summary area</h3>
+      <ul>
+        <li>Job title</li>
+        <li>Job id</li>
+        <li>Client name</li>
+        <li>Type badge</li>
+        <li>Priority badge</li>
+        <li>Status badge</li>
+        <li>Assignee count</li>
+        <li>Start / End / Deadline / Duration</li>
+        <li>Description HTML block</li>
+      </ul>
+
+      <h3>Tabs inside job detail</h3>
+      <div class="grid">
+        <div class="mini-card">
+          <strong>Overview</strong>
+          <span>Core job metadata and description.</span>
+        </div>
+        <div class="mini-card">
+          <strong>Assignees</strong>
+          <span>Show assigned people names, emails, and assignment status.</span>
+        </div>
+        <div class="mini-card">
+          <strong>Conversation</strong>
+          <span>Chat list, send message, attachments, edit own message if allowed.</span>
+        </div>
+        <div class="mini-card">
+          <strong>Expenses</strong>
+          <span>Show only the current assignee's expenses for the job.</span>
+        </div>
+      </div>
+
+      <h3>Job detail APIs</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Method</th>
+            <th>Endpoint</th>
+            <th>Purpose</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>GET</td>
+            <td><code>/api/job-details/{id}</code></td>
+            <td>Fetch full job object, media, assignees.</td>
+          </tr>
+          <tr>
+            <td>GET</td>
+            <td><code>/api/job-details/{job}/assignees</code></td>
+            <td>Fetch assignee list separately.</td>
+          </tr>
+          <tr>
+            <td>PATCH</td>
+            <td><code>/api/job-details/{id}/status</code></td>
+            <td>Update job status if mobile app exposes it.</td>
+          </tr>
+          <tr>
+            <td>GET</td>
+            <td><code>/api/job-details/{job}/export-report?format=pdf</code></td>
+            <td>Download job report PDF.</td>
+          </tr>
+          <tr>
+            <td>GET</td>
+            <td><code>/api/job-details/{job}/export-chats?format=pdf&amp;rolewise=1</code></td>
+            <td>Download conversation export PDF.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Job detail response shape</h3>
+      <pre>{
+  "status": "success",
+  "message": "Job fetched",
+  "data": {
+    "id": 91,
+    "title": "Draft legal notice",
+    "description": "&lt;p&gt;HTML description&lt;/p&gt;",
+    "client_id": 4,
+    "client_name": "ABC Group",
+    "document_id": 11,
+    "document_name": "Case bundle",
+    "type": "task",
+    "priority": "high",
+    "status": "in_progress",
+    "budget": "5000.00",
+    "planned_start_at": "2026-05-01 10:00:00",
+    "planned_end_at": "2026-05-05 18:00:00",
+    "planned_deadline_at": "2026-05-05 18:00:00"
+  },
+  "media": [],
+  "assignees": [
+    {
+      "id": 12,
+      "name": "Rahul Sen",
+      "email": "rahul@example.com",
+      "status": "active",
+      "map_status": "active",
+      "assigned_at": "2026-05-02 09:20:00"
+    }
+  ]
+}</pre>
+    </div>
+
+    <div class="section">
+      <h2>9. Conversation / Chat Spec</h2>
+      <h3>Use case</h3>
+      <p>Assignee can participate in job-specific conversation threads and send attachments.</p>
+
+      <h3>APIs</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Method</th>
+            <th>Endpoint</th>
+            <th>Purpose</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>GET</td>
+            <td><code>/api/job-details/{job}/messages?page=1&amp;per_page=20</code></td>
+            <td>Paginated message list.</td>
+          </tr>
+          <tr>
+            <td>POST</td>
+            <td><code>/api/job-details/{job}/messages</code></td>
+            <td>Send message with optional attachments.</td>
+          </tr>
+          <tr>
+            <td>POST</td>
+            <td><code>/api/job-details/{job}/messages/upload</code></td>
+            <td>Optional rich-text inline image upload.</td>
+          </tr>
+          <tr>
+            <td>GET</td>
+            <td><code>/api/job-details/messages/{messageId}/can-edit</code></td>
+            <td>Check whether message can be edited.</td>
+          </tr>
+          <tr>
+            <td>PATCH</td>
+            <td><code>/api/job-details/messages/{messageId}</code></td>
+            <td>Edit a message.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Message create request</h3>
+      <p>Use multipart form data.</p>
+      <pre>message_html = "&lt;p&gt;Hello team&lt;/p&gt;"
+attachments[] = file1
+attachments[] = file2</pre>
+
+      <h3>Message item example</h3>
+      <pre>{
+  "id": 441,
+  "job_id": 91,
+  "sender_type": "assignee",
+  "sender_id": 12,
+  "sender_role": "assignee",
+  "sender_name": "Rahul Sen",
+  "sender_email": "rahul@example.com",
+  "message_html": "&lt;p&gt;Please review this draft.&lt;/p&gt;",
+  "message_text": "Please review this draft.",
+  "has_attachments": true,
+  "attachments_count": 1,
+  "attachments_json": [
+    {
+      "kind": "file",
+      "original_name": "draft.docx",
+      "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "absolute_url": "https://...",
+      "relative_url": "/f/jobMessages/..."
+    }
+  ],
+  "created_at": "2026-05-04 13:40:00",
+  "updated_at": "2026-05-04 13:40:00"
+}</pre>
+
+      <h3>Implementation notes</h3>
+      <ul>
+        <li>Show message bubble alignment by sender role / sender id.</li>
+        <li>Support attachments preview list.</li>
+        <li>Allow editing only if backend says it is allowed.</li>
+        <li>If Flutter has trouble sending multipart with HTTP PATCH, send <code>POST</code> multipart with <code>_method=PATCH</code> as fallback, because the current web UI does this.</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h2>10. Expenses Inside Job Detail</h2>
+      <h3>Business rule</h3>
+      <p>When the actor is an assignee, the backend automatically filters expenses so they only see expenses created by themselves.</p>
+
+      <h3>APIs</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Method</th>
+            <th>Endpoint</th>
+            <th>Purpose</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>GET</td>
+            <td><code>/api/job-details/{job}/expenses?page=1&amp;per_page=20</code></td>
+            <td>List expenses for that job, already scoped for assignee.</td>
+          </tr>
+          <tr>
+            <td>POST</td>
+            <td><code>/api/job-details/{job}/expenses</code></td>
+            <td>Create new expense with attachments.</td>
+          </tr>
+          <tr>
+            <td>PATCH</td>
+            <td><code>/api/job-details/expenses/{expenseId}</code></td>
+            <td>Edit own expense within 24 hours.</td>
+          </tr>
+          <tr>
+            <td>DELETE</td>
+            <td><code>/api/job-details/expenses/{expenseId}</code></td>
+            <td>Delete expense if needed.</td>
+          </tr>
+          <tr>
+            <td>GET</td>
+            <td><code>/api/job-details/{job}/expenses/export</code></td>
+            <td>Backend export route for expenses.</td>
+          </tr>
+          <tr>
+            <td>GET</td>
+            <td><code>/api/expense-heads/all</code></td>
+            <td>Expense head dropdown values.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Expense list response example</h3>
+      <pre>{
+  "status": "success",
+  "data": [
+    {
+      "id": 51,
+      "job_id": 91,
+      "expense_head_id": 3,
+      "expense_head": "Travel",
+      "expense_date": "2026-05-03",
+      "amount": "1450.00",
+      "currency": "INR",
+      "note": "&lt;p&gt;Taxi to court&lt;/p&gt;",
+      "created_by": 12,
+      "creator_name": "Rahul Sen",
+      "creator_email": "rahul@example.com",
+      "attachments_count": 1,
+      "has_attachments": true,
+      "attachments_json": [
+        {
+          "absolute_url": "https://...",
+          "relative_url": "/f/jobExpenses/..."
+        }
+      ]
+    }
+  ],
+  "actor_email": "rahul@example.com",
+  "totals": {},
+  "meta": {
+    "page": 1,
+    "per_page": 20,
+    "total": 4,
+    "total_pages": 1
+  }
+}</pre>
+
+      <h3>Create expense request</h3>
+      <p>Use multipart form data.</p>
+      <pre>expense_head_id = 3
+expense_date = 2026-05-03
+amount = 1450
+currency = INR
+note = Taxi to court
+attachments[] = proof.jpg</pre>
+    </div>
+
+    <div class="section">
+      <h2>11. Expense Claim / Reimbursement Flow</h2>
+      <h3>Goal</h3>
+      <p>The assignee can request reimbursement for an expense they created themselves.</p>
+
+      <h3>Flow</h3>
+      <ol>
+        <li>Assignee picks a job.</li>
+        <li>App loads expenses for that job.</li>
+        <li>App shows only expenses created by current assignee.</li>
+        <li>Assignee taps <strong>Claim</strong> on one expense.</li>
+        <li>App posts claim request.</li>
+        <li>Claim history screen shows submitted claim statuses.</li>
+      </ol>
+
+      <h3>APIs</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Method</th>
+            <th>Endpoint</th>
+            <th>Purpose</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>POST</td>
+            <td><code>/api/job-expense-claims/claim</code></td>
+            <td>Create claim request for one expense.</td>
+          </tr>
+          <tr>
+            <td>GET</td>
+            <td><code>/api/job-expense-claims/my</code></td>
+            <td>Claim history for logged-in assignee.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Create claim request body</h3>
+      <pre>{
+  "expense_id": 51,
+  "job_id": 91,
+  "message": "Please reimburse this travel expense."
+}</pre>
+
+      <h3>Claim history response example</h3>
+      <pre>{
+  "status": "success",
+  "data": [
+    {
+      "id": 8,
+      "title": "Expense Claim - Draft legal notice - Travel (INR 1450.00)",
+      "created_by": 12,
+      "job_id": 91,
+      "expense_id": 51,
+      "message": "Please reimburse this travel expense.",
+      "requested_at": "2026-05-04 10:30:00",
+      "status": "pending",
+      "payment_breakdown": null
+    }
+  ],
+  "meta": {
+    "page": 1,
+    "per_page": 20,
+    "total": 1,
+    "total_pages": 1
+  }
+}</pre>
+    </div>
+
+    <div class="section">
+      <h2>12. Notifications Module</h2>
+      <h3>Required features</h3>
+      <ul>
+        <li>Unread count badge in app shell.</li>
+        <li>Notification inbox list.</li>
+        <li>Open one notification.</li>
+        <li>Mark one as read.</li>
+        <li>Mark many as read.</li>
+        <li>Mark all as read.</li>
+      </ul>
+
+      <h3>APIs</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Method</th>
+            <th>Endpoint</th>
+            <th>Purpose</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>GET</td>
+            <td><code>/api/notifications/my</code></td>
+            <td>Notification list.</td>
+          </tr>
+          <tr>
+            <td>GET</td>
+            <td><code>/api/notifications/unread-count</code></td>
+            <td>Unread badge count.</td>
+          </tr>
+          <tr>
+            <td>GET</td>
+            <td><code>/api/notifications/{id}</code></td>
+            <td>Single notification detail.</td>
+          </tr>
+          <tr>
+            <td>PATCH</td>
+            <td><code>/api/notifications/{id}/read</code></td>
+            <td>Mark one read/unread.</td>
+          </tr>
+          <tr>
+            <td>POST</td>
+            <td><code>/api/notifications/mark-many-read</code></td>
+            <td>Bulk read/unread.</td>
+          </tr>
+          <tr>
+            <td>POST</td>
+            <td><code>/api/notifications/mark-all-read</code></td>
+            <td>Mark all as read.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Useful query params</h3>
+      <p><code>role</code>, <code>unread</code>, <code>type</code>, <code>priority</code>, <code>status</code>, <code>before_id</code>, <code>since_id</code>, <code>limit</code>, <code>page</code>.</p>
+
+      <h3>List response format</h3>
+      <pre>{
+  "data": [
+    {
+      "id": 701,
+      "title": "New chat message",
+      "message": "Admin in \"Draft legal notice\": Please review this update",
+      "type": "job_message",
+      "priority": "normal",
+      "status": "active",
+      "link_url": "https://...",
+      "receivers": [
+        { "id": 12, "role": "assignee", "read": 0, "read_at": null }
+      ],
+      "metadata": {
+        "job_id": 91,
+        "message_id": 441
+      }
+    }
+  ],
+  "pagination": {
+    "total": 25,
+    "per_page": 20,
+    "current_page": 1,
+    "last_page": 2
+  }
+}</pre>
+    </div>
+
+    <div class="section">
+      <h2>13. Push Notification Support</h2>
+      <p>Optional but recommended for mobile.</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Method</th>
+            <th>Endpoint</th>
+            <th>Purpose</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>POST</td>
+            <td><code>/api/fcm/token</code></td>
+            <td>Register device token.</td>
+          </tr>
+          <tr>
+            <td>POST</td>
+            <td><code>/api/fcm/touch</code></td>
+            <td>Refresh token activity.</td>
+          </tr>
+          <tr>
+            <td>POST</td>
+            <td><code>/api/fcm/deactivate</code></td>
+            <td>Deactivate token.</td>
+          </tr>
+          <tr>
+            <td>DELETE</td>
+            <td><code>/api/fcm/token</code></td>
+            <td>Remove token.</td>
+          </tr>
+          <tr>
+            <td>GET</td>
+            <td><code>/api/fcm/my-tokens</code></td>
+            <td>Debug or settings screen if needed.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section">
+      <h2>14. Recommended Flutter Architecture</h2>
+      <h3>Packages</h3>
+      <ul>
+        <li><code>dio</code> or <code>http</code> for API requests.</li>
+        <li><code>flutter_secure_storage</code> for token storage.</li>
+        <li><code>go_router</code> or <code>auto_route</code> for navigation.</li>
+        <li><code>riverpod</code>, <code>bloc</code>, or <code>provider</code> for state management.</li>
+        <li><code>image_picker</code> and <code>file_picker</code> for attachments.</li>
+        <li><code>firebase_messaging</code> if FCM is enabled.</li>
+        <li><code>syncfusion_flutter_charts</code> or <code>fl_chart</code> for dashboard charts.</li>
+      </ul>
+
+      <h3>Suggested module structure</h3>
+      <pre>lib/
+  core/
+    api/
+    auth/
+    storage/
+    theme/
+    widgets/
+  features/
+    auth/
+    dashboard/
+    jobs/
+      data/
+      models/
+      presentation/
+      chat/
+      expenses/
+    claims/
+    notifications/
+    profile/
+  main.dart</pre>
+
+      <h3>Suggested data models</h3>
+      <ul>
+        <li><code>AuthContext</code></li>
+        <li><code>AssigneeProfile</code></li>
+        <li><code>JobSummary</code></li>
+        <li><code>JobDetail</code></li>
+        <li><code>JobAssignee</code></li>
+        <li><code>JobMessage</code></li>
+        <li><code>ExpenseItem</code></li>
+        <li><code>ExpenseClaim</code></li>
+        <li><code>NotificationItem</code></li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h2>15. Recommended Build Order</h2>
+      <ol>
+        <li>Auth flow and secure token handling.</li>
+        <li>Base app shell with bottom nav or drawer nav.</li>
+        <li>Dashboard with KPI cards and chart APIs.</li>
+        <li>My Jobs list with filters.</li>
+        <li>Job Detail overview.</li>
+        <li>Conversation tab.</li>
+        <li>Expenses tab.</li>
+        <li>Expense claim flow.</li>
+        <li>Notifications module.</li>
+        <li>FCM and deep-link navigation from notification to target job.</li>
+      </ol>
+    </div>
+
+    <div class="section">
+      <h2>16. Open Decisions for Mobile</h2>
+      <ul>
+        <li>Whether assignees should be allowed to change job status in the mobile app. Backend allows it.</li>
+        <li>Whether assignees should be allowed to add expenses from inside job detail or only from a dedicated expense screen. Backend allows add/edit within limits.</li>
+        <li>Whether chat editing UI should be shown by default or only after <code>can-edit</code> confirms availability.</li>
+        <li>Whether exports should open in external file viewer or just download/share from app.</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h2>17. Final Instruction Block for an AI App Builder</h2>
+      <pre>Build a Flutter mobile app for the "Assignee Portal" using the Laravel APIs documented in this file.
+
+Primary requirements:
+1. Login with /api/assignedpeople/login using identifier + password.
+2. Store Bearer token securely.
+3. Confirm role with /api/auth/context and only allow role=assignee.
+4. Dashboard must show:
+   - Assigned Jobs
+   - Due Today
+   - Overdue
+   - Completed
+   - Completion line chart using /api/assignedpeople/my-completion-stats
+   - Status pie chart using /api/assignedpeople/status-stats
+5. My Jobs screen must use /api/assignedpeople/my-jobs with search and filters.
+6. Job Detail screen must include:
+   - Overview
+   - Assignees
+   - Conversation
+   - Expenses
+7. Conversation must support:
+   - list messages
+   - send message
+   - file attachments
+   - edit message if backend allows
+8. Expenses must support:
+   - list assignee-owned expenses in a job
+   - create expense
+   - edit expense within backend rules
+9. Expense Claims must support:
+   - submit claim for one expense
+   - list my claims
+10. Notifications must support:
+   - unread badge
+   - inbox
+   - mark read
+   - mark all read
+11. Use a clean modern blue business UI, mobile-first, with compact cards and clear status chips.
+
+The app must strictly follow backend role and scope rules from this handoff document.</pre>
+      <p class="footer-note">Source basis: <code>routes/api.php</code>, <code>routes/web.php</code>, <code>AdminDashboardController.php</code>, <code>AssignedPeopleController.php</code>, <code>JobDetailsController.php</code>, <code>ExpenseController.php</code>, <code>JobExpenseClaimController.php</code>, <code>NotificationController.php</code>, and the current assignee Blade views.</p>
+    </div>
+  </div>
+</body>
+</html>

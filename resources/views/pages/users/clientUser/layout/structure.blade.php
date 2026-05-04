@@ -42,8 +42,8 @@
   <style>
     :root{
       --radius: var(--radius-md,12px);
-      --rail-w: 78px;
-      --drawer-w: 292px;
+      --rail-w: 64px;
+      --drawer-w: 236px;
       --elev-1: var(--shadow-sm, 0 1px 2px rgba(0,0,0,.06));
       --elev-2: 0 6px 20px rgba(0,0,0,.12);
       --ease: cubic-bezier(.2,.7,.2,1);
@@ -53,16 +53,39 @@
       background: var(--bg-body, var(--light-color,#f5f7fa)); color: var(--text-color,#0f172a); }
     body.no-scroll{ overflow:hidden; }
     .layout{ display:grid; grid-template-columns: var(--rail-w) 1fr; min-height:100svh; }
+    .rail{ transition: opacity .16s var(--ease), visibility .16s var(--ease), transform .16s var(--ease); }
+    .layout.drawer-expanded .rail,
+    .layout.is-pinned .rail{
+      opacity:0;
+      visibility:hidden;
+      pointer-events:none;
+      transform:translateX(-100%);
+    }
+    .layout.drawer-expanded,
+    .layout.is-pinned{
+      grid-template-columns: 0 1fr;
+    }
+    .layout.drawer-expanded .drawer,
+    .layout.is-pinned .drawer{
+      left:0;
+      transform:none;
+      opacity:1;
+      visibility:visible;
+    }
+    .layout.drawer-expanded .panel,
+    .layout.is-pinned .panel{
+      margin-left: var(--drawer-w);
+    }
 
     /* ===== REMOS-STYLE: Dark Navy Rail ===== */
     .rail{ position:sticky; top:0; height:100svh;
       background: #1b2240;
       border-right: none;
-      display:flex; flex-direction:column; align-items:center; gap:6px; padding:12px 10px; z-index:1001;
+      display:flex; flex-direction:column; align-items:center; gap:5px; padding:10px 7px; z-index:1001;
     }
-    .rail .logo{ width:48px; height:48px; display:flex; align-items:center; justify-content:center; margin-bottom: 4px; }
+    .rail .logo{ width:38px; height:38px; display:flex; align-items:center; justify-content:center; margin-bottom: 2px; }
     .rail .rail-nav{ display:flex; flex-direction:column; gap:4px; margin-top:6px; width:100%; }
-    .rail .rail-btn{ width:100%; height:42px; border:0; background:transparent; color:rgba(255,255,255,.55);
+    .rail .rail-btn{ width:100%; height:36px; border:0; background:transparent; color:rgba(255,255,255,.55);
       border-radius:10px; display:flex; align-items:center; justify-content:center;
       transition: background .18s var(--ease), color .18s var(--ease), transform .12s var(--ease);
       outline:none; position:relative;
@@ -90,21 +113,8 @@
     }
     .drawer.open{ transform:none; opacity:1; visibility:visible; }
     .drawer[aria-hidden="true"]{ pointer-events:none; }
-    /* CSS hover — ensures drawer opens reliably on hover */
-    .rail:hover ~ .drawer,
-    .drawer:hover {
-      transform: none !important;
-      opacity: 1 !important;
-      visibility: visible !important;
-      pointer-events: auto !important;
-    }
-    /* Shift panel content when sidebar is hover-open */
-    .rail:hover ~ .panel,
-    .drawer:hover ~ .panel {
-      margin-left: var(--drawer-w);
-    }
     .drawer .drawer-head{
-      padding:14px 16px; border-bottom:1px solid rgba(255,255,255,.06);
+      padding:12px 12px; border-bottom:1px solid rgba(255,255,255,.06);
       display:flex; align-items:center; justify-content:space-between; gap: 8px;
     }
     .drawer .nav-scroll{ flex:1; overflow:auto; padding:10px 10px 14px; display:flex; flex-direction:column; gap:2px; }
@@ -116,7 +126,7 @@
     }
 
     .drawer .nav-link{
-      display:flex; align-items:center; gap:10px; padding: 9px 12px;
+      display:flex; align-items:center; gap:10px; padding: 7px 10px;
       border-radius:10px; color:rgba(255,255,255,.72); text-decoration:none;
       transition: background .14s var(--ease), color .14s var(--ease);
       border:none !important; position:relative;
@@ -151,7 +161,6 @@
     .drawer-pin-btn i{ transition: transform .2s var(--ease); }
 
     /* When the layout is in pinned mode, leave room for the drawer */
-    .layout.is-pinned .panel{ margin-left: var(--drawer-w); }
     .layout.is-pinned .drawer{ box-shadow: none; border-right: 1px solid var(--border-color); }
 
     .nav-group{ display:flex; flex-direction:column; gap:3px; }
@@ -170,17 +179,58 @@
     .panel{ min-width:0; display:flex; flex-direction:column; min-height:100svh; transition: margin-left .22s var(--ease); }
     .panel.shifted{ margin-left: var(--drawer-w); }
 
-    .admin-header{ min-height:62px; background:#fff; border-bottom:1px solid var(--border-color,#e5e7eb); position:sticky; top:0; z-index:900; display:flex; align-items:center; gap:10px; padding:0 20px; box-shadow: 0 1px 0 var(--border-color,#e5e7eb); }
+    .admin-header{
+      min-height:54px; background:rgba(255,255,255,.94); border-bottom:1px solid rgba(227,235,245,.85);
+      position:sticky; top:0; z-index:900; display:flex; align-items:center; gap:10px; padding:0 14px;
+      box-shadow: 0 8px 18px rgba(15,23,42,.04); backdrop-filter: blur(14px);
+    }
+    .header-menu-btn{
+      width:34px; height:34px; border-radius:10px; border:1px solid rgba(210,221,236,.92);
+      background:#fff; color:#4a5565 !important; display:inline-flex; align-items:center; justify-content:center;
+      box-shadow:0 8px 18px rgba(15,23,42,.05);
+    }
+    .header-menu-btn:hover{ background:#f8fbff; color:var(--primary-color) !important; border-color:rgba(35,119,252,.24); }
     .header-theme-toggle{
-      width:36px; height:36px; border-radius:10px; border:1px solid var(--border-color,#e5e7eb);
-      background:transparent; color:var(--text-color); display:inline-flex; align-items:center;
+      width:28px; height:28px; border:none; background:transparent; color:var(--primary-color,#2377fc); display:inline-flex; align-items:center;
       justify-content:center; cursor:pointer; transition:var(--transition); font-size:15px;
     }
-    .header-theme-toggle:hover{ background:var(--light-color,#f4f7fb); color:var(--primary-color); border-color:rgba(35,119,252,.3); }
+    .header-theme-toggle:hover{ color:#1d4ed8; transform:translateY(-1px); }
     .header-theme-toggle i{ pointer-events:none; transition:transform .3s var(--ease); }
     .header-theme-toggle:hover i{ transform:rotate(20deg); }
     .admin-header .btn.btn-link{ color: var(--text-color); text-decoration:none; }
     .admin-header .btn.btn-link:hover{ color: var(--accent-color); }
+    .header-actions{ margin-left:auto; display:flex; align-items:center; gap:14px; }
+    .header-action-btn,
+    .ah_usericon{
+      width:34px; height:34px; border-radius:999px;
+      border:1px solid rgba(210,221,236,.95) !important;
+      background:#fff; color:#5b6778 !important;
+      display:inline-flex; align-items:center; justify-content:center;
+      text-decoration:none; box-shadow:0 8px 18px rgba(15,23,42,.06);
+      transition:var(--transition);
+    }
+    .header-action-btn{
+      width:28px; height:28px; border:none !important; border-radius:0;
+      background:transparent; color:var(--primary-color,#2377fc) !important;
+      box-shadow:none;
+    }
+    .header-action-btn:hover{
+      background:transparent; color:#1d4ed8 !important; transform:translateY(-1px);
+    }
+    .header-user-icon-btn{
+      width:34px; height:34px; min-width:34px; padding:0; gap:0; border-radius:999px;
+      background:#f8fbff; color:var(--primary-color,#2377fc) !important; border-color:rgba(35,119,252,.2) !important;
+      box-shadow:0 8px 18px rgba(35,119,252,.08);
+    }
+    .header-user-icon-btn:hover{ background:#eef5ff; color:#1d4ed8 !important; border-color:rgba(35,119,252,.28) !important; transform:translateY(-1px); }
+    .header-user-name{ font-size:13px; font-weight:700; color:#253041; white-space:nowrap; }
+    .notif-badge-dot{
+      position:absolute; top:-6px; right:-10px; min-width:18px; height:18px; border-radius:999px;
+      background:#ef4444; color:#fff; font-size:10px; font-weight:800; display:none;
+      align-items:center; justify-content:center; line-height:1; padding:0 5px;
+      border:2px solid rgba(255,255,255,.98);
+      box-shadow:0 6px 14px rgba(239,68,68,.22);
+    }
 
     .page-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; background:linear-gradient(180deg, #ffffff, #f8fbff); border:1px solid var(--border-color); border-radius: 18px;
       padding:14px 16px; margin:14px; box-shadow: var(--shadow-sm); }
@@ -201,7 +251,12 @@
     html.theme-dark{
       --bg-body:#0b1220; --text-color:#e5e7eb; --light-color:#0f172a; --border-color:#273244;
     }
-    html.theme-dark .admin-header{ background:#161b27 !important; border-bottom-color:#1e2a3a !important; }
+    html.theme-dark .admin-header{ background:rgba(22,27,39,.94) !important; border-bottom-color:#1e2a3a !important; }
+    html.theme-dark .header-menu-btn{ background:#111827; border-color:#243041; color:#d8e1ee !important; box-shadow:none; }
+    html.theme-dark .header-theme-toggle{ background:transparent; border-color:transparent; color:#93c5fd; box-shadow:none; }
+    html.theme-dark .header-action-btn{ background:transparent; border-color:transparent !important; color:#93c5fd !important; box-shadow:none; }
+    html.theme-dark .header-user-icon-btn{ background:#122033; border-color:#29417a !important; color:#93c5fd !important; box-shadow:none; }
+    html.theme-dark .header-user-name{ color:#e5e7eb; }
     .rail{ background:#1b2240 !important; }
     .drawer{ background:#222849 !important; }
 
@@ -480,7 +535,7 @@ html.theme-dark .btn-secondary { background: rgba(255,255,255,0.02); border-colo
   @stack('styles')
 </head>
 <body>
-<div class="layout">
+<div class="layout" id="layoutRoot">
 
   <!-- ===== Left: Icon Rail ===== -->
   <aside class="rail" id="rail" aria-label="Icon rail">
@@ -574,23 +629,22 @@ html.theme-dark .btn-secondary { background: rgba(255,255,255,0.02); border-colo
   <!-- ===== Right Panel ===== -->
   <div class="panel" id="panel">
     <header class="admin-header">
-      <button class="btn btn-link d-lg-none" id="openDrawerMobileTop" aria-label="Open navigation"><i class="fa fa-bars fs-4"></i></button>
+      <button class="btn btn-link d-lg-none header-menu-btn" id="openDrawerMobileTop" aria-label="Open navigation"><i class="fa fa-bars"></i></button>
 
-      <div class="ms-auto d-flex align-items-center gap-2 me-2" style="position:relative;">
+      <div class="header-actions" style="position:relative;">
         <!-- Theme Toggle (header) -->
         <button class="header-theme-toggle" id="toggleTheme" title="Toggle theme" aria-pressed="false">
-          <i class="fa-regular fa-sun" id="themeIcon"></i>
+          <i class="fa-solid fa-moon" id="themeIcon"></i>
         </button>
 
         <!-- 🔔 Notification Bell opens Drawer -->
         <a href="#" id="notifBellOpen"
-           class="position-relative d-flex align-items-center justify-content-center"
+           class="header-action-btn position-relative"
            aria-controls="notifDrawer" aria-expanded="false" aria-label="Notifications"
-           style="width:36px;height:36px;color:var(--primary-color);text-decoration:none;">
-          <i class="fa-regular fa-bell fa-lg"></i>
+           style="text-decoration:none;">
+          <i class="fa-regular fa-bell"></i>
           <span id="notifBadge"
-                class="position-absolute translate-middle badge rounded-pill bg-danger"
-                style="top:6px; right:-2px; display:none; font-size:10px; line-height:1; padding:.2rem .35rem;">
+                class="notif-badge-dot">
             0
           </span>
         </a>
@@ -599,16 +653,13 @@ html.theme-dark .btn-secondary { background: rgba(255,255,255,0.02); border-colo
         <!-- Profile (anchor kept) -->
 <div class="dropdown">
   <a href="#"
-     class="ah_usericon"
+     class="ah_usericon header-user-icon-btn"
      id="userDropdown"
      data-bs-toggle="dropdown"
      data-bs-auto-close="outside"
      aria-expanded="false"
      aria-label="User menu"
-     role="button"
-     style="border:2px solid var(--primary-color)!important;border-radius:50%;
-            width:36px;height:36px;display:flex;align-items:center;justify-content:center;
-            color:var(--primary-color); text-decoration:none;">
+     role="button">
     <i class="fa fa-user" aria-hidden="true"></i>
   </a>
 
@@ -669,6 +720,7 @@ html.theme-dark .btn-secondary { background: rgba(255,255,255,0.02); border-colo
 <script>
 document.addEventListener('DOMContentLoaded', ()=>{
   const body    = document.body;
+  const layoutRoot = document.getElementById('layoutRoot');
   const rail    = document.getElementById('rail');
   const drawer  = document.getElementById('drawer');
   const panel   = document.getElementById('panel');
@@ -680,9 +732,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
   const THEME_KEY   = @json($portalThemeKey);
   const themeIcon   = document.getElementById('themeIcon');
-  const themeIconDrawer = document.getElementById('themeIconDrawer');
   const toggleTheme = document.getElementById('toggleTheme');
-  const toggleThemeDrawer = document.getElementById('toggleThemeDrawer');
 
   const railLogoMask   = document.getElementById('railLogoMask');
   const drawerLogoMask = document.getElementById('drawerLogoMask');
@@ -702,14 +752,16 @@ document.addEventListener('DOMContentLoaded', ()=>{
   }
 
   function openDrawerDesktop(){
+    layoutRoot?.classList.add('drawer-expanded');
     add(drawer,'open'); drawer.setAttribute('aria-hidden','false');
     if(isDesktop()) add(panel,'shifted');
   }
   function closeDrawerDesktop(){
+    layoutRoot?.classList.remove('drawer-expanded');
     rem(drawer,'open'); drawer.setAttribute('aria-hidden','true'); rem(panel,'shifted');
   }
   function openNavMobile(){ add(drawer,'open'); drawer.setAttribute('aria-hidden','false'); setOverlay(true); }
-  function closeNavMobile(){ rem(drawer,'open'); drawer.setAttribute('aria-hidden','true'); setOverlay(false); }
+  function closeNavMobile(){ layoutRoot?.classList.remove('drawer-expanded'); rem(drawer,'open'); drawer.setAttribute('aria-hidden','true'); setOverlay(false); }
 
   openDrawerMobile?.addEventListener('click', openNavMobile);
   openDrawerMobileTop?.addEventListener('click', openNavMobile);
@@ -756,10 +808,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
     railLogoMask?.style.setProperty('--logo', `url("${maskLight}")`);
     drawerLogoMask?.style.setProperty('--logo', `url("${maskLight}")`);
     const toSun = (mode==='dark');
-    themeIcon?.classList.toggle('fa-moon', !toSun);
-    themeIcon?.classList.toggle('fa-sun',  toSun);
-    themeIconDrawer?.classList.toggle('fa-moon', !toSun);
-    themeIconDrawer?.classList.toggle('fa-sun',  toSun);
+    if (themeIcon) themeIcon.className = toSun ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
     toggleTheme?.setAttribute('aria-pressed', toSun ? 'true' : 'false');
   }
   function applyTheme(mode){
@@ -854,13 +903,11 @@ document.addEventListener('DOMContentLoaded', ()=>{
   // Resize behavior
   window.addEventListener('resize', ()=>{
     if(!window.matchMedia('(min-width: 992px)').matches){
+      layoutRoot?.classList.remove('drawer-expanded');
       rem(panel,'shifted');
       if(!overlay.classList.contains('active')) closeDrawerDesktop();
     } else {
-      if(overlay.classList.contains('active')) {
-        // left nav overlay only
-        // (notification drawer uses its own overlay)
-      }
+      layoutRoot?.classList.toggle('drawer-expanded', drawer.classList.contains('open'));
       if(drawer.classList.contains('open')) add(panel,'shifted'); else rem(panel,'shifted');
     }
   });

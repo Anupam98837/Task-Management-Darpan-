@@ -77,7 +77,7 @@
 .rp-proof-list { display:flex; flex-direction:column; gap:10px; margin-top:14px; }
 .rp-proof-link { display:inline-flex; align-items:center; gap:8px; color:#1d4ed8; text-decoration:none; font-weight:700; }
 .tree-shell { border:1px solid #e2e8f0; border-radius:16px; background:#fff; max-height:420px; overflow:auto; padding:10px; }
-.tree-node { display:flex; align-items:flex-start; gap:10px; padding:8px 10px; border-radius:12px; }
+.tree-node { display:flex; align-items:flex-start; gap:10px; padding:8px 10px; border-radius:12px; cursor:pointer; }
 .tree-node:hover { background:#f8fafc; }
 .tree-node.active { background:#eff6ff; box-shadow: inset 0 0 0 1px #bfdbfe; }
 .tree-children { margin-left:18px; padding-left:12px; border-left:1px solid #e2e8f0; }
@@ -86,6 +86,22 @@
 .tree-meta small { color:#94a3b8; font-size:12px; }
 .picker-note {
   display:inline-flex; align-items:center; gap:8px; min-height:44px; padding:0 14px; border-radius:12px; border:1px dashed #bfdbfe; background:#f8fbff; color:#1d4ed8; font-weight:700;
+}
+#repaymentModal.show {
+  z-index: 1060;
+}
+#repaymentModal.stacked-underlay {
+  z-index: 1060;
+}
+#clientTreeModal {
+  z-index: 1085;
+}
+#clientTreeModal .modal-dialog {
+  position: relative;
+  z-index: 1086;
+}
+body .modal-backdrop.stacked-tree-backdrop {
+  z-index: 1080;
 }
 @media (max-width: 768px) {
   .repayments-page { padding:16px; }
@@ -288,6 +304,8 @@
   }
 
   const headers = { 'Authorization': 'Bearer ' + TOKEN, 'Accept': 'application/json' };
+  const treeModalEl = document.getElementById('clientTreeModal');
+  const repaymentModalEl = document.getElementById('repaymentModal');
   const treeModal = new bootstrap.Modal(document.getElementById('clientTreeModal'));
   const repaymentModal = new bootstrap.Modal(document.getElementById('repaymentModal'));
   const repaymentDetailModal = new bootstrap.Modal(document.getElementById('repaymentDetailModal'));
@@ -661,6 +679,21 @@
     treeModal.show();
   });
 
+  treeModalEl?.addEventListener('show.bs.modal', () => {
+    if (repaymentModalEl?.classList.contains('show')) {
+      repaymentModalEl.classList.add('stacked-underlay');
+    }
+  });
+  treeModalEl?.addEventListener('shown.bs.modal', () => {
+    const backdrops = Array.from(document.querySelectorAll('.modal-backdrop'));
+    const activeBackdrop = backdrops[backdrops.length - 1];
+    if (activeBackdrop) activeBackdrop.classList.add('stacked-tree-backdrop');
+  });
+  treeModalEl?.addEventListener('hidden.bs.modal', () => {
+    repaymentModalEl?.classList.remove('stacked-underlay');
+    document.querySelectorAll('.modal-backdrop.stacked-tree-backdrop').forEach((el) => el.classList.remove('stacked-tree-backdrop'));
+  });
+
   els.clearClientFilterBtn.addEventListener('click', () => {
     state.clientId = '';
     state.page = 1;
@@ -679,6 +712,15 @@
   });
 
   els.clientTreeSearch.addEventListener('input', renderClientTree);
+  els.clientTreeShell.addEventListener('click', (event) => {
+    const node = event.target.closest('.tree-node');
+    if (!node) return;
+    const input = node.querySelector('input[name="client_tree_pick"]');
+    if (!input) return;
+    input.checked = true;
+    state.pendingTreeClientId = input.value;
+    renderClientTree();
+  });
   els.clientTreeShell.addEventListener('change', (event) => {
     const input = event.target.closest('input[name="client_tree_pick"]');
     if (!input) return;
@@ -687,6 +729,10 @@
   });
 
   els.applyClientTreeBtn.addEventListener('click', async () => {
+    if (!state.pendingTreeClientId) {
+      Swal.fire({ icon:'warning', title:'Client required', text:'Select a client before continuing.' });
+      return;
+    }
     if (state.treeTarget === 'form') {
       state.formClientId = state.pendingTreeClientId || '';
       updateClientLabels();
