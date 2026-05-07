@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use Closure;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\DB;
@@ -71,6 +72,12 @@ class CheckRole
         if (!$record) {
             $this->debug('token_not_found', $plaintext, null, $roles);
             return response()->json(['error' => 'Unauthorized Access'], 403);
+        }
+
+        if (!empty($record->expires_at) && now()->greaterThan(Carbon::parse($record->expires_at))) {
+            DB::table('personal_access_tokens')->where('id', (int) $record->id)->delete();
+            $this->debug('token_expired', $plaintext, $record, $roles);
+            return response()->json(['error' => 'Session expired', 'code' => 'TOKEN_EXPIRED'], 401);
         }
 
         $typeRaw  = (string) ($record->tokenable_type ?? '');

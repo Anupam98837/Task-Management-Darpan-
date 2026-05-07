@@ -25,6 +25,7 @@ use App\Http\Controllers\API\ExpenseController;
 use App\Http\Controllers\API\JobExpenseClaimController;
 use App\Http\Controllers\API\FcmTokenController;
 use App\Http\Controllers\API\AuthContextController;
+use App\Http\Controllers\API\SessionTokenController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -60,6 +61,8 @@ Route::prefix('accountant-users')->group(function () {
 
 Route::get('/auth/context', AuthContextController::class)
     ->middleware('check.role:admin,assignee,client_user,accountant_user');
+
+Route::get('/session-token/check', [SessionTokenController::class, 'check']);
 
 
 // READ (admin or user)

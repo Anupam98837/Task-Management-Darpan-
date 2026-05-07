@@ -195,9 +195,11 @@ class ClientUserController extends Controller
         $request->validate([
             'identifier' => 'required|string',
             'password'   => 'required|string',
+            'remember'   => 'sometimes|boolean',
         ]);
 
         $identifier = $request->identifier;
+        $remember = (bool) $request->boolean('remember', false);
 
         $user = DB::table('client_users')
             ->where('email', $identifier)
@@ -227,6 +229,7 @@ class ClientUserController extends Controller
 
         $plainText = bin2hex(random_bytes(40));
         $hash = hash('sha256', $plainText);
+        $expiresAt = $remember ? now()->addDays(30) : now()->addHours(12);
 
         DB::table('personal_access_tokens')->insert([
             'tokenable_type' => 'client_user',
@@ -234,6 +237,7 @@ class ClientUserController extends Controller
             'name'           => 'auth_token',
             'token'          => $hash,
             'abilities'      => json_encode(['*', 'role:client_user']),
+            'expires_at'     => $expiresAt,
             'created_at'     => now(),
             'updated_at'     => now(),
         ]);
@@ -253,6 +257,8 @@ class ClientUserController extends Controller
             'access_token'   => $plainText,
             'token_type'     => 'Bearer',
             'tokenable_type' => 'client_user',
+            'remember'       => $remember,
+            'expires_at'     => $expiresAt?->toIso8601String(),
         ], 200);
     }
 

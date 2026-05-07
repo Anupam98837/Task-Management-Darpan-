@@ -165,6 +165,7 @@
   async function login(){
     const identifier=document.getElementById('identifier').value.trim();
     const passwordVal=document.getElementById('password').value;
+    const remember=document.getElementById('rememberMe').checked;
     if(!identifier||!passwordVal){
       Swal.fire({icon:'warning',title:'Missing Fields',text:'Please enter both email/username and password.',confirmButtonColor:'#0369a1'});
       return;
@@ -174,15 +175,20 @@
     btn.innerHTML='<span class="spin"></span> Signing in…';
     try{
       const csrf=document.querySelector('meta[name="csrf-token"]')?.content||'';
-      const res=await fetch('/api/assignedpeople/login',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':csrf},body:JSON.stringify({identifier,password:passwordVal})});
+      const res=await fetch('/api/assignedpeople/login',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':csrf},body:JSON.stringify({identifier,password:passwordVal,remember})});
       const data=await res.json().catch(()=>({}));
       btn.disabled=false;
       btn.innerHTML='<span id="btnText">Sign In</span><i class="fas fa-arrow-right" id="btnIcon"></i>';
       if(res.ok&&data?.access_token){
         ['token','role'].forEach(k=>{sessionStorage.removeItem(k);localStorage.removeItem(k);});
         localStorage.removeItem('type');
-        sessionStorage.setItem('token',data.access_token);
-        if(data?.tokenable_type)sessionStorage.setItem('role',data.tokenable_type);
+        sessionStorage.removeItem('type');
+        const store = remember ? localStorage : sessionStorage;
+        store.setItem('token',data.access_token);
+        if(data?.tokenable_type){
+          store.setItem('role',data.tokenable_type);
+          store.setItem('type',data.tokenable_type);
+        }
         Swal.fire({icon:'success',title:'Login Successful',text:'Redirecting…',timer:1200,showConfirmButton:false}).then(()=>window.location.href='/assignee/dashboard');
       }else{
         Swal.fire({icon:'error',title:'Login Failed',text:data?.message||'Invalid credentials.',confirmButtonColor:'#0369a1'});

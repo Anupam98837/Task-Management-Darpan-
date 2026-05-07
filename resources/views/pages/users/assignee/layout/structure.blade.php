@@ -711,7 +711,76 @@ html.theme-dark .btn-secondary { background: rgba(255,255,255,0.02); border-colo
 </script>
 
 <script>
+  const PORTAL_AUTH_LOGIN_URL = @json($portalLoginUrl);
+  const PORTAL_SESSION_CHECK_URL = @json(url('/api/session-token/check'));
+  let portalSessionExpiredPromptOpen = false;
+  let portalSessionWatchStarted = false;
+
+  function getPortalStoredToken(){
+    return localStorage.getItem('token') || sessionStorage.getItem('token') || '';
+  }
+
+  function clearPortalStoredAuth(){
+    ['token','role','type'].forEach((key)=>{
+      sessionStorage.removeItem(key);
+      localStorage.removeItem(key);
+    });
+  }
+
+  async function showPortalSessionExpiredModal(message){
+    if (portalSessionExpiredPromptOpen) return;
+    portalSessionExpiredPromptOpen = true;
+    clearPortalStoredAuth();
+    if (window.Swal) {
+      await Swal.fire({
+        icon: 'warning',
+        title: 'Session Expired',
+        text: message || 'Your session has expired. Please login again.',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        confirmButtonText: 'Login Again'
+      });
+    } else {
+      alert(message || 'Your session has expired. Please login again.');
+    }
+    window.location.href = PORTAL_AUTH_LOGIN_URL;
+  }
+
+  async function verifyPortalSession(){
+    const token = getPortalStoredToken();
+    if (!token) return false;
+    try{
+      const res = await fetch(PORTAL_SESSION_CHECK_URL, {
+        headers: { 'Accept': 'application/json', 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json().catch(()=>({}));
+      if (res.ok && data?.success) return true;
+      if (res.status === 401 || data?.code === 'TOKEN_EXPIRED') {
+        await showPortalSessionExpiredModal(data?.message || 'Your session has expired. Please login again.');
+        return false;
+      }
+      return false;
+    }catch(_error){
+      return true;
+    }
+  }
+
+  function startPortalSessionWatch(){
+    if (portalSessionWatchStarted) return;
+    portalSessionWatchStarted = true;
+    setTimeout(()=>{ verifyPortalSession(); }, 600);
+    setInterval(()=>{
+      if (document.visibilityState !== 'hidden') verifyPortalSession();
+    }, 60000);
+    document.addEventListener('visibilitychange', ()=>{
+      if (document.visibilityState === 'visible') verifyPortalSession();
+    });
+  }
+</script>
+
+<script>
 document.addEventListener('DOMContentLoaded', ()=>{
+  startPortalSessionWatch();
   const body       = document.body;
   const layoutRoot = document.getElementById('layoutRoot');
   const rail       = document.getElementById('rail');
@@ -901,7 +970,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
   async function doLogout(){
     Swal.fire({title:'Logging out...', didOpen:()=>Swal.showLoading(), allowOutsideClick:false});
     const endpoints = [@json($portalLogoutApi), '/api/assignedpeople/logout', '/api/admin/logout', '/api/logout'];
-    const token = sessionStorage.getItem('token');
+    const token = getPortalStoredToken();
     try{
       let ok = false, lastErr = null;
       for(const url of endpoints){
@@ -914,10 +983,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
       Swal.close();
       if(!ok && lastErr) console.warn(lastErr);
       await Swal.fire({ icon:'success', title:'Logged out', timer:1000, showConfirmButton:false });
-      sessionStorage.removeItem('token');
-      sessionStorage.removeItem('role');
-      localStorage.removeItem('token');
-      localStorage.removeItem('type');
+      clearPortalStoredAuth();
       window.location.href = '/';
     }catch(err){
       Swal.close();
@@ -982,7 +1048,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
     return '';
   }
   function apiHeaders(){
-    const token = sessionStorage.getItem('token');
+    const token = getPortalStoredToken();
     const h = { 'Accept': 'application/json', 'Content-Type': 'application/json' };
     if(token) h['Authorization'] = `Bearer ${token}`;
     return h;

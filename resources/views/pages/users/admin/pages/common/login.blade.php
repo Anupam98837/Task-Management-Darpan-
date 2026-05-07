@@ -182,8 +182,13 @@
       if(res.ok&&data?.access_token){
         ['token','role'].forEach(k=>{sessionStorage.removeItem(k);localStorage.removeItem(k);});
         localStorage.removeItem('type');
-        sessionStorage.setItem('token',data.access_token);
-        if(data?.tokenable_type)sessionStorage.setItem('role',data.tokenable_type);
+        sessionStorage.removeItem('type');
+        const store = remember ? localStorage : sessionStorage;
+        store.setItem('token',data.access_token);
+        if(data?.tokenable_type){
+          store.setItem('role',data.tokenable_type);
+          store.setItem('type',data.tokenable_type);
+        }
         Swal.fire({icon:'success',title:'Login Successful',text:'Redirecting…',timer:1200,showConfirmButton:false}).then(()=>window.location.href='/dashboard');
       }else{
         Swal.fire({icon:'error',title:'Login Failed',text:data?.message||'Invalid credentials. Please try again.',confirmButtonColor:'#0369a1'});

@@ -645,6 +645,13 @@ let role = EXPECTED_ROLE;
 let IS_ASSIGNEE = false;
 let IS_CLIENT_USER = false;
 let IS_READ_ONLY = false;
+let CAN_ASSIGN = false;
+let CAN_EXPORT = false;
+let CAN_EDIT_JOB = false;
+let CAN_DELETE_JOB = false;
+let CAN_CHAT = false;
+let CAN_ADD_EXPENSE = false;
+let CAN_CHANGE_STATUS = false;
 const LOGIN_REDIRECT = EXPECTED_ROLE === 'client_user'
   ? '/client-user/login'
   : (EXPECTED_ROLE === 'assignee' ? '/assignee/login' : '/');
@@ -668,6 +675,18 @@ const badgeClass=(t,v)=>`badge ${String(v||'').toLowerCase().replace(/ /g,'_')}`
 const badgeLabel=(v)=>esc(String(v||'-').replaceAll('_',' '));
 const within1min=(iso)=>{const t=new Date(iso).getTime();return!isNaN(t)&&(Date.now()-t)<=60000};
 const parseFilename=(cd)=>{if(!cd)return null;const m=cd.match(/filename\*=UTF-8''([^;]+)|filename="([^"]+)"|filename=([^;]+)/i);return m?decodeURIComponent(m[1]||m[2]||m[3]||'').replace(/["']/g,''):null};
+function syncRoleFlags(){
+  IS_ASSIGNEE = role === 'assignee';
+  IS_CLIENT_USER = role === 'client_user';
+  IS_READ_ONLY = IS_CLIENT_USER;
+  CAN_ASSIGN = role === 'admin';
+  CAN_EXPORT = role === 'admin' || role === 'assignee';
+  CAN_EDIT_JOB = role === 'admin';
+  CAN_DELETE_JOB = role === 'admin';
+  CAN_CHAT = role === 'admin' || role === 'assignee';
+  CAN_ADD_EXPENSE = role === 'admin' || role === 'assignee';
+  CAN_CHANGE_STATUS = role === 'admin' || role === 'assignee';
+}
 // === Contact & initials helpers ===
 function safeTrim(v){ return (v==null)?'':String(v).trim(); }
 function initialsFrom(name,email,role){
@@ -727,9 +746,7 @@ async function ensurePortalAuth(){
       if(!EXPECTED_ROLE || String(ctx.data.role).toLowerCase() === EXPECTED_ROLE){
         TOKEN = candidate;
         role = String(ctx.data.role || EXPECTED_ROLE || '').toLowerCase();
-        IS_ASSIGNEE = role === 'assignee';
-        IS_CLIENT_USER = role === 'client_user';
-        IS_READ_ONLY = IS_ASSIGNEE || IS_CLIENT_USER;
+        syncRoleFlags();
         return ctx.data;
       }
     }catch(e){}
@@ -738,9 +755,7 @@ async function ensurePortalAuth(){
   if (fallback && !EXPECTED_ROLE) {
     TOKEN = fallback.token;
     role = String(fallback.data.role || '').toLowerCase();
-    IS_ASSIGNEE = role === 'assignee';
-    IS_CLIENT_USER = role === 'client_user';
-    IS_READ_ONLY = IS_ASSIGNEE || IS_CLIENT_USER;
+    syncRoleFlags();
     return fallback.data;
   }
 
@@ -884,14 +899,12 @@ function applyRoleVisibility(){
   if(IS_ASSIGNEE){
     const c=byId('filterClient'); if(c) c.closest('.filter-field').style.display='none';
   }
-  if(IS_READ_ONLY){
-    const a=document.querySelector('a.btn.btn-primary[href="/admin/jobs/add"]'); if(a) a.style.display='none';
-    const composerWrap = document.querySelector('.composer-sticky'); if (composerWrap) composerWrap.style.display = 'none';
-    if (typeof btnAddExpense !== 'undefined' && btnAddExpense) btnAddExpense.style.display = 'none';
-    if (typeof expenseForm !== 'undefined' && expenseForm) expenseForm.style.display = 'none';
-    if (typeof dSaveStatus !== 'undefined' && dSaveStatus) dSaveStatus.style.display = 'none';
-    if (typeof dStatus !== 'undefined' && dStatus) dStatus.disabled = true;
-  }
+  const a=document.querySelector('a.btn.btn-primary[href="/admin/jobs/add"]'); if(a) a.style.display = CAN_EDIT_JOB ? '' : 'none';
+  const composerWrap = document.querySelector('.composer-sticky'); if (composerWrap) composerWrap.style.display = CAN_CHAT ? '' : 'none';
+  if (typeof btnAddExpense !== 'undefined' && btnAddExpense) btnAddExpense.style.display = CAN_ADD_EXPENSE ? '' : 'none';
+  if (typeof expenseForm !== 'undefined' && expenseForm && !CAN_ADD_EXPENSE) expenseForm.style.display = 'none';
+  if (typeof dSaveStatus !== 'undefined' && dSaveStatus) dSaveStatus.style.display = CAN_CHANGE_STATUS ? '' : 'none';
+  if (typeof dStatus !== 'undefined' && dStatus) dStatus.disabled = !CAN_CHANGE_STATUS;
 }
 
 const tbody   = byId('jTbody'),
@@ -1295,16 +1308,16 @@ function ensureActionsMenu(){
     if(act==='open') return openDrawer(id);
     if(act==='view') return openViewer(id);
     if(act==='viewdoc') return viewDocument(id);
-    if(act==='assign'){ if(IS_READ_ONLY){info('You do not have permission for this action.');return}
+    if(act==='assign'){ if(!CAN_ASSIGN){info('You do not have permission for this action.');return}
       const tr = tbody.querySelector(`tr[data-id="${id}"]`); return openAssignModal(id, tr?.dataset?.title||(`#${id}`))
     }
-    if(act==='export'){ if(IS_READ_ONLY){info('You do not have permission for this action.');return}
+    if(act==='export'){ if(!CAN_EXPORT){info('You do not have permission for this action.');return}
       return exportReport(id);
     }
-    if(act==='edit'){ if(IS_READ_ONLY){info('You do not have permission for this action.');return}
+    if(act==='edit'){ if(!CAN_EDIT_JOB){info('You do not have permission for this action.');return}
       location.href=`/admin/jobs/edit/${id}`; return;
     }
-    if(act==='delete'){ if(IS_READ_ONLY){info('You do not have permission for this action.');return}
+    if(act==='delete'){ if(!CAN_DELETE_JOB){info('You do not have permission for this action.');return}
       const ask=await Swal.fire({title:'Delete Job?',text:'This job will be permanently removed (including children).',icon:'warning',showCancelButton:true,confirmButtonText:'Delete',confirmButtonColor:'#dc2626'});
       if(!ask.isConfirmed) return;
       try{
@@ -1337,11 +1350,19 @@ function openActionsMenu(btn, id){
     list.push(`<a href="#" data-am-act="viewdoc" data-id="${id}" style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;color:var(--text-color);text-decoration:none"><i class="fa fa-file-pdf"></i><span>View document</span></a>`);
   }
   
-  if(!IS_READ_ONLY){
+  if(CAN_ASSIGN || CAN_EXPORT || CAN_EDIT_JOB || CAN_DELETE_JOB){
+    if(CAN_ASSIGN){
     list.push(`<a href="#" data-am-act="assign" data-id="${id}" style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;color:var(--text-color);text-decoration:none"><i class="fa fa-user-plus"></i><span>Assign people</span></a>`);
+    }
+    if(CAN_EXPORT){
     list.push(`<a href="#" data-am-act="export" data-id="${id}" style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;color:var(--text-color);text-decoration:none"><i class="fa fa-download"></i><span>Export report</span></a>`);
+    }
+    if(CAN_EDIT_JOB){
     list.push(`<a href="/admin/jobs/edit/${id}" data-am-act="edit" data-id="${id}" style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;color:var(--text-color);text-decoration:none"><i class="fa fa-pen"></i><span>Edit</span></a>`);
+    }
+    if(CAN_DELETE_JOB){
     list.push(`<a href="#" data-am-act="delete" data-id="${id}" style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;color:#dc2626;text-decoration:none"><i class="fa fa-trash"></i><span>Delete</span></a>`);
+    }
   }
   el.innerHTML = list.join('');
   
@@ -1579,7 +1600,7 @@ tbody.addEventListener('click',async e=>{
   const actBtn=e.target.closest('.btn-actions');
   if(actBtn){ e.preventDefault(); openActionsMenu(actBtn, id); return }
 
-  if(IS_READ_ONLY&&(e.target.closest('.js-assign')||e.target.closest('.js-del')||e.target.closest('.btn-edit'))){
+  if((!CAN_ASSIGN && e.target.closest('.js-assign')) || (!CAN_DELETE_JOB && e.target.closest('.js-del')) || (!CAN_EDIT_JOB && e.target.closest('.btn-edit'))){
     e.preventDefault(); info('You do not have permission for this action.'); return;
   }
   if(e.target.closest('.js-expand')){
@@ -1993,6 +2014,10 @@ async function openViewer(id){
 /* ================== DRAWER + MESSAGES ================== */
 const drawer=new bootstrap.Offcanvas('#jobDrawer');
 const dTitle=byId('dTitle'),dJobId=byId('dJobId'),dClient=byId('dClient'),dChipType=byId('dChipType'),dChipPriority=byId('dChipPriority'),dChipAssignees=byId('dChipAssignees'),dStatus=byId('dStatus'),dSaveStatus=byId('dSaveStatus'),dStatusSpin=byId('dStatusSpin'),dStart=byId('dStart'),dEnd=byId('dEnd'),dDeadline=byId('dDeadline'),dDuration=byId('dDuration'),dDesc=byId('dDesc'),chat=byId('chat'),btnLoadOlder=byId('btnLoadOlder'),olderSpin=byId('olderSpin'),composer=byId('composer'),btnAttach=byId('btnAttach'),attachInput=byId('attachInput'),attachChips=byId('attachChips'),drawerBusy=byId('drawerBusy'),msgBusy=byId('msgBusy'),msgEmpty=byId('msgEmpty');
+const drawerTabsWrap = byId('drawerTabs');
+const drawerTabContent = byId('drawerTabContent');
+const conversationPane = byId('conversation');
+const expensesPane = byId('expenses');
 // === ADD EXPENSE VARIABLES HERE ===
 const expenseForm = byId('expenseForm');
 const expensesList = byId('expensesList');
@@ -2008,6 +2033,21 @@ const expenseDate = byId('expenseDate');
 const expenseAmount = byId('expenseAmount');
 const expenseNote = byId('expenseNote');
 const expenseFile = byId('expenseFile');
+function syncDrawerSectionVisibility(){
+  const showDetailSections = !IS_CLIENT_USER;
+  if (drawerTabsWrap) drawerTabsWrap.style.display = showDetailSections ? '' : 'none';
+  if (drawerTabContent) drawerTabContent.style.display = showDetailSections ? '' : 'none';
+  if (!showDetailSections) {
+    if (conversationPane) {
+      conversationPane.classList.remove('show', 'active');
+      conversationPane.style.display = 'none';
+    }
+    if (expensesPane) {
+      expensesPane.classList.remove('show', 'active');
+      expensesPane.style.display = 'none';
+    }
+  }
+}
 
 (function(){ if(role!=='admin')return;
   const b=document.createElement('button');
@@ -3005,13 +3045,13 @@ async function openDrawer(id){
     if(dJob.planned_start_at&&dJob.planned_end_at){ const sd=new Date(dJob.planned_start_at), ed=new Date(dJob.planned_end_at); dDuration.textContent=Math.max(0,Math.round((ed-sd)/86400000))+' day(s)' }
     dStatus.value=(dJob.status||'planned');
     dDesc.innerHTML = dJob.description || '<span style="font-size:13px;color:#94a3b8">No description</span>';
-    
-    // Reset expense form and load expenses
-    resetExpenseForm();
-    showExpensesList();
-    await loadExpenses(id);
-    
-    await loadMessages(true);
+    syncDrawerSectionVisibility();
+    if (!IS_CLIENT_USER) {
+      resetExpenseForm();
+      showExpensesList();
+      await loadExpenses(id);
+      await loadMessages(true);
+    }
   }catch(ex){ 
     err(ex.message||'Failed to open') 
   }finally{ 
@@ -3713,7 +3753,7 @@ function downloadExpensesWord(expenses, jobId) {
   // render pill (if UI has it)
   renderAppliedFilterPill();
 
-  if (!IS_READ_ONLY) {
+  if (CAN_ADD_EXPENSE) {
     await loadExpenseHeads();
   }
 

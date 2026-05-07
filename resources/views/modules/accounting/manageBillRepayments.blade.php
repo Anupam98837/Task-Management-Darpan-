@@ -6,132 +6,100 @@
 
 @push('styles')
 <style>
-.repayments-page {
+.repayments-page{
   background:
-    radial-gradient(circle at top left, rgba(14,165,233,.1), transparent 24%),
+    radial-gradient(circle at top left, rgba(14,165,233,.09), transparent 24%),
     radial-gradient(circle at bottom right, rgba(37,99,235,.08), transparent 20%),
     var(--bg-body);
   min-height:100vh;
   padding:24px;
   font-family:var(--font-sans);
 }
-.rp-header { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; margin-bottom:22px; }
-.rp-header h1 { margin:0; font-size:28px; font-weight:800; color:var(--text-color); }
-.rp-header p { margin:6px 0 0; color:#64748b; font-size:14px; max-width:760px; }
-.rp-actions { display:flex; gap:10px; flex-wrap:wrap; }
-.rp-toolbar { display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:20px; }
-.rp-search { position:relative; flex:1; min-width:240px; max-width:420px; }
-.rp-search input {
-  width:100%; height:44px; padding:0 14px 0 40px; border:1px solid #dbe5f0; border-radius:12px; background:#fff; color:#0f172a; font-size:14px;
-}
-.rp-search i { position:absolute; left:14px; top:50%; transform:translateY(-50%); color:#94a3b8; }
-.rp-chip, .rp-select, .rp-btn, .rp-input {
-  height:44px; border:1px solid #dbe5f0; border-radius:12px; background:#fff; color:#0f172a; font-size:14px;
-}
-.rp-chip {
-  min-width:220px; padding:0 14px; display:inline-flex; align-items:center; justify-content:space-between; gap:10px; cursor:pointer;
-}
-.rp-select, .rp-input { padding:0 14px; }
-.rp-input { width:100%; }
-.rp-btn {
-  padding:0 14px; font-weight:700; display:inline-flex; align-items:center; gap:8px; cursor:pointer; text-decoration:none;
-}
-.rp-btn.primary { background:linear-gradient(135deg,#2563eb,#1d4ed8); border-color:#2563eb; color:#fff; }
-.rp-btn.soft { background:#eff6ff; border-color:#bfdbfe; color:#1d4ed8; }
-.rp-card {
-  background:rgba(255,255,255,.96);
-  border:1px solid rgba(226,232,240,.9);
-  border-radius:22px;
-  box-shadow:0 18px 36px rgba(15,23,42,.08);
-  overflow:hidden;
-}
-.rp-table-wrap { overflow:auto; }
-.rp-table { width:100%; border-collapse:collapse; }
-.rp-table th, .rp-table td { padding:14px 16px; border-bottom:1px solid #eef2f7; text-align:left; font-size:14px; color:var(--text-color); vertical-align:top; }
-.rp-table th { background:#f8fafc; text-transform:uppercase; font-size:11px; letter-spacing:.5px; color:#64748b; }
-.rp-badge {
-  display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; font-size:12px; font-weight:700; border:1px solid transparent;
-}
-.rp-badge.pending { background:#fff7ed; color:#c2410c; border-color:#fdba74; }
-.rp-badge.approved { background:#dcfce7; color:#15803d; border-color:#86efac; }
-.rp-badge.rejected { background:#fee2e2; color:#b91c1c; border-color:#fca5a5; }
-.rp-empty { text-align:center; padding:56px 20px; color:#94a3b8; }
-.rp-empty h3 { margin:0 0 8px; font-size:18px; color:#475569; }
-.rp-pagination { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; padding:18px; background:#f8fafc; }
-.rp-pages { display:flex; gap:6px; flex-wrap:wrap; }
-.rp-page-btn {
-  min-width:38px; height:38px; border:1px solid #dbe5f0; border-radius:10px; background:#fff; color:#0f172a; font-weight:700; cursor:pointer;
-}
-.rp-page-btn.active { background:#2563eb; border-color:#2563eb; color:#fff; }
-.rp-page-btn:disabled { opacity:.4; cursor:not-allowed; }
-.rp-icon-btn {
-  width:34px; height:34px; border-radius:10px; border:1px solid #dbe5f0; background:#fff; color:#1e293b; display:inline-flex; align-items:center; justify-content:center; cursor:pointer;
-}
-.rp-icon-btn:hover { background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; }
-.rp-inline-actions { display:flex; gap:8px; flex-wrap:wrap; }
-.rp-detail-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
-.rp-detail-box, .rp-line-card {
-  border:1px solid #e2e8f0; border-radius:14px; padding:14px; background:#f8fafc;
-}
-.rp-detail-box small, .rp-line-card small { display:block; color:#64748b; margin-bottom:4px; }
-.rp-proof-list { display:flex; flex-direction:column; gap:10px; margin-top:14px; }
-.rp-proof-link { display:inline-flex; align-items:center; gap:8px; color:#1d4ed8; text-decoration:none; font-weight:700; }
-.tree-shell { border:1px solid #e2e8f0; border-radius:16px; background:#fff; max-height:420px; overflow:auto; padding:10px; }
-.tree-node { display:flex; align-items:flex-start; gap:10px; padding:8px 10px; border-radius:12px; cursor:pointer; }
-.tree-node:hover { background:#f8fafc; }
-.tree-node.active { background:#eff6ff; box-shadow: inset 0 0 0 1px #bfdbfe; }
-.tree-children { margin-left:18px; padding-left:12px; border-left:1px solid #e2e8f0; }
-.tree-meta { display:flex; flex-direction:column; gap:3px; }
-.tree-meta strong { font-size:14px; color:#0f172a; }
-.tree-meta small { color:#94a3b8; font-size:12px; }
-.picker-note {
-  display:inline-flex; align-items:center; gap:8px; min-height:44px; padding:0 14px; border-radius:12px; border:1px dashed #bfdbfe; background:#f8fbff; color:#1d4ed8; font-weight:700;
-}
-#repaymentModal.show {
-  z-index: 1060;
-}
-#repaymentModal.stacked-underlay {
-  z-index: 1060;
-}
-#clientTreeModal {
-  z-index: 1085;
-}
-#clientTreeModal .modal-dialog {
-  position: relative;
-  z-index: 1086;
-}
-body .modal-backdrop.stacked-tree-backdrop {
-  z-index: 1080;
-}
-@media (max-width: 768px) {
-  .repayments-page { padding:16px; }
-  .rp-detail-grid { grid-template-columns:1fr; }
-}
+.rp-header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+.rp-header h1{margin:0;font-size:28px;font-weight:800;color:var(--text-color)}
+.rp-header p{margin:6px 0 0;color:#64748b;font-size:14px;max-width:820px}
+.rp-actions{display:flex;gap:10px;flex-wrap:wrap}
+.rp-toolbar{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:18px}
+.rp-search{position:relative;flex:1;min-width:240px;max-width:420px}
+.rp-search input{width:100%;height:44px;padding:0 14px 0 40px;border:1px solid #dbe5f0;border-radius:12px;background:#fff;color:#0f172a;font-size:14px}
+.rp-search i{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#94a3b8}
+.rp-btn,.rp-chip,.rp-input{height:44px;border:1px solid #dbe5f0;border-radius:12px;background:#fff;color:#0f172a;font-size:14px}
+.rp-btn{padding:0 14px;font-weight:700;display:inline-flex;align-items:center;gap:8px;cursor:pointer;text-decoration:none}
+.rp-btn.primary{background:linear-gradient(135deg,#2563eb,#1d4ed8);border-color:#2563eb;color:#fff}
+.rp-btn.soft{background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8}
+.rp-chip{min-width:220px;padding:0 14px;display:inline-flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer}
+.rp-tabs{display:inline-flex;align-items:center;gap:8px;padding:6px;border-radius:16px;background:#eaf1fb;border:1px solid #d8e6f7}
+.rp-tab{min-width:110px;height:40px;border:0;border-radius:12px;background:transparent;color:#526070;font-size:13px;font-weight:800;cursor:pointer;transition:.2s}
+.rp-tab.active{background:#fff;color:#1d4ed8;box-shadow:0 8px 18px rgba(37,99,235,.12)}
+.rp-card-head{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;padding:18px 18px 0}
+.rp-card-title{display:flex;flex-direction:column;gap:4px}
+.rp-card-title strong{font-size:18px;color:#0f172a}
+.rp-card-title small{color:#64748b}
+.rp-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:18px}
+.rp-stat{background:rgba(255,255,255,.96);border:1px solid rgba(226,232,240,.9);border-radius:20px;box-shadow:0 16px 32px rgba(15,23,42,.07);padding:18px}
+.rp-stat small{display:block;color:#64748b;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+.rp-stat strong{display:block;color:#0f172a;font-size:28px;line-height:1}
+.rp-card{background:rgba(255,255,255,.96);border:1px solid rgba(226,232,240,.9);border-radius:22px;box-shadow:0 18px 36px rgba(15,23,42,.08);overflow:hidden}
+.rp-table-wrap{overflow:auto}
+.rp-table{width:100%;border-collapse:collapse}
+.rp-table th,.rp-table td{padding:14px 16px;border-bottom:1px solid #eef2f7;text-align:left;font-size:14px;color:var(--text-color);vertical-align:top}
+.rp-table th{background:#f8fafc;text-transform:uppercase;font-size:11px;letter-spacing:.5px;color:#64748b}
+.rp-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:700;border:1px solid transparent}
+.rp-badge.due{background:#fff7ed;color:#c2410c;border-color:#fdba74}
+.rp-badge.paid{background:#dcfce7;color:#15803d;border-color:#86efac}
+.rp-badge.pending{background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe}
+.rp-empty{text-align:center;padding:56px 20px;color:#94a3b8}
+.rp-empty h3{margin:0 0 8px;font-size:18px;color:#475569}
+.rp-pagination{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:18px;background:#f8fafc}
+.rp-pages{display:flex;gap:6px;flex-wrap:wrap}
+.rp-page-btn{min-width:38px;height:38px;border:1px solid #dbe5f0;border-radius:10px;background:#fff;color:#0f172a;font-weight:700;cursor:pointer}
+.rp-page-btn.active{background:#2563eb;border-color:#2563eb;color:#fff}
+.rp-page-btn:disabled{opacity:.4;cursor:not-allowed}
+.rp-inline-actions{display:flex;gap:8px;flex-wrap:wrap}
+.rp-mini-btn{height:34px;padding:0 12px;border-radius:10px;border:1px solid #dbe5f0;background:#fff;color:#0f172a;font-size:12px;font-weight:800;display:inline-flex;align-items:center;gap:7px;cursor:pointer}
+.rp-mini-btn.primary{background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8}
+.rp-mini-btn.success{background:#ecfdf5;border-color:#bbf7d0;color:#047857}
+.rp-mini-btn[disabled]{opacity:.45;cursor:not-allowed}
+.tree-shell{border:1px solid #e2e8f0;border-radius:16px;background:#fff;max-height:420px;overflow:auto;padding:10px}
+.tree-node{display:flex;align-items:flex-start;gap:10px;padding:8px 10px;border-radius:12px;cursor:pointer}
+.tree-node:hover{background:#f8fafc}
+.tree-node.active{background:#eff6ff;box-shadow:inset 0 0 0 1px #bfdbfe}
+.tree-children{margin-left:18px;padding-left:12px;border-left:1px solid #e2e8f0}
+.tree-meta{display:flex;flex-direction:column;gap:3px}
+.tree-meta strong{font-size:14px;color:#0f172a}
+.tree-meta small{color:#94a3b8;font-size:12px}
+.rp-detail-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.rp-detail-box,.rp-list-card{border:1px solid #e2e8f0;border-radius:14px;padding:14px;background:#f8fafc}
+.rp-detail-box small,.rp-list-card small{display:block;color:#64748b;margin-bottom:4px}
+.rp-line{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid #e5edf6}
+.rp-line:last-child{border-bottom:0}
+.rp-proof-list{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+.rp-proof-link{display:inline-flex;align-items:center;gap:8px;color:#1d4ed8;text-decoration:none;font-weight:700}
+.rp-note{font-size:12px;color:#64748b}
+.rp-accent{color:#1d4ed8}
+@media (max-width: 900px){.rp-detail-grid{grid-template-columns:1fr}}
+@media (max-width: 768px){.repayments-page{padding:16px}}
 </style>
 @endpush
 
 <div class="repayments-page">
   <div class="rp-header">
     <div>
-      <h1>Repayments</h1>
-      <p>Track bill repayments, approve client-submitted receipts, and keep every published bill connected to its repayment history.</p>
+      <h1>Bill Repayments</h1>
+      <p>Track published bill balances, separate due bills from fully paid bills, and add repayments only where a remaining balance still exists.</p>
     </div>
     <div class="rp-actions">
       <a href="{{ $repaymentBillsUrl }}" class="rp-btn soft">
         <i class="fa-solid fa-file-invoice-dollar"></i>
         Bills
       </a>
-      <button type="button" class="rp-btn primary" id="newRepaymentBtn">
-        <i class="fa-solid fa-plus"></i>
-        {{ $repaymentRole === 'client_user' ? 'Submit Repayment' : 'New Repayment' }}
-      </button>
     </div>
   </div>
 
   <div class="rp-toolbar">
     <div class="rp-search">
       <i class="fa-solid fa-magnifying-glass"></i>
-      <input type="text" id="repaymentSearch" placeholder="Search by client, note, or approval note...">
+      <input type="text" id="billSearch" placeholder="Search by client or bill id...">
     </div>
     <button type="button" class="rp-chip" id="clientFilterBtn">
       <span id="clientFilterLabel">All Clients</span>
@@ -141,41 +109,65 @@ body .modal-backdrop.stacked-tree-backdrop {
       <i class="fa-solid fa-xmark"></i>
       Clear Client
     </button>
-    <select id="statusFilter" class="rp-select">
-      <option value="">All Status</option>
-      <option value="pending">Pending</option>
-      <option value="approved">Approved</option>
-      <option value="rejected">Rejected</option>
-    </select>
-    <button type="button" class="rp-btn" id="refreshRepaymentsBtn">
+    <button type="button" class="rp-btn" id="refreshBillsBtn">
       <i class="fa-solid fa-rotate"></i>
       Refresh
     </button>
   </div>
 
+  <div class="rp-summary">
+    <div class="rp-stat">
+      <small>Visible Bills</small>
+      <strong id="statBills">0</strong>
+    </div>
+    <div class="rp-stat">
+      <small>Total Amount</small>
+      <strong id="statTotal">Rs 0.00</strong>
+    </div>
+    <div class="rp-stat">
+      <small>Total Paid</small>
+      <strong id="statPaid">Rs 0.00</strong>
+    </div>
+    <div class="rp-stat">
+      <small>Total Remaining</small>
+      <strong id="statRemaining">Rs 0.00</strong>
+    </div>
+  </div>
+
   <div class="rp-card">
+    <div class="rp-card-head">
+      <div class="rp-card-title">
+        <strong>Client Bill Ledger</strong>
+        <small>All published bills, repayment balance, PDF export, and repayment history in one place.</small>
+      </div>
+      <div class="rp-tabs" id="bucketTabs">
+        <button type="button" class="rp-tab active" data-bucket="due">Due Bills</button>
+        <button type="button" class="rp-tab" data-bucket="paid">Paid Bills</button>
+      </div>
+    </div>
     <div class="rp-table-wrap">
       <table class="rp-table">
         <thead>
           <tr>
-            <th>Repayment</th>
             <th>Bill</th>
             <th>Client</th>
-            <th>Date</th>
-            <th>Amount</th>
+            <th>Bill Date</th>
+            <th>Due Date</th>
+            <th>Total Amount</th>
+            <th>Repaid Amount</th>
+            <th>Due Amount</th>
             <th>Status</th>
-            <th>Submitted By</th>
             <th>Actions</th>
           </tr>
         </thead>
-        <tbody id="repaymentRows">
-          <tr><td colspan="8" class="text-center py-4">Loading…</td></tr>
+        <tbody id="billRows">
+          <tr><td colspan="9" class="text-center py-4">Loading…</td></tr>
         </tbody>
       </table>
     </div>
     <div class="rp-pagination">
-      <div id="repaymentPaginationInfo">Showing 0-0 of 0 repayments</div>
-      <div class="rp-pages" id="repaymentPager"></div>
+      <div id="billPaginationInfo">Showing 0-0 of 0 bills</div>
+      <div class="rp-pages" id="billPager"></div>
     </div>
   </div>
 </div>
@@ -186,7 +178,7 @@ body .modal-backdrop.stacked-tree-backdrop {
       <div class="modal-header">
         <div>
           <h5 class="modal-title mb-1">Choose Client Tree</h5>
-          <div class="text-muted small">Use one client branch for the current filter or repayment form.</div>
+          <div class="text-muted small">Filter the due/paid bill list using one client branch.</div>
         </div>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
@@ -216,29 +208,18 @@ body .modal-backdrop.stacked-tree-backdrop {
       <form id="repaymentForm" autocomplete="off">
         <div class="modal-header">
           <div>
-            <h5 class="modal-title mb-1">{{ $repaymentRole === 'client_user' ? 'Submit Repayment' : 'New Repayment' }}</h5>
-            <div class="text-muted small">{{ $repaymentRole === 'client_user' ? 'Client submissions stay pending until an admin or accountant approves them.' : 'Admin and accountant repayments are saved as approved immediately.' }}</div>
+            <h5 class="modal-title mb-1">Add Repayment</h5>
+            <div class="text-muted small" id="repaymentModalSubtitle">Published bill repayments are approved immediately for admin/accountant users and submitted for approval by client users.</div>
           </div>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <div class="mb-3">
-            <label class="form-label fw-semibold">Client Tree <span class="text-danger">*</span></label>
-            <div class="d-flex gap-2 flex-wrap align-items-center">
-              <button type="button" class="rp-chip" id="formClientPickerBtn">
-                <span id="formClientLabel">Choose Client</span>
-                <i class="fa-solid fa-sitemap"></i>
-              </button>
-              <span class="picker-note" id="formClientNote">Published bills load after you choose a client.</span>
-            </div>
+          <div class="rp-detail-grid mb-3">
+            <div class="rp-detail-box"><small>Bill</small><strong id="formBillTitle">—</strong></div>
+            <div class="rp-detail-box"><small>Total</small><strong id="formBillTotal">Rs 0.00</strong></div>
+            <div class="rp-detail-box"><small>Remaining</small><strong id="formBillRemaining">Rs 0.00</strong></div>
           </div>
           <div class="row g-3">
-            <div class="col-md-6">
-              <label class="form-label fw-semibold">Published Bill <span class="text-danger">*</span></label>
-              <select id="formBillId" class="rp-input" required>
-                <option value="">Choose a published bill</option>
-              </select>
-            </div>
             <div class="col-md-6">
               <label class="form-label fw-semibold">Repayment Date <span class="text-danger">*</span></label>
               <input type="date" id="formRepaymentDate" class="rp-input" required>
@@ -258,12 +239,11 @@ body .modal-backdrop.stacked-tree-backdrop {
           </div>
         </div>
         <div class="modal-footer">
-          <div class="text-muted small">{{ $repaymentRole === 'client_user' ? 'Your repayment will appear as pending until it is approved.' : 'This repayment will appear inside future billing analysis right away.' }}</div>
           <div class="d-flex gap-2">
             <button type="button" class="rp-btn" data-bs-dismiss="modal">Cancel</button>
             <button type="submit" class="rp-btn primary" id="saveRepaymentBtn">
               <i class="fa-solid fa-check"></i>
-              {{ $repaymentRole === 'client_user' ? 'Submit Repayment' : 'Save Repayment' }}
+              Save Repayment
             </button>
           </div>
         </div>
@@ -272,19 +252,20 @@ body .modal-backdrop.stacked-tree-backdrop {
   </div>
 </div>
 
-<div class="modal fade" id="repaymentDetailModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+<div class="modal fade" id="billRepaymentsModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
         <div>
-          <h5 class="modal-title mb-1">Repayment Details</h5>
-          <div class="text-muted small">Review proof files, approval state, and bill reference details.</div>
+          <h5 class="modal-title mb-1">Bill Repayments</h5>
+          <div class="text-muted small" id="billRepaymentsSubtitle">Review all repayments linked to this bill.</div>
         </div>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <div class="modal-body" id="repaymentDetailBody">
+      <div class="modal-body" id="billRepaymentsBody">
         <div class="text-center text-muted py-4">Loading…</div>
       </div>
+      <div class="modal-footer" id="billRepaymentsFooter"></div>
     </div>
   </div>
 </div>
@@ -297,61 +278,62 @@ body .modal-backdrop.stacked-tree-backdrop {
   const TOKEN = localStorage.getItem('token') || sessionStorage.getItem('token') || '';
   const LOGIN_URL = @json($repaymentLoginUrl);
   const PORTAL_ROLE = @json($repaymentRole);
-  const CAN_APPROVE = PORTAL_ROLE === 'admin' || PORTAL_ROLE === 'accountant_user';
+  const DIRECT_APPROVAL = PORTAL_ROLE === 'admin' || PORTAL_ROLE === 'accountant_user';
   if (!TOKEN) {
     setTimeout(() => { window.location.href = LOGIN_URL; }, 400);
     return;
   }
 
   const headers = { 'Authorization': 'Bearer ' + TOKEN, 'Accept': 'application/json' };
-  const treeModalEl = document.getElementById('clientTreeModal');
-  const repaymentModalEl = document.getElementById('repaymentModal');
-  const treeModal = new bootstrap.Modal(document.getElementById('clientTreeModal'));
+  const clientTreeModal = new bootstrap.Modal(document.getElementById('clientTreeModal'));
   const repaymentModal = new bootstrap.Modal(document.getElementById('repaymentModal'));
-  const repaymentDetailModal = new bootstrap.Modal(document.getElementById('repaymentDetailModal'));
+  const billRepaymentsModal = new bootstrap.Modal(document.getElementById('billRepaymentsModal'));
 
   const state = {
     page: 1,
     total: 0,
     totalPages: 1,
     q: '',
-    status: '',
+    bucket: 'due',
     clientId: '',
     pendingTreeClientId: '',
-    treeTarget: 'filter',
     clients: [],
     clientTreeRoots: [],
     items: [],
-    formClientId: '',
-    formBills: [],
+    currentBill: null,
   };
 
   const els = {
-    repaymentSearch: document.getElementById('repaymentSearch'),
+    billSearch: document.getElementById('billSearch'),
     clientFilterBtn: document.getElementById('clientFilterBtn'),
     clientFilterLabel: document.getElementById('clientFilterLabel'),
     clearClientFilterBtn: document.getElementById('clearClientFilterBtn'),
-    statusFilter: document.getElementById('statusFilter'),
-    refreshRepaymentsBtn: document.getElementById('refreshRepaymentsBtn'),
-    repaymentRows: document.getElementById('repaymentRows'),
-    repaymentPaginationInfo: document.getElementById('repaymentPaginationInfo'),
-    repaymentPager: document.getElementById('repaymentPager'),
+    bucketTabs: document.getElementById('bucketTabs'),
+    refreshBillsBtn: document.getElementById('refreshBillsBtn'),
+    statBills: document.getElementById('statBills'),
+    statTotal: document.getElementById('statTotal'),
+    statPaid: document.getElementById('statPaid'),
+    statRemaining: document.getElementById('statRemaining'),
+    billRows: document.getElementById('billRows'),
+    billPaginationInfo: document.getElementById('billPaginationInfo'),
+    billPager: document.getElementById('billPager'),
     clientTreeSearch: document.getElementById('clientTreeSearch'),
     clientTreeShell: document.getElementById('clientTreeShell'),
     clientTreeSelectionLabel: document.getElementById('clientTreeSelectionLabel'),
     applyClientTreeBtn: document.getElementById('applyClientTreeBtn'),
-    newRepaymentBtn: document.getElementById('newRepaymentBtn'),
     repaymentForm: document.getElementById('repaymentForm'),
-    formClientPickerBtn: document.getElementById('formClientPickerBtn'),
-    formClientLabel: document.getElementById('formClientLabel'),
-    formClientNote: document.getElementById('formClientNote'),
-    formBillId: document.getElementById('formBillId'),
+    formBillTitle: document.getElementById('formBillTitle'),
+    formBillTotal: document.getElementById('formBillTotal'),
+    formBillRemaining: document.getElementById('formBillRemaining'),
     formRepaymentDate: document.getElementById('formRepaymentDate'),
     formAmount: document.getElementById('formAmount'),
     formAttachments: document.getElementById('formAttachments'),
     formNote: document.getElementById('formNote'),
+    repaymentModalSubtitle: document.getElementById('repaymentModalSubtitle'),
     saveRepaymentBtn: document.getElementById('saveRepaymentBtn'),
-    repaymentDetailBody: document.getElementById('repaymentDetailBody'),
+    billRepaymentsSubtitle: document.getElementById('billRepaymentsSubtitle'),
+    billRepaymentsBody: document.getElementById('billRepaymentsBody'),
+    billRepaymentsFooter: document.getElementById('billRepaymentsFooter'),
   };
 
   const esc = (value = '') => String(value).replace(/[&<>"']/g, (m) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[m]));
@@ -405,15 +387,11 @@ body .modal-backdrop.stacked-tree-backdrop {
 
   function updateClientLabels() {
     els.clientFilterLabel.textContent = state.clientId ? labelForClient(state.clientId) : 'All Clients';
-    els.formClientLabel.textContent = state.formClientId ? labelForClient(state.formClientId, 'Choose Client') : 'Choose Client';
-    els.formClientNote.textContent = state.formClientId
-      ? `${labelForClient(state.formClientId)} selected`
-      : 'Published bills load after you choose a client.';
   }
 
   function renderClientTree() {
     const query = String(els.clientTreeSearch.value || '').trim().toLowerCase();
-    const activeId = Number(state.pendingTreeClientId || (state.treeTarget === 'form' ? state.formClientId : state.clientId) || 0);
+    const activeId = Number(state.pendingTreeClientId || state.clientId || 0);
 
     const matchNode = (node) => {
       const selfMatch = !query || String(node.name || '').toLowerCase().includes(query);
@@ -443,8 +421,7 @@ body .modal-backdrop.stacked-tree-backdrop {
     }).join('');
 
     els.clientTreeShell.innerHTML = renderNodes(filteredRoots);
-    const selectedLabel = activeId ? labelForClient(activeId, 'Choose Client') : 'All Clients';
-    els.clientTreeSelectionLabel.textContent = selectedLabel;
+    els.clientTreeSelectionLabel.textContent = activeId ? labelForClient(activeId, 'Choose Client') : 'All Clients';
   }
 
   async function loadClients() {
@@ -455,65 +432,99 @@ body .modal-backdrop.stacked-tree-backdrop {
     renderClientTree();
   }
 
+  function updateSummary() {
+    const totalBills = state.total;
+    const totalAmount = state.items.reduce((sum, row) => sum + Number(row.total_amount || 0), 0);
+    const totalPaid = state.items.reduce((sum, row) => sum + Number(row.paid_amount || 0), 0);
+    const totalRemaining = state.items.reduce((sum, row) => sum + Number(row.remaining_amount || 0), 0);
+    els.statBills.textContent = String(totalBills || 0);
+    els.statTotal.textContent = money(totalAmount);
+    els.statPaid.textContent = money(totalPaid);
+    els.statRemaining.textContent = money(totalRemaining);
+  }
+
   function renderPager() {
     const start = state.total ? ((state.page - 1) * 10) + 1 : 0;
     const end = Math.min(state.total, state.page * 10);
-    els.repaymentPaginationInfo.textContent = `Showing ${start}-${end} of ${state.total} repayments`;
+    els.billPaginationInfo.textContent = `Showing ${start}-${end} of ${state.total} bills`;
     const buttons = [];
     buttons.push(`<button class="rp-page-btn" data-page="${state.page - 1}" ${state.page <= 1 ? 'disabled' : ''}>Previous</button>`);
     for (let page = Math.max(1, state.page - 2); page <= Math.min(state.totalPages, state.page + 2); page += 1) {
       buttons.push(`<button class="rp-page-btn ${page === state.page ? 'active' : ''}" data-page="${page}">${page}</button>`);
     }
     buttons.push(`<button class="rp-page-btn" data-page="${state.page + 1}" ${state.page >= state.totalPages ? 'disabled' : ''}>Next</button>`);
-    els.repaymentPager.innerHTML = buttons.join('');
+    els.billPager.innerHTML = buttons.join('');
   }
 
-  function statusBadge(status) {
-    const key = ['approved', 'rejected'].includes(String(status)) ? String(status) : 'pending';
-    return `<span class="rp-badge ${key}">${esc(key.charAt(0).toUpperCase() + key.slice(1))}</span>`;
+  function statusBadge(row) {
+    const key = Number(row.remaining_amount || 0) > 0.009 ? 'due' : 'paid';
+    return `<span class="rp-badge ${key}">${key === 'due' ? 'Due' : 'Paid'}</span>`;
+  }
+
+  async function downloadBillPdf(id) {
+    const res = await fetch(`${API_BASE}/client-bills/${encodeURIComponent(id)}/pdf`, { headers });
+    if (!res.ok) throw new Error(`Unable to download PDF (HTTP ${res.status})`);
+    const blob = await res.blob();
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `client_bill_${id}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(link.href);
   }
 
   function renderRows() {
+    updateSummary();
     if (!state.items.length) {
-      els.repaymentRows.innerHTML = '<tr><td colspan="8"><div class="rp-empty"><h3>No repayments found</h3><p>Try another client tree or add a new repayment.</p></div></td></tr>';
+      els.billRows.innerHTML = `<tr><td colspan="9"><div class="rp-empty"><h3>No ${state.bucket} bills found</h3><p>Try another client branch or switch tabs.</p></div></td></tr>`;
       renderPager();
       return;
     }
 
-    els.repaymentRows.innerHTML = state.items.map((row) => `
-      <tr>
-        <td>
-          <strong>Repayment #${esc(row.id)}</strong>
-          <div style="font-size:12px;color:#94a3b8;margin-top:4px;">${Number(row.attachments_count || 0)} proof file(s)</div>
-        </td>
-        <td>
-          <strong>Bill #${esc(row.client_bill_id)}</strong>
-          <div style="font-size:12px;color:#94a3b8;margin-top:4px;">${esc(money(row.bill_total_amount || 0))}</div>
-        </td>
-        <td>${esc(row.client_name || '—')}</td>
-        <td>${fmtDate(row.repayment_date)}</td>
-        <td style="font-weight:800;">${esc(money(row.amount))}</td>
-        <td>${statusBadge(row.status)}</td>
-        <td>
-          ${esc(row.submitted_by_name || '—')}
-          <div style="font-size:12px;color:#94a3b8;margin-top:4px;">${esc(String(row.submitted_by_role || '—').replaceAll('_', ' '))}</div>
-        </td>
-        <td>
-          <div class="rp-inline-actions">
-            <button type="button" class="rp-icon-btn" data-action="view" data-id="${esc(row.id)}" title="View"><i class="fa-solid fa-eye"></i></button>
-            ${CAN_APPROVE && row.status === 'pending' ? `<button type="button" class="rp-icon-btn" data-action="approve" data-id="${esc(row.id)}" title="Approve"><i class="fa-solid fa-check"></i></button>` : ''}
-            ${CAN_APPROVE && row.status === 'pending' ? `<button type="button" class="rp-icon-btn" data-action="reject" data-id="${esc(row.id)}" title="Reject"><i class="fa-solid fa-xmark"></i></button>` : ''}
-          </div>
-        </td>
-      </tr>
-    `).join('');
+    els.billRows.innerHTML = state.items.map((row) => {
+      const remaining = Number(row.remaining_amount || 0);
+      const canRepay = remaining > 0.009;
+      return `
+        <tr>
+          <td>
+            <strong>Bill #${esc(row.id)}</strong>
+            <div class="rp-note mt-1">${row.published_at ? `Published ${fmtDate(row.published_at)}` : 'Published bill'}</div>
+          </td>
+          <td>${esc(row.client_name || '—')}</td>
+          <td>${fmtDate(row.bill_date)}</td>
+          <td>${fmtDate(row.due_date)}</td>
+          <td style="font-weight:800;">${esc(money(row.total_amount || 0))}</td>
+          <td>${esc(money(row.paid_amount || 0))}</td>
+          <td style="font-weight:800;color:${canRepay ? '#c2410c' : '#15803d'};">${esc(money(remaining))}</td>
+          <td>
+            ${statusBadge(row)}
+            <div class="rp-note mt-1">${esc(row.repayment_count || 0)} repayment entr${Number(row.repayment_count || 0) === 1 ? 'y' : 'ies'}</div>
+          </td>
+          <td>
+            <div class="rp-inline-actions">
+              <button type="button" class="rp-mini-btn primary" data-action="view" data-id="${esc(row.id)}">
+                <i class="fa-solid fa-eye"></i>
+                View
+              </button>
+              <button type="button" class="rp-mini-btn" data-action="pdf" data-id="${esc(row.id)}">
+                <i class="fa-solid fa-file-pdf rp-accent"></i>
+                PDF
+              </button>
+              ${canRepay ? `<button type="button" class="rp-mini-btn success" data-action="repay" data-id="${esc(row.id)}">
+                <i class="fa-solid fa-plus"></i>
+                Repayment
+              </button>` : ''}
+            </div>
+          </td>
+        </tr>`;
+    }).join('');
     renderPager();
   }
 
-  async function loadRepayments() {
-    const params = new URLSearchParams({ page: state.page, per_page: 10 });
+  async function loadBills() {
+    const params = new URLSearchParams({ page: state.page, per_page: 10, view: 'bills', bucket: state.bucket });
     if (state.q) params.set('q', state.q);
-    if (state.status) params.set('status', state.status);
     if (state.clientId) params.set('client_id', state.clientId);
     const data = await fetchJSON(`${API_BASE}/client-bill-repayments?${params.toString()}`);
     state.items = Array.isArray(data.data) ? data.data : [];
@@ -522,112 +533,129 @@ body .modal-backdrop.stacked-tree-backdrop {
     renderRows();
   }
 
-  async function loadFormBills(clientId) {
-    if (!clientId) {
-      state.formBills = [];
-      els.formBillId.innerHTML = '<option value="">Choose a published bill</option>';
-      return;
-    }
-    const data = await fetchJSON(`${API_BASE}/client-bills?publish=published&client_id=${encodeURIComponent(clientId)}&per_page=100`);
-    state.formBills = Array.isArray(data.data) ? data.data : [];
-    els.formBillId.innerHTML = '<option value="">Choose a published bill</option>' + state.formBills.map((bill) => (
-      `<option value="${esc(bill.id)}">Bill #${esc(bill.id)} · ${esc(bill.client_name || '—')} · ${esc(money(bill.total_amount || 0))}</option>`
-    )).join('');
+  function syncBucketTabs() {
+    els.bucketTabs.querySelectorAll('.rp-tab').forEach((btn) => {
+      btn.classList.toggle('active', btn.dataset.bucket === state.bucket);
+    });
   }
 
-  function resetForm() {
+  function openRepaymentModalForBill(billId) {
+    const bill = state.items.find((item) => String(item.id) === String(billId));
+    if (!bill) return;
+    state.currentBill = bill;
     els.repaymentForm.reset();
     els.formRepaymentDate.value = new Date().toISOString().slice(0, 10);
-    state.formClientId = state.clientId || '';
-    state.pendingTreeClientId = '';
-    updateClientLabels();
-  }
-
-  async function openCreateModal() {
-    resetForm();
-    if (state.formClientId) {
-      await loadFormBills(state.formClientId);
-    } else {
-      await loadFormBills('');
-    }
+    els.formBillTitle.textContent = `Bill #${bill.id} · ${bill.client_name || '—'}`;
+    els.formBillTotal.textContent = money(bill.total_amount || 0);
+    els.formBillRemaining.textContent = money(bill.remaining_amount || 0);
+    els.formAmount.value = Number(bill.remaining_amount || 0).toFixed(2);
+    els.repaymentModalSubtitle.textContent = DIRECT_APPROVAL
+      ? 'This repayment will be approved immediately and reflected in bill balances right away.'
+      : 'This repayment will be submitted for approval and will reduce due balance after approval.';
     repaymentModal.show();
   }
 
-  async function openDetail(id) {
-    repaymentDetailModal.show();
-    els.repaymentDetailBody.innerHTML = '<div class="text-center text-muted py-4">Loading…</div>';
-    const data = await fetchJSON(`${API_BASE}/client-bill-repayments/${encodeURIComponent(id)}`);
-    const row = data.data || {};
-    const proofs = Array.isArray(row.attachments) ? row.attachments : [];
-    els.repaymentDetailBody.innerHTML = `
-      <div class="rp-detail-grid">
-        <div class="rp-detail-box"><small>Repayment</small><strong>#${esc(row.id || '—')}</strong></div>
-        <div class="rp-detail-box"><small>Bill</small><strong>#${esc(row.client_bill_id || '—')}</strong></div>
-        <div class="rp-detail-box"><small>Client</small><strong>${esc(row.client_name || '—')}</strong></div>
-        <div class="rp-detail-box"><small>Status</small><strong>${esc(String(row.status || 'pending').toUpperCase())}</strong></div>
-        <div class="rp-detail-box"><small>Repayment Date</small><strong>${fmtDate(row.repayment_date)}</strong></div>
-        <div class="rp-detail-box"><small>Amount</small><strong>${esc(money(row.amount || 0))}</strong></div>
+  async function openBillRepaymentsModal(billId) {
+    billRepaymentsModal.show();
+    els.billRepaymentsBody.innerHTML = '<div class="text-center text-muted py-4">Loading…</div>';
+
+    const summaryResp = await fetchJSON(`${API_BASE}/client-bill-repayments?view=bills&client_bill_id=${encodeURIComponent(billId)}&per_page=1`);
+    const summary = Array.isArray(summaryResp.data) && summaryResp.data.length ? summaryResp.data[0] : null;
+    const data = await fetchJSON(`${API_BASE}/client-bill-repayments?client_bill_id=${encodeURIComponent(billId)}&per_page=200`);
+    const rows = Array.isArray(data.data) ? data.data : [];
+
+    if (summary) {
+      els.billRepaymentsSubtitle.textContent = `Bill #${summary.id} · ${summary.client_name || '—'} · Remaining ${money(summary.remaining_amount || 0)}`;
+    } else {
+      els.billRepaymentsSubtitle.textContent = `Bill #${billId}`;
+    }
+
+    els.billRepaymentsBody.innerHTML = `
+      <div class="rp-detail-grid mb-3">
+        <div class="rp-detail-box"><small>Bill</small><strong>#${esc(summary?.id || billId)}</strong></div>
+        <div class="rp-detail-box"><small>Total</small><strong>${esc(money(summary?.total_amount || 0))}</strong></div>
+        <div class="rp-detail-box"><small>Paid</small><strong>${esc(money(summary?.paid_amount || 0))}</strong></div>
+        <div class="rp-detail-box"><small>Due</small><strong>${esc(money(summary?.remaining_amount || 0))}</strong></div>
+        <div class="rp-detail-box"><small>Bill Date</small><strong>${fmtDate(summary?.bill_date)}</strong></div>
+        <div class="rp-detail-box"><small>Due Date</small><strong>${fmtDate(summary?.due_date)}</strong></div>
+        <div class="rp-detail-box"><small>Published</small><strong>${fmtDate(summary?.published_at)}</strong></div>
       </div>
-      <div class="rp-line-card mt-3">
-        <small>Submitted By</small>
-        <strong>${esc(row.submitted_by_name || '—')}</strong>
-        <div class="text-muted small mt-1">${esc(String(row.submitted_by_role || '—').replaceAll('_', ' '))}</div>
-      </div>
-      <div class="rp-line-card mt-3">
-        <small>Approval</small>
-        <strong>${esc(row.approved_by_name || 'Pending')}</strong>
-        <div class="text-muted small mt-1">${row.approved_at ? `Updated ${fmtDate(row.approved_at)}` : 'No approval action yet.'}</div>
-        <div class="mt-2">${row.approval_note ? esc(row.approval_note) : '<span class="text-muted small">No approval note.</span>'}</div>
-      </div>
-      <div class="rp-line-card mt-3">
-        <small>Note</small>
-        <div>${row.note ? esc(row.note) : '<span class="text-muted small">No note added.</span>'}</div>
-      </div>
-      <div class="rp-line-card mt-3">
-        <small>Proof Files</small>
-        <div class="rp-proof-list">
-          ${proofs.length ? proofs.map((proof) => `<a class="rp-proof-link" href="${esc(proof.absolute_url || proof.relative_url || '#')}" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-paperclip"></i>${esc(proof.original_name || 'Attachment')}</a>`).join('') : '<span class="text-muted small">No proof files uploaded.</span>'}
+      <div class="rp-list-card">
+        <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
+          <div>
+            <small>Repayment History</small>
+            <strong>${rows.length ? `${rows.length} repayment entr${rows.length === 1 ? 'y' : 'ies'}` : 'No repayments yet'}</strong>
+          </div>
+          ${Number(summary?.remaining_amount || 0) > 0.009 ? `<button type="button" class="rp-mini-btn success" id="billModalRepayBtn" data-id="${esc(summary?.id || billId)}"><i class="fa-solid fa-plus"></i>Repayment</button>` : ''}
         </div>
-      </div>
-    `;
-  }
+        <div class="mt-3">
+          ${rows.length ? rows.map((row) => `
+            <div class="rp-line">
+              <div>
+                <div style="font-weight:800;">${esc(money(row.amount || 0))}</div>
+                <div class="rp-note mt-1">${fmtDate(row.repayment_date)} · ${esc(row.submitted_by_name || '—')}</div>
+                <div class="rp-note mt-1">${row.note ? esc(row.note) : 'No note'}</div>
+              </div>
+              <div style="text-align:right;min-width:180px">
+                <div>${Number(row.status === 'approved') ? '<span class="rp-badge paid">Approved</span>' : row.status === 'pending' ? '<span class="rp-badge pending">Pending</span>' : '<span class="rp-badge due">Rejected</span>'}</div>
+                <div class="rp-proof-list" style="align-items:flex-end;">
+                  ${Array.isArray(row.attachments) && row.attachments.length ? row.attachments.map((proof) => `<a class="rp-proof-link" href="${esc(proof.absolute_url || proof.relative_url || '#')}" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-paperclip"></i>${esc(proof.original_name || 'Attachment')}</a>`).join('') : '<span class="rp-note">No proof file</span>'}
+                </div>
+              </div>
+            </div>`).join('') : '<div class="rp-empty" style="padding:28px 12px;"><h3>No repayments yet</h3><p>Add the first repayment while this bill still has remaining balance.</p></div>'}
+        </div>
+      </div>`;
 
-  async function takeApprovalAction(id, action) {
-    const result = await Swal.fire({
-      title: action === 'approve' ? 'Approve repayment?' : 'Reject repayment?',
-      input: 'textarea',
-      inputLabel: 'Optional note',
-      inputPlaceholder: action === 'approve' ? 'Approval note' : 'Reason for rejection',
-      showCancelButton: true,
-      confirmButtonText: action === 'approve' ? 'Approve' : 'Reject',
-      icon: action === 'approve' ? 'question' : 'warning',
-    });
-    if (!result.isConfirmed) return;
+    els.billRepaymentsFooter.innerHTML = `
+      <div class="d-flex gap-2 ms-auto">
+        <button type="button" class="rp-btn" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="rp-btn" id="billModalPdfBtn" data-id="${esc(summary?.id || billId)}">
+          <i class="fa-solid fa-file-pdf"></i>
+          Download PDF
+        </button>
+      </div>`;
 
-    await fetchJSON(`${API_BASE}/client-bill-repayments/${encodeURIComponent(id)}/${action}`, {
-      method: 'PATCH',
-      headers: { ...headers, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ approval_note: result.value || null }),
-    });
-    toast('success', action === 'approve' ? 'Repayment approved' : 'Repayment rejected');
-    await loadRepayments();
+    const repayBtn = document.getElementById('billModalRepayBtn');
+    if (repayBtn) {
+      repayBtn.addEventListener('click', () => {
+        billRepaymentsModal.hide();
+        openRepaymentModalForBill(repayBtn.dataset.id);
+      });
+    }
+    const pdfBtn = document.getElementById('billModalPdfBtn');
+    if (pdfBtn) {
+      pdfBtn.addEventListener('click', async () => {
+        try {
+          await downloadBillPdf(pdfBtn.dataset.id);
+        } catch (error) {
+          Swal.fire({ icon:'error', title:'Download failed', text:String(error.message || error) });
+        }
+      });
+    }
   }
 
   async function submitRepayment(event) {
     event.preventDefault();
-    if (!state.formClientId) {
-      Swal.fire({ icon:'warning', title:'Client required', text:'Choose a client tree first.' });
+    if (!state.currentBill) {
+      Swal.fire({ icon:'warning', title:'Bill required', text:'Choose a bill first.' });
       return;
     }
-    if (!els.formBillId.value) {
-      Swal.fire({ icon:'warning', title:'Bill required', text:'Choose a published bill for this repayment.' });
+
+    const remaining = Number(state.currentBill.remaining_amount || 0);
+    const amount = Number(els.formAmount.value || 0);
+    if (!(amount > 0)) {
+      Swal.fire({ icon:'warning', title:'Amount required', text:'Enter a valid repayment amount.' });
+      return;
+    }
+    if (amount - remaining > 0.009) {
+      Swal.fire({ icon:'warning', title:'Amount too high', text:`Repayment cannot exceed remaining balance of ${money(remaining)}.` });
       return;
     }
 
     const formData = new FormData();
-    formData.append('client_bill_id', els.formBillId.value);
+    formData.append('client_bill_id', state.currentBill.id);
     formData.append('repayment_date', els.formRepaymentDate.value);
-    formData.append('amount', els.formAmount.value);
+    formData.append('amount', String(amount));
     if (els.formNote.value.trim()) formData.append('note', els.formNote.value.trim());
     Array.from(els.formAttachments.files || []).forEach((file) => formData.append('attachments[]', file));
 
@@ -643,9 +671,9 @@ body .modal-backdrop.stacked-tree-backdrop {
         const errors = data?.errors ? Object.entries(data.errors).map(([key, value]) => `${key}: ${[].concat(value).join(', ')}`).join('\n') : '';
         throw new Error(errors || data?.message || 'Unable to save repayment');
       }
-      toast('success', PORTAL_ROLE === 'client_user' ? 'Repayment submitted' : 'Repayment saved');
+      toast('success', DIRECT_APPROVAL ? 'Repayment saved' : 'Repayment submitted');
       repaymentModal.hide();
-      await loadRepayments();
+      await loadBills();
     } catch (error) {
       Swal.fire({ icon:'error', title:'Save failed', text:String(error.message || error) });
     } finally {
@@ -654,61 +682,43 @@ body .modal-backdrop.stacked-tree-backdrop {
   }
 
   let searchTimer;
-  els.repaymentSearch.addEventListener('input', () => {
+  els.billSearch.addEventListener('input', () => {
     clearTimeout(searchTimer);
     searchTimer = setTimeout(() => {
-      state.q = els.repaymentSearch.value.trim();
+      state.q = els.billSearch.value.trim();
       state.page = 1;
-      loadRepayments().catch((error) => {
-        els.repaymentRows.innerHTML = `<tr><td colspan="8" class="text-danger text-center py-4">${esc(error.message || error)}</td></tr>`;
+      loadBills().catch((error) => {
+        els.billRows.innerHTML = `<tr><td colspan="9" class="text-danger text-center py-4">${esc(error.message || error)}</td></tr>`;
       });
     }, 300);
   });
 
   els.clientFilterBtn.addEventListener('click', () => {
-    state.treeTarget = 'filter';
     state.pendingTreeClientId = state.clientId || '';
     renderClientTree();
-    treeModal.show();
-  });
-
-  els.formClientPickerBtn.addEventListener('click', () => {
-    state.treeTarget = 'form';
-    state.pendingTreeClientId = state.formClientId || '';
-    renderClientTree();
-    treeModal.show();
-  });
-
-  treeModalEl?.addEventListener('show.bs.modal', () => {
-    if (repaymentModalEl?.classList.contains('show')) {
-      repaymentModalEl.classList.add('stacked-underlay');
-    }
-  });
-  treeModalEl?.addEventListener('shown.bs.modal', () => {
-    const backdrops = Array.from(document.querySelectorAll('.modal-backdrop'));
-    const activeBackdrop = backdrops[backdrops.length - 1];
-    if (activeBackdrop) activeBackdrop.classList.add('stacked-tree-backdrop');
-  });
-  treeModalEl?.addEventListener('hidden.bs.modal', () => {
-    repaymentModalEl?.classList.remove('stacked-underlay');
-    document.querySelectorAll('.modal-backdrop.stacked-tree-backdrop').forEach((el) => el.classList.remove('stacked-tree-backdrop'));
+    clientTreeModal.show();
   });
 
   els.clearClientFilterBtn.addEventListener('click', () => {
     state.clientId = '';
     state.page = 1;
     updateClientLabels();
-    loadRepayments().catch(() => {});
+    loadBills().catch(() => {});
   });
 
-  els.statusFilter.addEventListener('change', () => {
-    state.status = els.statusFilter.value;
+  els.bucketTabs.addEventListener('click', (event) => {
+    const button = event.target.closest('.rp-tab[data-bucket]');
+    if (!button) return;
+    const nextBucket = button.dataset.bucket;
+    if (!nextBucket || nextBucket === state.bucket) return;
+    state.bucket = nextBucket;
     state.page = 1;
-    loadRepayments().catch(() => {});
+    syncBucketTabs();
+    loadBills().catch(() => {});
   });
 
-  els.refreshRepaymentsBtn.addEventListener('click', () => {
-    loadRepayments().catch(() => {});
+  els.refreshBillsBtn.addEventListener('click', () => {
+    loadBills().catch(() => {});
   });
 
   els.clientTreeSearch.addEventListener('input', renderClientTree);
@@ -729,60 +739,48 @@ body .modal-backdrop.stacked-tree-backdrop {
   });
 
   els.applyClientTreeBtn.addEventListener('click', async () => {
-    if (!state.pendingTreeClientId) {
-      Swal.fire({ icon:'warning', title:'Client required', text:'Select a client before continuing.' });
-      return;
-    }
-    if (state.treeTarget === 'form') {
-      state.formClientId = state.pendingTreeClientId || '';
-      updateClientLabels();
-      await loadFormBills(state.formClientId);
-    } else {
-      state.clientId = state.pendingTreeClientId || '';
-      state.page = 1;
-      updateClientLabels();
-      await loadRepayments();
-    }
-    treeModal.hide();
-  });
-
-  els.newRepaymentBtn.addEventListener('click', () => {
-    openCreateModal().catch((error) => {
-      Swal.fire({ icon:'error', title:'Unable to open form', text:String(error.message || error) });
-    });
+    state.clientId = state.pendingTreeClientId || '';
+    state.page = 1;
+    updateClientLabels();
+    await loadBills();
+    clientTreeModal.hide();
   });
 
   els.repaymentForm.addEventListener('submit', submitRepayment);
 
-  els.repaymentRows.addEventListener('click', (event) => {
+  els.billRows.addEventListener('click', (event) => {
     const button = event.target.closest('[data-action]');
     if (!button) return;
     const action = button.dataset.action;
     const id = button.dataset.id;
     if (action === 'view') {
-      openDetail(id).catch((error) => {
-        els.repaymentDetailBody.innerHTML = `<div class="text-danger">${esc(error.message || error)}</div>`;
+      openBillRepaymentsModal(id).catch((error) => {
+        els.billRepaymentsBody.innerHTML = `<div class="text-danger">${esc(error.message || error)}</div>`;
       });
       return;
     }
-    if (action === 'approve' || action === 'reject') {
-      takeApprovalAction(id, action).catch((error) => {
-        Swal.fire({ icon:'error', title:'Action failed', text:String(error.message || error) });
+    if (action === 'pdf') {
+      downloadBillPdf(id).catch((error) => {
+        Swal.fire({ icon:'error', title:'Download failed', text:String(error.message || error) });
       });
+      return;
+    }
+    if (action === 'repay') {
+      openRepaymentModalForBill(id);
     }
   });
 
-  els.repaymentPager.addEventListener('click', (event) => {
+  els.billPager.addEventListener('click', (event) => {
     const button = event.target.closest('button[data-page]');
     if (!button || button.disabled) return;
     const page = Number(button.dataset.page || 1);
     if (Number.isNaN(page) || page < 1 || page > state.totalPages || page === state.page) return;
     state.page = page;
-    loadRepayments().catch(() => {});
+    loadBills().catch(() => {});
   });
 
-  Promise.all([loadClients(), loadRepayments()]).catch((error) => {
-    els.repaymentRows.innerHTML = `<tr><td colspan="8" class="text-danger text-center py-4">${esc(error.message || error)}</td></tr>`;
+  Promise.all([loadClients(), loadBills()]).then(syncBucketTabs).catch((error) => {
+    els.billRows.innerHTML = `<tr><td colspan="9" class="text-danger text-center py-4">${esc(error.message || error)}</td></tr>`;
   });
 })();
 </script>

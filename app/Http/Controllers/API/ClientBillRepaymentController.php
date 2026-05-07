@@ -99,6 +99,44 @@ class ClientBillRepaymentController extends Controller
             );
     }
 
+    private function billSummaryQuery()
+    {
+        $repaymentSummary = DB::table('client_bill_repayments')
+            ->selectRaw(
+                'client_bill_id,
+                 ROUND(SUM(CASE WHEN status = "approved" THEN amount ELSE 0 END), 2) as approved_amount,
+                 ROUND(SUM(CASE WHEN status = "pending" THEN amount ELSE 0 END), 2) as pending_amount,
+                 COUNT(*) as repayment_count,
+                 SUM(CASE WHEN status = "approved" THEN 1 ELSE 0 END) as approved_count,
+                 SUM(CASE WHEN status = "pending" THEN 1 ELSE 0 END) as pending_count,
+                 SUM(CASE WHEN status = "rejected" THEN 1 ELSE 0 END) as rejected_count'
+            )
+            ->groupBy('client_bill_id');
+
+        return DB::table('client_bills as cb')
+            ->join('clients as c', 'c.id', '=', 'cb.client_id')
+            ->leftJoinSub($repaymentSummary, 'rps', function ($join) {
+                $join->on('rps.client_bill_id', '=', 'cb.id');
+            })
+            ->select(
+                'cb.id',
+                'cb.client_id',
+                'cb.bill_date',
+                'cb.due_date',
+                'cb.published_at',
+                'cb.total_amount',
+                'cb.is_published',
+                'c.name as client_name',
+                DB::raw('COALESCE(rps.approved_amount, 0) as paid_amount'),
+                DB::raw('COALESCE(rps.pending_amount, 0) as pending_amount'),
+                DB::raw('GREATEST(cb.total_amount - COALESCE(rps.approved_amount, 0), 0) as remaining_amount'),
+                DB::raw('COALESCE(rps.repayment_count, 0) as repayment_count'),
+                DB::raw('COALESCE(rps.approved_count, 0) as approved_count'),
+                DB::raw('COALESCE(rps.pending_count, 0) as pending_count'),
+                DB::raw('COALESCE(rps.rejected_count, 0) as rejected_count')
+            );
+    }
+
     private function resolveActorName(?string $role, ?int $id): ?string
     {
         $id = (int) ($id ?? 0);
@@ -223,12 +261,88 @@ class ClientBillRepaymentController extends Controller
             return $resp;
         }
 
+        $view = trim((string) $request->query('view', 'repayments'));
         $page = max(1, (int) $request->query('page', 1));
         $perPage = min(100, max(1, (int) $request->query('per_page', 10)));
         $clientId = (int) $request->query('client_id', 0);
         $billId = (int) $request->query('client_bill_id', 0);
         $status = trim((string) $request->query('status', ''));
+        $bucket = trim((string) $request->query('bucket', ''));
         $q = trim((string) $request->query('q', ''));
+
+        if ($view === 'bills') {
+            $query = $this->billSummaryQuery()->where('cb.is_published', 1);
+
+            $scopedClientIds = $this->scopedClientIdsForActor($request);
+            if ($scopedClientIds !== null) {
+                if (empty($scopedClientIds)) {
+                    return response()->json([
+                        'status' => 'success',
+                        'message' => 'No bill summaries found',
+                        'data' => [],
+                        'meta' => ['page' => 1, 'per_page' => $perPage, 'total' => 0, 'total_pages' => 0, 'last_page' => 0],
+                    ]);
+                }
+                $query->whereIn('cb.client_id', $scopedClientIds);
+            }
+
+            if ($clientId > 0) {
+                $this->ensureClientVisible($request, $clientId);
+                $query->whereIn('cb.client_id', $this->collectClientTreeIds($clientId));
+            }
+
+            if ($billId > 0) {
+                $query->where('cb.id', $billId);
+            }
+
+            if ($q !== '') {
+                $like = '%' . $q . '%';
+                $query->where(function ($sub) use ($like) {
+                    $sub->where('c.name', 'LIKE', $like)
+                        ->orWhereRaw('CAST(cb.id AS CHAR) LIKE ?', [$like]);
+                });
+            }
+
+            if ($bucket === 'due') {
+                $query->whereRaw('(cb.total_amount - COALESCE(rps.approved_amount, 0)) > 0.009');
+            } elseif ($bucket === 'paid') {
+                $query->whereRaw('(cb.total_amount - COALESCE(rps.approved_amount, 0)) <= 0.009');
+            }
+
+            $total = (clone $query)->count();
+            $totalPages = $total > 0 ? (int) ceil($total / $perPage) : 0;
+            if ($totalPages === 0) {
+                $page = 1;
+            } elseif ($page > $totalPages) {
+                $page = $totalPages;
+            }
+
+            $rows = $query
+                ->orderByRaw($bucket === 'paid' ? 'cb.bill_date desc, cb.id desc' : 'COALESCE(cb.due_date, cb.bill_date) asc, cb.id desc')
+                ->forPage($page, $perPage)
+                ->get()
+                ->map(function ($row) {
+                    $row->total_amount = (float) ($row->total_amount ?? 0);
+                    $row->paid_amount = (float) ($row->paid_amount ?? 0);
+                    $row->pending_amount = (float) ($row->pending_amount ?? 0);
+                    $row->remaining_amount = max(0, (float) ($row->remaining_amount ?? 0));
+                    $row->is_fully_paid = $row->remaining_amount <= 0.009;
+                    return $row;
+                });
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Bill repayment summary fetched',
+                'data' => $rows,
+                'meta' => [
+                    'page' => $page,
+                    'per_page' => $perPage,
+                    'total' => $total,
+                    'total_pages' => $totalPages,
+                    'last_page' => $totalPages,
+                ],
+            ]);
+        }
 
         $query = $this->baseQuery();
 

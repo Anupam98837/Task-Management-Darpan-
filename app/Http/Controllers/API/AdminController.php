@@ -50,9 +50,11 @@ class AdminController extends Controller
         $request->validate([
             'identifier' => 'required|string', // email or username
             'password'   => 'required|string',
+            'remember'   => 'sometimes|boolean',
         ]);
 
         $identifier = $request->identifier;
+        $remember = (bool) $request->boolean('remember', false);
 
         // Find admin by email or username
         $admin = DB::table('admins')
@@ -79,6 +81,7 @@ class AdminController extends Controller
         // Generate token (PLAINTEXT returned to client)
         $plainText = bin2hex(random_bytes(40));
         $hash = hash('sha256', $plainText);
+        $expiresAt = $remember ? now()->addDays(30) : now()->addHours(12);
 
         DB::table('personal_access_tokens')->insert([
             'tokenable_type' => 'admin',
@@ -86,6 +89,7 @@ class AdminController extends Controller
             'name'           => 'auth_token',
             'token'          => $hash,
             'abilities'      => json_encode(['*']),
+            'expires_at'     => $expiresAt,
             'created_at'     => now(),
             'updated_at'     => now(),
         ]);
@@ -109,6 +113,8 @@ class AdminController extends Controller
             'access_token'   => $plainText, // return plaintext to client
             'token_type'     => 'Bearer',
             'tokenable_type' => 'admin',
+            'remember'       => $remember,
+            'expires_at'     => $expiresAt?->toIso8601String(),
         ], 200);
     }
 
