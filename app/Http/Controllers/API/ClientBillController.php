@@ -207,8 +207,10 @@ class ClientBillController extends Controller
                 'client_bill_id,
                 COUNT(*) as repayment_count,
                 SUM(CASE WHEN status = ? THEN amount ELSE 0 END) as approved_repayment_amount,
-                SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as pending_repayment_count',
-                ['approved', 'pending']
+                SUM(CASE WHEN status = ? THEN amount ELSE 0 END) as pending_repayment_amount,
+                SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as pending_repayment_count,
+                SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as rejected_repayment_count',
+                ['approved', 'pending', 'pending', 'rejected']
             )
             ->groupBy('client_bill_id')
             ->get()
@@ -216,7 +218,9 @@ class ClientBillController extends Controller
             ->map(fn ($row) => [
                 'repayment_count' => (int) ($row->repayment_count ?? 0),
                 'approved_repayment_amount' => round((float) ($row->approved_repayment_amount ?? 0), 2),
+                'pending_repayment_amount' => round((float) ($row->pending_repayment_amount ?? 0), 2),
                 'pending_repayment_count' => (int) ($row->pending_repayment_count ?? 0),
+                'rejected_repayment_count' => (int) ($row->rejected_repayment_count ?? 0),
             ])
             ->all();
     }
@@ -226,12 +230,17 @@ class ClientBillController extends Controller
         $meta = $aggregateMap[(int) ($row->id ?? 0)] ?? [
             'repayment_count' => 0,
             'approved_repayment_amount' => 0,
+            'pending_repayment_amount' => 0,
             'pending_repayment_count' => 0,
+            'rejected_repayment_count' => 0,
         ];
 
         $row->repayment_count = (int) ($meta['repayment_count'] ?? 0);
         $row->approved_repayment_amount = round((float) ($meta['approved_repayment_amount'] ?? 0), 2);
+        $row->pending_repayment_amount = round((float) ($meta['pending_repayment_amount'] ?? 0), 2);
         $row->pending_repayment_count = (int) ($meta['pending_repayment_count'] ?? 0);
+        $row->rejected_repayment_count = (int) ($meta['rejected_repayment_count'] ?? 0);
+        $row->remaining_amount = round(max(0, (float) ($row->total_amount ?? 0) - (float) $row->approved_repayment_amount), 2);
 
         return $row;
     }
@@ -246,7 +255,10 @@ class ClientBillController extends Controller
         $row->items_count = $row->items->count();
         $row->repayment_count = $row->repayments->count();
         $row->approved_repayment_amount = round((float) $row->repayments->where('status', 'approved')->sum('amount'), 2);
+        $row->pending_repayment_amount = round((float) $row->repayments->where('status', 'pending')->sum('amount'), 2);
         $row->pending_repayment_count = (int) $row->repayments->where('status', 'pending')->count();
+        $row->rejected_repayment_count = (int) $row->repayments->where('status', 'rejected')->count();
+        $row->remaining_amount = round(max(0, (float) ($row->total_amount ?? 0) - (float) $row->approved_repayment_amount), 2);
         return $row;
     }
 

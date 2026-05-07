@@ -108,6 +108,19 @@ tbody td { padding:16px 18px; font-size:14px; color:var(--text-color); vertical-
 .detail-total { display:flex; justify-content:flex-end; margin-top:16px; font-size:18px; font-weight:800; color:#0f172a; }
 .table-link { background:none; border:none; color:#1d4ed8; padding:0; font-weight:700; text-align:left; cursor:pointer; }
 .notes-box { white-space:pre-wrap; color:var(--text-color); }
+.table-tabs { display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; padding:18px 20px 0; }
+.table-tab-list { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.table-tab-btn {
+  min-height:40px; padding:0 14px; border-radius:12px; border:1px solid #dbeafe; background:#eff6ff; color:#1d4ed8;
+  font-size:13px; font-weight:800; display:inline-flex; align-items:center; gap:8px; cursor:pointer;
+}
+.table-tab-btn.active { background:linear-gradient(135deg,#2377fc,#155eef); border-color:#2377fc; color:#fff; box-shadow:0 12px 22px rgba(35,119,252,.18); }
+.tab-badge { min-width:22px; height:22px; border-radius:999px; padding:0 7px; display:inline-flex; align-items:center; justify-content:center; background:rgba(255,255,255,.18); font-size:11px; }
+.table-panel { display:none; }
+.table-panel.active { display:block; }
+.proof-links { display:flex; flex-direction:column; gap:6px; }
+.proof-link { color:#1d4ed8; font-size:12px; font-weight:700; text-decoration:none; }
+.proof-link:hover { text-decoration:underline; }
 .btn.is-loading, .btn[aria-busy="true"] { pointer-events:none; opacity:.8; position:relative; }
 .btn.is-loading .btn-label { visibility:hidden; }
 .btn.is-loading::after { content:""; position:absolute; inset:0; margin:auto; width:18px; height:18px; border-radius:50%; border:2px solid rgba(255,255,255,.7); border-top-color:transparent; animation:spin .7s linear infinite; }
@@ -191,11 +204,6 @@ tbody td { padding:16px 18px; font-size:14px; color:var(--text-color); vertical-
       Export
     </button>
 
-    <a href="{{ $billingRepaymentsUrl }}" class="btn btn-secondary">
-      <i class="fa-solid fa-money-bill-transfer"></i>
-      Repayments
-    </a>
-
     <button id="addBillBtn" class="btn btn-primary" type="button">
       <i class="fa-solid fa-plus"></i>
       New Bill
@@ -203,29 +211,69 @@ tbody td { padding:16px 18px; font-size:14px; color:var(--text-color); vertical-
   </div>
 
   <div class="data-card">
-    <div class="table-container">
-      <table>
-        <thead>
-          <tr>
-            <th>Bill</th>
-            <th>Client</th>
-            <th>Bill Date</th>
-            <th>Due Date</th>
-            <th>Status</th>
-            <th>Total</th>
-            <th>Items</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="rows">
-          <tr><td colspan="8" class="text-center py-4">Loading…</td></tr>
-        </tbody>
-      </table>
+    <div class="table-tabs">
+      <div class="table-tab-list">
+        <button type="button" class="table-tab-btn active" id="tabBillsBtn">
+          Bills
+        </button>
+        <button type="button" class="table-tab-btn" id="tabPendingBtn">
+          Pending Repayments
+          <span class="tab-badge" id="pendingTabBadge">0</span>
+        </button>
+      </div>
+      <button type="button" class="btn btn-secondary" id="approveAllPendingBtn">
+        <i class="fa-solid fa-circle-check"></i>
+        Approve All Visible
+      </button>
     </div>
 
-    <div class="pagination">
-      <div id="paginationInfo">Showing 0-0 of 0 bills</div>
-      <div class="pagination-controls" id="pager"></div>
+    <div class="table-panel active" id="billsPanel">
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Bill</th>
+              <th>Client</th>
+              <th>Bill Date</th>
+              <th>Due Date</th>
+              <th>Status</th>
+              <th>Total</th>
+              <th>Paid</th>
+              <th>Due</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="rows">
+            <tr><td colspan="9" class="text-center py-4">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="pagination">
+        <div id="paginationInfo">Showing 0-0 of 0 bills</div>
+        <div class="pagination-controls" id="pager"></div>
+      </div>
+    </div>
+
+    <div class="table-panel" id="pendingPanel">
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Bill</th>
+              <th>Client</th>
+              <th>Repayment Date</th>
+              <th>Amount</th>
+              <th>Submitted By</th>
+              <th>Proof</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="pendingRows">
+            <tr><td colspan="7" class="text-center py-4">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </div>
@@ -333,6 +381,54 @@ tbody td { padding:16px 18px; font-size:14px; color:var(--text-color); vertical-
   </div>
 </div>
 
+<div class="modal fade" id="repaymentModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <form id="repaymentForm" autocomplete="off">
+        <div class="modal-header">
+          <div>
+            <h5 class="modal-title mb-1">Add Repayment</h5>
+            <div class="muted-small" id="repaymentBillMeta">Select repayment details for this published bill.</div>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="repayment_bill_id">
+          <div class="detail-grid">
+            <div class="detail-box"><small>Bill</small><strong id="repaymentBillTitle">—</strong></div>
+            <div class="detail-box"><small>Remaining</small><strong id="repaymentRemaining">Rs 0.00</strong></div>
+          </div>
+          <div class="row g-3 mt-1">
+            <div class="col-md-6">
+              <label class="form-label">Repayment Date <span class="text-danger">*</span></label>
+              <input id="repayment_date" type="date" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Amount <span class="text-danger">*</span></label>
+              <input id="repayment_amount" type="number" min="0.01" step="0.01" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Proof Files</label>
+              <input id="repayment_files" type="file" class="form-control" multiple>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Note</label>
+              <textarea id="repayment_note" class="form-control" placeholder="Optional note"></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <div class="muted-small">Repayments created here stay inside the same bill flow.</div>
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="saveRepaymentBtn"><span class="btn-label">Save Repayment</span></button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
@@ -350,6 +446,7 @@ tbody td { padding:16px 18px; font-size:14px; color:var(--text-color); vertical-
   const billModal = new bootstrap.Modal(document.getElementById('billModal'));
   const billDetailModal = new bootstrap.Modal(document.getElementById('billDetailModal'));
   const clientFilterModal = new bootstrap.Modal(document.getElementById('clientFilterModal'));
+  const repaymentModal = new bootstrap.Modal(document.getElementById('repaymentModal'));
 
   const state = {
     page: 1,
@@ -364,12 +461,22 @@ tbody td { padding:16px 18px; font-size:14px; color:var(--text-color); vertical-
     billHeads: [],
     editingBill: null,
     pendingClientId: '',
+    pendingRepayments: [],
+    activeTab: 'bills',
+    repaymentBill: null,
   };
 
   const els = {
     rows: document.getElementById('rows'),
     pager: document.getElementById('pager'),
     paginationInfo: document.getElementById('paginationInfo'),
+    tabBillsBtn: document.getElementById('tabBillsBtn'),
+    tabPendingBtn: document.getElementById('tabPendingBtn'),
+    billsPanel: document.getElementById('billsPanel'),
+    pendingPanel: document.getElementById('pendingPanel'),
+    pendingRows: document.getElementById('pendingRows'),
+    pendingTabBadge: document.getElementById('pendingTabBadge'),
+    approveAllPendingBtn: document.getElementById('approveAllPendingBtn'),
     searchInput: document.getElementById('searchInput'),
     clientFilterBtn: document.getElementById('clientFilterBtn'),
     clientFilterLabel: document.getElementById('clientFilterLabel'),
@@ -398,6 +505,16 @@ tbody td { padding:16px 18px; font-size:14px; color:var(--text-color); vertical-
     formTotal: document.getElementById('formTotal'),
     saveBillBtn: document.getElementById('saveBillBtn'),
     billDetailBody: document.getElementById('billDetailBody'),
+    repaymentForm: document.getElementById('repaymentForm'),
+    repaymentBillId: document.getElementById('repayment_bill_id'),
+    repaymentBillTitle: document.getElementById('repaymentBillTitle'),
+    repaymentBillMeta: document.getElementById('repaymentBillMeta'),
+    repaymentRemaining: document.getElementById('repaymentRemaining'),
+    repaymentDate: document.getElementById('repayment_date'),
+    repaymentAmount: document.getElementById('repayment_amount'),
+    repaymentFiles: document.getElementById('repayment_files'),
+    repaymentNote: document.getElementById('repayment_note'),
+    saveRepaymentBtn: document.getElementById('saveRepaymentBtn'),
   };
 
   const money = (value) => `Rs ${Number(value || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -410,6 +527,15 @@ tbody td { padding:16px 18px; font-size:14px; color:var(--text-color); vertical-
   };
   const statusBadge = (row) => row.is_published ? '<span class="badge published">Published</span>' : '<span class="badge draft">Draft</span>';
   const toast = (icon, title) => Swal.fire({ toast:true, position:'top-end', showConfirmButton:false, timer:1800, icon, title });
+
+  function syncTabs() {
+    const isBills = state.activeTab === 'bills';
+    els.tabBillsBtn.classList.toggle('active', isBills);
+    els.tabPendingBtn.classList.toggle('active', !isBills);
+    els.billsPanel.classList.toggle('active', isBills);
+    els.pendingPanel.classList.toggle('active', !isBills);
+    els.approveAllPendingBtn.style.display = isBills ? 'none' : '';
+  }
 
   function setBtnLoading(btn, on) {
     btn.classList.toggle('is-loading', !!on);
@@ -553,6 +679,7 @@ tbody td { padding:16px 18px; font-size:14px; color:var(--text-color); vertical-
     els.statPublishedBills.textContent = String(publishedCount);
     els.statDraftBills.textContent = String(draftCount);
     els.statVisibleAmount.textContent = money(visibleAmount);
+    els.pendingTabBadge.textContent = String(state.pendingRepayments.length || 0);
   }
 
   function exportBills() {
@@ -590,7 +717,7 @@ tbody td { padding:16px 18px; font-size:14px; color:var(--text-color); vertical-
     if (!state.items.length) {
       els.rows.innerHTML = `
         <tr>
-          <td colspan="8">
+          <td colspan="9">
             <div class="empty-state">
               <h3>No client bills found</h3>
               <p>Adjust filters or create a new draft bill.</p>
@@ -612,14 +739,61 @@ tbody td { padding:16px 18px; font-size:14px; color:var(--text-color); vertical-
         <td>${esc(fmtDate(row.due_date))}</td>
         <td>${statusBadge(row)}</td>
         <td style="font-weight:700">${esc(money(row.total_amount))}</td>
-        <td>${esc(row.items_count || 0)}</td>
+        <td>${esc(money(row.approved_repayment_amount || 0))}</td>
+        <td style="font-weight:700;color:${Number(row.remaining_amount || 0) > 0.009 ? '#c2410c' : '#15803d'};">${esc(money(row.remaining_amount ?? row.total_amount ?? 0))}</td>
         <td>
           <div class="actions-cell">
             <button class="btn-icon" type="button" data-action="view" data-id="${esc(row.id)}" title="View"><i class="fa-solid fa-eye"></i></button>
             ${row.is_published ? `<button class="btn-icon" type="button" data-action="pdf" data-id="${esc(row.id)}" title="Download PDF"><i class="fa-solid fa-file-pdf"></i></button>` : ''}
+            ${row.is_published && Number(row.remaining_amount || 0) > 0.009 ? `<button class="btn-icon" type="button" data-action="repay" data-id="${esc(row.id)}" title="Add Repayment"><i class="fa-solid fa-money-bill-transfer"></i></button>` : ''}
             ${row.is_published ? '' : `<button class="btn-icon" type="button" data-action="edit" data-id="${esc(row.id)}" title="Edit"><i class="fa-solid fa-pen"></i></button>`}
             ${row.is_published ? '' : `<button class="btn-icon" type="button" data-action="publish" data-id="${esc(row.id)}" title="Publish"><i class="fa-solid fa-paper-plane"></i></button>`}
             ${row.is_published ? '' : `<button class="btn-icon" type="button" data-action="delete" data-id="${esc(row.id)}" title="Delete"><i class="fa-solid fa-trash"></i></button>`}
+          </div>
+        </td>
+      </tr>`).join('');
+    renderStats();
+  }
+
+  function renderPendingRepayments() {
+    if (!state.pendingRepayments.length) {
+      els.pendingRows.innerHTML = `
+        <tr>
+          <td colspan="7">
+            <div class="empty-state">
+              <h3>No pending repayments</h3>
+              <p>New client repayment submissions will appear here for approval.</p>
+            </div>
+          </td>
+        </tr>`;
+      renderStats();
+      return;
+    }
+
+    els.pendingRows.innerHTML = state.pendingRepayments.map((row) => `
+      <tr data-id="${esc(row.id)}">
+        <td>
+          <button type="button" class="table-link" data-pending-action="view-bill" data-bill-id="${esc(row.client_bill_id)}">Bill #${esc(row.client_bill_id)}</button>
+        </td>
+        <td>${esc(row.client_name || '—')}</td>
+        <td>${esc(fmtDate(row.repayment_date))}</td>
+        <td style="font-weight:700">${esc(money(row.amount || 0))}</td>
+        <td>
+          <strong>${esc(row.submitted_by_name || '—')}</strong>
+          <div class="muted-small">${esc(String(row.submitted_by_role || 'client_user').replaceAll('_', ' '))}</div>
+        </td>
+        <td>
+          <div class="proof-links">
+            ${Array.isArray(row.attachments) && row.attachments.length ? row.attachments.map((proof) => `
+              <a class="proof-link" href="${esc(proof.absolute_url || proof.relative_url || '#')}" target="_blank" rel="noopener noreferrer">
+                <i class="fa-solid fa-paperclip"></i> ${esc(proof.original_name || 'Attachment')}
+              </a>`).join('') : '<span class="muted-small">No proof files</span>'}
+          </div>
+        </td>
+        <td>
+          <div class="actions-cell">
+            <button class="btn-icon" type="button" data-pending-action="approve" data-id="${esc(row.id)}" title="Approve"><i class="fa-solid fa-circle-check"></i></button>
+            <button class="btn-icon" type="button" data-pending-action="reject" data-id="${esc(row.id)}" title="Reject"><i class="fa-solid fa-circle-xmark"></i></button>
           </div>
         </td>
       </tr>`).join('');
@@ -661,6 +835,26 @@ tbody td { padding:16px 18px; font-size:14px; color:var(--text-color); vertical-
     state.totalPages = Number(data?.meta?.total_pages || 1);
     renderRows();
     renderPager();
+  }
+
+  async function fetchPendingRepayments() {
+    const params = new URLSearchParams({
+      status: 'pending',
+      per_page: 200,
+    });
+    if (state.q) params.set('q', state.q);
+    if (state.clientId) params.set('client_id', state.clientId);
+
+    const res = await fetch(`${API_BASE}/client-bill-repayments?${params.toString()}`, { headers });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data?.message || 'Failed to load pending repayments');
+
+    state.pendingRepayments = Array.isArray(data.data) ? data.data : [];
+    renderPendingRepayments();
+  }
+
+  async function refreshPageData() {
+    await Promise.all([fetchBills(), fetchPendingRepayments()]);
   }
 
   function updateFormTotal() {
@@ -777,6 +971,8 @@ tbody td { padding:16px 18px; font-size:14px; color:var(--text-color); vertical-
         <div class="detail-box"><small>Due Date</small><strong>${esc(fmtDate(bill.due_date))}</strong></div>
         <div class="detail-box"><small>Status</small><strong>${bill.is_published ? 'Published' : 'Draft'}</strong></div>
         <div class="detail-box"><small>Published Date</small><strong>${esc(fmtDate(bill.published_at))}</strong></div>
+        <div class="detail-box"><small>Paid</small><strong>${esc(money(bill.approved_repayment_amount || 0))}</strong></div>
+        <div class="detail-box"><small>Due</small><strong>${esc(money(bill.remaining_amount ?? bill.total_amount ?? 0))}</strong></div>
       </div>
       <div class="section-card mt-3">
         <h6 class="section-title">Notes</h6>
@@ -802,14 +998,145 @@ tbody td { padding:16px 18px; font-size:14px; color:var(--text-color); vertical-
             <div class="detail-item">
               <div>
                 <strong>${esc(fmtDate(repayment.repayment_date))}</strong>
-                <div class="muted-small">${esc(String(repayment.status || 'pending').replaceAll('_', ' '))}</div>
+                <div class="muted-small">${esc(String(repayment.status || 'pending').replaceAll('_', ' '))} · ${esc(repayment.submitted_by_name || '—')}</div>
+                <div class="muted-small">${repayment.note ? esc(repayment.note) : 'No note'}</div>
+                ${(Array.isArray(repayment.attachments) && repayment.attachments.length) ? `<div class="proof-links mt-2">${repayment.attachments.map((proof) => `
+                  <a class="proof-link" href="${esc(proof.absolute_url || proof.relative_url || '#')}" target="_blank" rel="noopener noreferrer">
+                    <i class="fa-solid fa-paperclip"></i> ${esc(proof.original_name || 'Attachment')}
+                  </a>`).join('')}</div>` : '<div class="muted-small">No proof files</div>'}
               </div>
-              <div style="font-weight:700">${esc(money(repayment.amount || 0))}</div>
+              <div style="text-align:right">
+                <div style="font-weight:700">${esc(money(repayment.amount || 0))}</div>
+                ${repayment.status === 'pending' ? `<div class="actions-cell mt-2" style="justify-content:flex-end;">
+                  <button class="btn-icon" type="button" data-detail-action="approve" data-id="${esc(repayment.id)}" title="Approve"><i class="fa-solid fa-circle-check"></i></button>
+                  <button class="btn-icon" type="button" data-detail-action="reject" data-id="${esc(repayment.id)}" title="Reject"><i class="fa-solid fa-circle-xmark"></i></button>
+                </div>` : ''}
+              </div>
             </div>`).join('') : '<div class="muted-small">No repayments recorded yet.</div>'}
         </div>
       </div>
+      ${bill.is_published && Number(bill.remaining_amount || 0) > 0.009 ? `
+        <div class="section-card mt-3">
+          <button type="button" class="btn btn-primary" data-detail-action="repay" data-bill-id="${esc(bill.id)}">
+            <i class="fa-solid fa-money-bill-transfer"></i>
+            Add Repayment
+          </button>
+        </div>` : ''}
       <div class="detail-total">Total: <span class="ms-2">${esc(money(bill.total_amount))}</span></div>
       `;
+  }
+
+  function openRepaymentModalForBill(billId) {
+    const bill = state.items.find((row) => String(row.id) === String(billId));
+    if (!bill || !bill.is_published) {
+      Swal.fire({ icon:'warning', title:'Published bill required', text:'Repayments can only be added to published bills.' });
+      return;
+    }
+    state.repaymentBill = bill;
+    els.repaymentForm.reset();
+    els.repaymentBillId.value = String(bill.id);
+    els.repaymentBillTitle.textContent = `Bill #${bill.id} · ${bill.client_name || '—'}`;
+    els.repaymentBillMeta.textContent = `Total ${money(bill.total_amount || 0)} · Paid ${money(bill.approved_repayment_amount || 0)}`;
+    els.repaymentRemaining.textContent = money(bill.remaining_amount ?? bill.total_amount ?? 0);
+    els.repaymentDate.value = new Date().toISOString().slice(0, 10);
+    els.repaymentAmount.value = Number(bill.remaining_amount || 0).toFixed(2);
+    repaymentModal.show();
+  }
+
+  async function submitRepayment(event) {
+    event.preventDefault();
+    if (!state.repaymentBill) return;
+
+    const amount = Number(els.repaymentAmount.value || 0);
+    const remaining = Number(state.repaymentBill.remaining_amount || 0);
+    if (!(amount > 0)) {
+      Swal.fire({ icon:'warning', title:'Amount required', text:'Enter a valid repayment amount.' });
+      return;
+    }
+    if (amount - remaining > 0.009) {
+      Swal.fire({ icon:'warning', title:'Amount too high', text:`Repayment cannot exceed remaining due of ${money(remaining)}.` });
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('client_bill_id', String(state.repaymentBill.id));
+    formData.append('repayment_date', els.repaymentDate.value);
+    formData.append('amount', String(amount));
+    if (els.repaymentNote.value.trim()) formData.append('note', els.repaymentNote.value.trim());
+    Array.from(els.repaymentFiles.files || []).forEach((file) => formData.append('attachments[]', file));
+
+    setBtnLoading(els.saveRepaymentBtn, true);
+    try {
+      const res = await fetch(`${API_BASE}/client-bill-repayments`, {
+        method: 'POST',
+        headers,
+        body: formData,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.message || 'Failed to save repayment');
+      toast('success', 'Repayment added');
+      repaymentModal.hide();
+      await refreshPageData();
+    } catch (error) {
+      Swal.fire({ icon:'error', title:'Repayment failed', text:String(error.message || error) });
+    } finally {
+      setBtnLoading(els.saveRepaymentBtn, false);
+    }
+  }
+
+  async function decideRepayment(id, action) {
+    const confirm = await Swal.fire({
+      title: action === 'approve' ? 'Approve repayment?' : 'Reject repayment?',
+      input: 'text',
+      inputLabel: 'Approval note',
+      inputPlaceholder: action === 'approve' ? 'Optional approval note' : 'Optional rejection note',
+      icon: action === 'approve' ? 'question' : 'warning',
+      showCancelButton: true,
+      confirmButtonText: action === 'approve' ? 'Approve' : 'Reject',
+      confirmButtonColor: action === 'approve' ? '#2563eb' : '#dc2626',
+    });
+    if (!confirm.isConfirmed) return;
+
+    const res = await fetch(`${API_BASE}/client-bill-repayments/${encodeURIComponent(id)}/${action}`, {
+      method: 'PATCH',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ approval_note: confirm.value || null }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data?.message || `Failed to ${action} repayment`);
+    toast('success', action === 'approve' ? 'Repayment approved' : 'Repayment rejected');
+    await refreshPageData();
+  }
+
+  async function approveAllVisiblePending() {
+    if (!state.pendingRepayments.length) {
+      Swal.fire({ icon:'info', title:'Nothing pending', text:'No pending repayments are visible in this view.' });
+      return;
+    }
+    const confirm = await Swal.fire({
+      title: 'Approve all visible pending repayments?',
+      text: `This will approve ${state.pendingRepayments.length} pending repayment(s).`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Approve All',
+    });
+    if (!confirm.isConfirmed) return;
+
+    try {
+      for (const repayment of state.pendingRepayments) {
+        const res = await fetch(`${API_BASE}/client-bill-repayments/${encodeURIComponent(repayment.id)}/approve`, {
+          method: 'PATCH',
+          headers: { ...headers, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ approval_note: 'Approved from bills page' }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data?.message || `Failed to approve repayment #${repayment.id}`);
+      }
+      toast('success', 'All visible repayments approved');
+      await refreshPageData();
+    } catch (error) {
+      Swal.fire({ icon:'error', title:'Bulk approval failed', text:String(error.message || error) });
+    }
   }
 
   async function downloadBillPdf(id) {
@@ -886,7 +1213,7 @@ tbody td { padding:16px 18px; font-size:14px; color:var(--text-color); vertical-
       }
       toast('success', isEdit ? 'Client bill updated' : 'Client bill created');
       billModal.hide();
-      await fetchBills();
+      await refreshPageData();
     } catch (error) {
       Swal.fire({ icon:'error', title:'Save failed', text:String(error.message || error) });
     } finally {
@@ -908,7 +1235,7 @@ tbody td { padding:16px 18px; font-size:14px; color:var(--text-color); vertical-
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data?.message || 'Failed to publish bill');
     toast('success', 'Client bill published');
-    await fetchBills();
+    await refreshPageData();
   }
 
   async function deleteBill(id) {
@@ -926,7 +1253,7 @@ tbody td { padding:16px 18px; font-size:14px; color:var(--text-color); vertical-
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data?.message || 'Failed to delete bill');
     toast('success', 'Draft bill deleted');
-    await fetchBills();
+    await refreshPageData();
   }
 
   els.addBillBtn.addEventListener('click', () => {
@@ -934,10 +1261,16 @@ tbody td { padding:16px 18px; font-size:14px; color:var(--text-color); vertical-
     window.location.href = `{{ $billingBuilderUrl }}${clientId}`;
   });
   els.exportBillsBtn.addEventListener('click', exportBills);
+  els.tabBillsBtn.addEventListener('click', () => { state.activeTab = 'bills'; syncTabs(); });
+  els.tabPendingBtn.addEventListener('click', () => { state.activeTab = 'pending'; syncTabs(); });
+  els.approveAllPendingBtn.addEventListener('click', () => approveAllVisiblePending().catch((error) => {
+    Swal.fire({ icon:'error', title:'Bulk approval failed', text:String(error.message || error) });
+  }));
 
   els.addItemBtn.addEventListener('click', () => addItemRow());
   els.billForm.addEventListener('submit', saveBill);
-  els.refreshBtn.addEventListener('click', () => fetchBills().catch((error) => Swal.fire({ icon:'error', title:'Refresh failed', text:String(error.message || error) })));
+  els.repaymentForm.addEventListener('submit', submitRepayment);
+  els.refreshBtn.addEventListener('click', () => refreshPageData().catch((error) => Swal.fire({ icon:'error', title:'Refresh failed', text:String(error.message || error) })));
 
   let searchTimer;
   els.searchInput.addEventListener('input', () => {
@@ -945,7 +1278,7 @@ tbody td { padding:16px 18px; font-size:14px; color:var(--text-color); vertical-
     searchTimer = setTimeout(() => {
       state.q = els.searchInput.value.trim();
       state.page = 1;
-      fetchBills().catch((error) => Swal.fire({ icon:'error', title:'Search failed', text:String(error.message || error) }));
+      refreshPageData().catch((error) => Swal.fire({ icon:'error', title:'Search failed', text:String(error.message || error) }));
     }, 300);
   });
 
@@ -960,7 +1293,7 @@ tbody td { padding:16px 18px; font-size:14px; color:var(--text-color); vertical-
     state.pendingClientId = '';
     updateClientFilterLabel();
     state.page = 1;
-    fetchBills().catch((error) => Swal.fire({ icon:'error', title:'Filter failed', text:String(error.message || error) }));
+    refreshPageData().catch((error) => Swal.fire({ icon:'error', title:'Filter failed', text:String(error.message || error) }));
   });
   els.clientTreeSearch.addEventListener('input', renderClientTree);
   els.clientTreeShell.addEventListener('change', (event) => {
@@ -974,13 +1307,13 @@ tbody td { padding:16px 18px; font-size:14px; color:var(--text-color); vertical-
     updateClientFilterLabel();
     clientFilterModal.hide();
     state.page = 1;
-    fetchBills().catch((error) => Swal.fire({ icon:'error', title:'Filter failed', text:String(error.message || error) }));
+    refreshPageData().catch((error) => Swal.fire({ icon:'error', title:'Filter failed', text:String(error.message || error) }));
   });
 
   els.publishFilter.addEventListener('change', () => {
     state.publish = els.publishFilter.value;
     state.page = 1;
-    fetchBills().catch((error) => Swal.fire({ icon:'error', title:'Filter failed', text:String(error.message || error) }));
+    refreshPageData().catch((error) => Swal.fire({ icon:'error', title:'Filter failed', text:String(error.message || error) }));
   });
 
   els.pager.addEventListener('click', (event) => {
@@ -1003,6 +1336,7 @@ tbody td { padding:16px 18px; font-size:14px; color:var(--text-color); vertical-
     try {
       if (action === 'view') await openDetailModal(id);
       if (action === 'pdf') await downloadBillPdf(id);
+      if (action === 'repay') openRepaymentModalForBill(id);
       if (action === 'edit') await openEditModal(id);
       if (action === 'publish') await publishBill(id);
       if (action === 'delete') await deleteBill(id);
@@ -1011,14 +1345,43 @@ tbody td { padding:16px 18px; font-size:14px; color:var(--text-color); vertical-
     }
   });
 
+  els.pendingRows.addEventListener('click', async (event) => {
+    const trigger = event.target.closest('[data-pending-action]');
+    if (!trigger) return;
+    try {
+      if (trigger.dataset.pendingAction === 'view-bill') await openDetailModal(trigger.dataset.billId);
+      if (trigger.dataset.pendingAction === 'approve') await decideRepayment(trigger.dataset.id, 'approve');
+      if (trigger.dataset.pendingAction === 'reject') await decideRepayment(trigger.dataset.id, 'reject');
+    } catch (error) {
+      Swal.fire({ icon:'error', title:'Approval action failed', text:String(error.message || error) });
+    }
+  });
+
+  els.billDetailBody.addEventListener('click', async (event) => {
+    const trigger = event.target.closest('[data-detail-action]');
+    if (!trigger) return;
+    try {
+      if (trigger.dataset.detailAction === 'repay') {
+        billDetailModal.hide();
+        openRepaymentModalForBill(trigger.dataset.billId);
+      }
+      if (trigger.dataset.detailAction === 'approve') await decideRepayment(trigger.dataset.id, 'approve');
+      if (trigger.dataset.detailAction === 'reject') await decideRepayment(trigger.dataset.id, 'reject');
+    } catch (error) {
+      Swal.fire({ icon:'error', title:'Repayment action failed', text:String(error.message || error) });
+    }
+  });
+
   async function init() {
     try {
       await Promise.all([fetchClients(), fetchBillHeads()]);
       resetForm();
-      await fetchBills();
+      syncTabs();
+      await refreshPageData();
     } catch (error) {
       Swal.fire({ icon:'error', title:'Unable to load billing page', text:String(error.message || error) });
-      els.rows.innerHTML = `<tr><td colspan="8" class="text-center text-danger py-4">Unable to load client bills.</td></tr>`;
+      els.rows.innerHTML = `<tr><td colspan="9" class="text-center text-danger py-4">Unable to load client bills.</td></tr>`;
+      els.pendingRows.innerHTML = `<tr><td colspan="7" class="text-center text-danger py-4">Unable to load pending repayments.</td></tr>`;
     }
   }
 

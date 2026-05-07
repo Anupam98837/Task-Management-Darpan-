@@ -663,7 +663,6 @@ html.theme-dark .btn-secondary { background: rgba(255,255,255,0.02); border-colo
         </a>
         <div id="sm-accounting" class="submenu" role="group" aria-label="Accounting submenu">
           <a href="/admin/accounting/client-bills" class="nav-link">Client Bills</a>
-          <a href="/admin/accounting/repayments" class="nav-link">Repayments</a>
           <a href="/admin/accounting/bill-heads/create" class="nav-link">Create Bill Head</a>
           <a href="/admin/accounting/bill-heads/manage" class="nav-link">Bill Head Library</a>
           <a href="/admin/accountant-users/manage" class="nav-link">Accountants</a>

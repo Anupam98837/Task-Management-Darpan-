@@ -66,6 +66,9 @@
 .tree-meta { display:flex; flex-direction:column; gap:3px; }
 .tree-meta strong { font-size:14px; color:#0f172a; }
 .tree-meta small { color:#94a3b8; font-size:12px; }
+.proof-links { display:flex; flex-direction:column; gap:6px; margin-top:8px; }
+.proof-link { color:#1d4ed8; font-size:12px; font-weight:700; text-decoration:none; }
+.proof-link:hover { text-decoration:underline; }
 @media (max-width: 768px) {
   .client-bills-page { padding:16px; }
   .detail-grid { grid-template-columns: 1fr; }
@@ -99,10 +102,6 @@
       <i class="fa-solid fa-file-export"></i>
       Export
     </button>
-    <a href="/client-user/repayments" class="cb-btn">
-      <i class="fa-solid fa-money-bill-transfer"></i>
-      Repayments
-    </a>
   </div>
 
   <div class="cb-card">
@@ -115,12 +114,14 @@
             <th>Bill Date</th>
             <th>Due Date</th>
             <th>Total</th>
+            <th>Paid</th>
+            <th>Due</th>
             <th>Status</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody id="billRows">
-          <tr><td colspan="7" class="text-center py-4">Loading…</td></tr>
+          <tr><td colspan="9" class="text-center py-4">Loading…</td></tr>
         </tbody>
       </table>
     </div>
@@ -174,6 +175,56 @@
     </div>
   </div>
 </div>
+
+<div class="modal fade" id="repaymentModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <form id="repaymentForm" autocomplete="off">
+        <div class="modal-header">
+          <div>
+            <h5 class="modal-title mb-1">Submit Repayment</h5>
+            <div class="text-muted small" id="repaymentBillMeta">This repayment will be submitted for approval.</div>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="repayment_bill_id">
+          <div class="detail-grid">
+            <div class="detail-box"><small>Bill</small><strong id="repaymentBillTitle">—</strong></div>
+            <div class="detail-box"><small>Remaining</small><strong id="repaymentRemaining">Rs 0.00</strong></div>
+          </div>
+          <div class="row g-3 mt-1">
+            <div class="col-md-6">
+              <label class="form-label">Repayment Date <span class="text-danger">*</span></label>
+              <input id="repayment_date" type="date" class="cb-filter" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Amount <span class="text-danger">*</span></label>
+              <input id="repayment_amount" type="number" min="0.01" step="0.01" class="cb-filter" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Proof Files</label>
+              <input id="repayment_files" type="file" class="cb-filter" multiple>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Note</label>
+              <textarea id="repayment_note" class="cb-filter" style="height:auto;padding:10px 14px;" rows="4" placeholder="Optional note"></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <div class="d-flex gap-2 ms-auto">
+            <button type="button" class="cb-btn" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="cb-btn" id="saveRepaymentBtn">
+              <i class="fa-solid fa-paper-plane"></i>
+              Submit
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 @endsection
 
 @push('scripts')
@@ -187,7 +238,8 @@
   const headers = { 'Authorization': 'Bearer ' + TOKEN, 'Accept': 'application/json' };
   const detailModal = new bootstrap.Modal(document.getElementById('billDetailModal'));
   const treeModal = new bootstrap.Modal(document.getElementById('clientTreeModal'));
-  const state = { page: 1, total: 0, totalPages: 1, q: '', clientId: '', items: [], clients: [], clientTreeRoots: [], pendingClientId: '' };
+  const repaymentModal = new bootstrap.Modal(document.getElementById('repaymentModal'));
+  const state = { page: 1, total: 0, totalPages: 1, q: '', clientId: '', items: [], clients: [], clientTreeRoots: [], pendingClientId: '', repaymentBill: null };
   const els = {
     billSearch: document.getElementById('billSearch'),
     clientFilterBtn: document.getElementById('clientFilterBtn'),
@@ -198,6 +250,16 @@
     pager: document.getElementById('pager'),
     billDetailBody: document.getElementById('billDetailBody'),
     exportBillsBtn: document.getElementById('exportBillsBtn'),
+    repaymentForm: document.getElementById('repaymentForm'),
+    repaymentBillId: document.getElementById('repayment_bill_id'),
+    repaymentBillTitle: document.getElementById('repaymentBillTitle'),
+    repaymentBillMeta: document.getElementById('repaymentBillMeta'),
+    repaymentRemaining: document.getElementById('repaymentRemaining'),
+    repaymentDate: document.getElementById('repayment_date'),
+    repaymentAmount: document.getElementById('repayment_amount'),
+    repaymentFiles: document.getElementById('repayment_files'),
+    repaymentNote: document.getElementById('repayment_note'),
+    saveRepaymentBtn: document.getElementById('saveRepaymentBtn'),
     clientTreeSearch: document.getElementById('clientTreeSearch'),
     clientTreeShell: document.getElementById('clientTreeShell'),
     clientTreeSelectionLabel: document.getElementById('clientTreeSelectionLabel'),
@@ -210,6 +272,10 @@
     return Number.isNaN(dt.getTime()) ? esc(value) : dt.toLocaleDateString('en-IN', { year:'numeric', month:'short', day:'numeric' });
   };
   const money = (value) => `Rs ${Number(value || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  function setBtnLoading(btn, on) {
+    btn.disabled = !!on;
+    btn.style.opacity = on ? '.75' : '1';
+  }
   function exportBills() {
     if (!state.items.length) {
       return;
@@ -307,7 +373,7 @@
 
   function renderRows() {
     if (!state.items.length) {
-      els.billRows.innerHTML = '<tr><td colspan="7"><div class="empty-state"><h3>No published bills found</h3><p>No bills are currently visible inside your scope.</p></div></td></tr>';
+      els.billRows.innerHTML = '<tr><td colspan="9"><div class="empty-state"><h3>No published bills found</h3><p>No bills are currently visible inside your scope.</p></div></td></tr>';
       return;
     }
     els.billRows.innerHTML = state.items.map((bill) => `
@@ -320,11 +386,14 @@
         <td>${fmtDate(bill.bill_date)}</td>
         <td>${fmtDate(bill.due_date)}</td>
         <td style="font-weight:800;">${esc(money(bill.total_amount))}</td>
+        <td>${esc(money(bill.approved_repayment_amount || 0))}</td>
+        <td style="font-weight:800;color:${Number(bill.remaining_amount || 0) > 0.009 ? '#c2410c' : '#15803d'};">${esc(money(bill.remaining_amount ?? bill.total_amount ?? 0))}</td>
         <td><span class="bill-badge">Published</span></td>
         <td>
           <div class="cb-inline-actions">
             <button type="button" class="cb-icon-btn" data-bill-id="${esc(bill.id)}" title="View"><i class="fa-solid fa-eye"></i></button>
             <button type="button" class="cb-icon-btn" data-bill-pdf="${esc(bill.id)}" title="Download PDF"><i class="fa-solid fa-file-pdf"></i></button>
+            ${Number(bill.remaining_amount || 0) > 0.009 ? `<button type="button" class="cb-icon-btn" data-bill-repay="${esc(bill.id)}" title="Submit Repayment"><i class="fa-solid fa-money-bill-transfer"></i></button>` : ''}
           </div>
         </td>
       </tr>
@@ -369,6 +438,8 @@
         <div class="detail-box"><small>Client</small><strong>${esc(bill.client_name || '—')}</strong></div>
         <div class="detail-box"><small>Bill Date</small><strong>${fmtDate(bill.bill_date)}</strong></div>
         <div class="detail-box"><small>Due Date</small><strong>${fmtDate(bill.due_date)}</strong></div>
+        <div class="detail-box"><small>Paid</small><strong>${esc(money(bill.approved_repayment_amount || 0))}</strong></div>
+        <div class="detail-box"><small>Due</small><strong>${esc(money(bill.remaining_amount ?? bill.total_amount ?? 0))}</strong></div>
       </div>
       <div class="detail-items">
         ${items.length ? items.map((item) => `
@@ -385,13 +456,79 @@
           <div class="detail-item">
             <div>
               <strong>${fmtDate(repayment.repayment_date)}</strong>
-              <div style="font-size:12px;color:#64748b;">${esc(String(repayment.status || 'pending').replaceAll('_', ' '))}</div>
+              <div style="font-size:12px;color:#64748b;">${esc(String(repayment.status || 'pending').replaceAll('_', ' '))} · ${esc(repayment.submitted_by_name || '—')}</div>
+              <div style="font-size:12px;color:#64748b;">${repayment.note ? esc(repayment.note) : 'No note'}</div>
+              ${(Array.isArray(repayment.attachments) && repayment.attachments.length) ? `<div class="proof-links">${repayment.attachments.map((proof) => `
+                <a class="proof-link" href="${esc(proof.absolute_url || proof.relative_url || '#')}" target="_blank" rel="noopener noreferrer">
+                  <i class="fa-solid fa-paperclip"></i> ${esc(proof.original_name || 'Attachment')}
+                </a>`).join('')}</div>` : '<div style="font-size:12px;color:#64748b;">No proof files</div>'}
             </div>
             <div style="font-weight:800;">${esc(money(repayment.amount || 0))}</div>
           </div>
         `).join('') : '<div class="empty-state" style="padding:16px;">No repayments recorded yet.</div>'}
       </div>
+      ${Number(bill.remaining_amount || 0) > 0.009 ? `
+        <div style="margin-top:16px;">
+          <button type="button" class="cb-btn" data-detail-repay="${esc(bill.id)}">
+            <i class="fa-solid fa-money-bill-transfer"></i>
+            Submit Repayment
+          </button>
+        </div>` : ''}
       <div class="detail-total">Total: <span class="ms-2">${esc(money(bill.total_amount))}</span></div>`;
+  }
+
+  function openRepaymentModal(billId) {
+    const bill = state.items.find((row) => String(row.id) === String(billId));
+    if (!bill) return;
+    state.repaymentBill = bill;
+    els.repaymentForm.reset();
+    els.repaymentBillId.value = String(bill.id);
+    els.repaymentBillTitle.textContent = `Bill #${bill.id} · ${bill.client_name || '—'}`;
+    els.repaymentBillMeta.textContent = `Total ${money(bill.total_amount || 0)} · Paid ${money(bill.approved_repayment_amount || 0)}`;
+    els.repaymentRemaining.textContent = money(bill.remaining_amount ?? bill.total_amount ?? 0);
+    els.repaymentDate.value = new Date().toISOString().slice(0, 10);
+    els.repaymentAmount.value = Number(bill.remaining_amount || 0).toFixed(2);
+    repaymentModal.show();
+  }
+
+  async function submitRepayment(event) {
+    event.preventDefault();
+    if (!state.repaymentBill) return;
+    const amount = Number(els.repaymentAmount.value || 0);
+    const remaining = Number(state.repaymentBill.remaining_amount || 0);
+    if (!(amount > 0)) {
+      window.alert('Enter a valid repayment amount.');
+      return;
+    }
+    if (amount - remaining > 0.009) {
+      window.alert(`Repayment cannot exceed remaining due of ${money(remaining)}.`);
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('client_bill_id', String(state.repaymentBill.id));
+    formData.append('repayment_date', els.repaymentDate.value);
+    formData.append('amount', String(amount));
+    if (els.repaymentNote.value.trim()) formData.append('note', els.repaymentNote.value.trim());
+    Array.from(els.repaymentFiles.files || []).forEach((file) => formData.append('attachments[]', file));
+
+    setBtnLoading(els.saveRepaymentBtn, true);
+    try {
+      const res = await fetch('/api/client-bill-repayments', {
+        method: 'POST',
+        headers,
+        body: formData,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.message || 'Unable to submit repayment');
+      repaymentModal.hide();
+      await loadBills();
+      window.alert('Repayment submitted for approval.');
+    } catch (error) {
+      window.alert(error.message || error);
+    } finally {
+      setBtnLoading(els.saveRepaymentBtn, false);
+    }
   }
 
   async function downloadBillPdf(id) {
@@ -418,7 +555,7 @@
       state.q = els.billSearch.value.trim();
       state.page = 1;
       loadBills().catch((error) => {
-        els.billRows.innerHTML = `<tr><td colspan="6" class="text-danger text-center py-4">${esc(error.message || error)}</td></tr>`;
+        els.billRows.innerHTML = `<tr><td colspan="9" class="text-danger text-center py-4">${esc(error.message || error)}</td></tr>`;
       });
     }, 300);
   });
@@ -464,16 +601,28 @@
       });
       return;
     }
+    const repayBtn = event.target.closest('[data-bill-repay]');
+    if (repayBtn) {
+      openRepaymentModal(repayBtn.dataset.billRepay);
+      return;
+    }
     const pdfBtn = event.target.closest('[data-bill-pdf]');
     if (!pdfBtn) return;
     downloadBillPdf(pdfBtn.dataset.billPdf).catch((error) => {
       window.alert(error.message || error);
     });
   });
+  els.billDetailBody.addEventListener('click', (event) => {
+    const repayBtn = event.target.closest('[data-detail-repay]');
+    if (!repayBtn) return;
+    detailModal.hide();
+    openRepaymentModal(repayBtn.dataset.detailRepay);
+  });
   els.exportBillsBtn.addEventListener('click', exportBills);
+  els.repaymentForm.addEventListener('submit', submitRepayment);
 
   Promise.all([loadClients(), loadBills()]).catch((error) => {
-    els.billRows.innerHTML = `<tr><td colspan="6" class="text-danger text-center py-4">${esc(error.message || error)}</td></tr>`;
+    els.billRows.innerHTML = `<tr><td colspan="9" class="text-danger text-center py-4">${esc(error.message || error)}</td></tr>`;
   });
 })();
 </script>

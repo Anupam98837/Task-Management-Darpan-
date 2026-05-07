@@ -554,9 +554,6 @@ html.theme-dark .btn-secondary { background: rgba(255,255,255,0.02); border-colo
       <a class="rail-btn" href="{{ $portalBillsUrl }}" title="{{ $portalBillsLabel }}" id="railBills">
         <i class="{{ $portalBillsIcon }}"></i>
       </a>
-      <a class="rail-btn" href="{{ $portalRepaymentsUrl }}" title="{{ $portalRepaymentsLabel }}" id="railRepayments">
-        <i class="{{ $portalRepaymentsIcon }}"></i>
-      </a>
       <a class="rail-btn" href="{{ $portalDocumentsUrl }}" title="{{ $portalDocumentsLabel }}" id="railDocuments">
         <i class="{{ $portalDocumentsIcon }}"></i>
       </a>
@@ -598,10 +595,6 @@ html.theme-dark .btn-secondary { background: rgba(255,255,255,0.02); border-colo
 
       <a href="{{ $portalBillsUrl }}" class="nav-link" id="navBills">
         <i class="{{ $portalBillsIcon }}"></i><span>{{ $portalBillsLabel }}</span>
-      </a>
-
-      <a href="{{ $portalRepaymentsUrl }}" class="nav-link" id="navRepayments">
-        <i class="{{ $portalRepaymentsIcon }}"></i><span>{{ $portalRepaymentsLabel }}</span>
       </a>
 
       <a href="{{ $portalDocumentsUrl }}" class="nav-link" id="navDocuments">

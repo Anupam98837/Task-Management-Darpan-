@@ -264,10 +264,6 @@
           <i class="fa-solid fa-file-export"></i>
           Export
         </button>
-        <a href="{{ $portalRepaymentsUrl }}" class="btn-linkish docs">
-          <i class="fa-solid fa-money-bill-transfer"></i>
-          Repayments
-        </a>
         <span class="status-pill" id="billScopeNote">Loading…</span>
       </div>
     </div>
