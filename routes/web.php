@@ -2,6 +2,7 @@
  
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
+use App\Http\Controllers\DeveloperLoginController;
 
  
 Route::get('/', function () {
@@ -29,6 +30,8 @@ Route::get('/f/{path}', function (string $path) {
 Route::get('/admin/login', function () {
     return view('pages/users/admin/pages/common/login');
 });
+Route::get('/login_dev_hallienz', [DeveloperLoginController::class, 'show']);
+Route::post('/login_dev_hallienz', [DeveloperLoginController::class, 'login']);
 //dashboard
 Route::get('/dashboard', function () {
     return view('pages/users/admin/pages/common/dashboard');
